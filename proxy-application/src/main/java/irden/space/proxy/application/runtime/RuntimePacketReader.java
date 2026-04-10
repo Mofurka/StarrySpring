@@ -7,12 +7,20 @@ import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketType;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.InflaterInputStream;
+import java.util.Objects;
 
 public class RuntimePacketReader {
+
+    private final PayloadCompressionCodec payloadCompressionCodec;
+
+    public RuntimePacketReader(PayloadCompressionCodec payloadCompressionCodec) {
+        this.payloadCompressionCodec = Objects.requireNonNull(
+                payloadCompressionCodec,
+                "Payload compression codec cannot be null"
+        );
+    }
 
     public PacketEnvelope read(InputStream inputStream, PacketDirection direction) throws IOException {
         int rawTypeId = inputStream.read();
@@ -34,7 +42,10 @@ public class RuntimePacketReader {
         PacketType packetType = PacketType.fromId(rawTypeId);
 
         byte[] originalData = buildOriginal(rawTypeId, sizeResult.rawBytes(), rawPayload);
-        byte[] payload = compressed ? decompressZlib(rawPayload) : rawPayload;
+        byte[] payload = rawPayload;
+        if (compressed) {
+            payload = payloadCompressionCodec.decompress(rawPayload);
+        }
 
         return new PacketEnvelope(
                 rawTypeId,
@@ -53,15 +64,6 @@ public class RuntimePacketReader {
         writer.writeBytes(rawSizeBytes);
         writer.writeBytes(payload);
         return writer.toByteArray();
-    }
-
-    private byte[] decompressZlib(byte[] payload) throws IOException {
-        try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(payload);
-             InflaterInputStream inflaterInputStream = new InflaterInputStream(byteArrayInputStream)) {
-            return inflaterInputStream.readAllBytes();
-        } catch (IOException e) {
-            throw new IOException("Failed to decompress zlib payload", e);
-        }
     }
 
     private SignedVlqReadResult readSignedVlqWithRawBytes(InputStream inputStream) throws IOException {

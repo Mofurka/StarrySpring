@@ -1,6 +1,5 @@
 package irden.space.proxy.application.runtime;
 
-
 import irden.space.proxy.domain.session.SessionTransportMode;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
@@ -14,9 +13,9 @@ public class PlainSessionTransport implements SessionTransport {
     private final RuntimePacketReader packetReader;
     private final RuntimePacketWriter packetWriter;
 
-    public PlainSessionTransport(RuntimePacketReader packetReader, RuntimePacketWriter packetWriter) {
-        this.packetReader = packetReader;
-        this.packetWriter = packetWriter;
+    public PlainSessionTransport() {
+        this.packetReader = new RuntimePacketReader(new ZlibPayloadCompressionCodec());
+        this.packetWriter = new RuntimePacketWriter();
     }
 
     @Override

@@ -25,12 +25,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
     private final SessionRegistry sessionRegistry;
     private final ProxyServerProperties properties;
-
-    private final RuntimePacketReader packetReader = new RuntimePacketReader();
-    private final RuntimePacketWriter packetWriter = new RuntimePacketWriter();
     private final PacketParserRegistry packetParserRegistry = new PacketParserRegistry();
     private final PacketDispatcher packetDispatcher = new PacketDispatcher(packetParserRegistry);
-
 
     @Override
     public void start() {
@@ -50,6 +46,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
     private void handleNewClient(Socket clientSocket) {
         try {
+            clientSocket.setSoTimeout(200);
+
             ProxySession session = new ProxySession(
                     ProxySessionId.generate(),
                     clientSocket.getInetAddress().getHostAddress()
@@ -62,6 +60,7 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     properties.getUpstreamHost(),
                     properties.getUpstreamPort()
             );
+            upstreamSocket.setSoTimeout(200);
 
             session.makeUpstreamConnecting();
             log.info(
@@ -79,7 +78,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
             session.activate();
             log.info("Session {} is ACTIVE", session.getId());
-            PlainSessionTransport plainTransport = new PlainSessionTransport(packetReader, packetWriter);
+
+            PlainSessionTransport plainTransport = new PlainSessionTransport();
 
             ProxySessionRuntimeContext context = new ProxySessionRuntimeContext(
                     session,
@@ -88,36 +88,31 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     new SwitchableSessionTransport(plainTransport),
                     new SwitchableSessionTransport(plainTransport)
             );
+
             Thread clientToServer = new Thread(
                     new PacketForwarder(
-                            session,
                             clientIn,
                             upstreamOut,
-                            clientSocket,
-                            upstreamSocket,
                             sessionRegistry,
                             PacketDirection.TO_SERVER,
                             packetDispatcher,
                             context,
                             context.clientSideTransport()
                     ),
-                    "proxy-c2s-" + session.getId().uuid()
+                     session.getId().uuid() + "-proxy-c2s"
             );
 
             Thread serverToClient = new Thread(
                     new PacketForwarder(
-                            session,
                             upstreamIn,
                             clientOut,
-                            clientSocket,
-                            upstreamSocket,
                             sessionRegistry,
                             PacketDirection.TO_CLIENT,
                             packetDispatcher,
                             context,
                             context.upstreamSideTransport()
                     ),
-                    "proxy-s2c-" + session.getId().uuid()
+                    session.getId().uuid() + "-proxy-s2c"
             );
 
             clientToServer.start();

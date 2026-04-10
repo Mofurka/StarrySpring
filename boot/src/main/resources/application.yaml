@@ -11,4 +11,4 @@ proxy:
 logging:
   level:
     root: INFO
-    irden.space.proxy.application: DEBUG
+    irden.space.proxy.application: INFO
