@@ -1,7 +1,5 @@
 package irden.space.proxy.protocol.codec;
 
-import lombok.experimental.UtilityClass;
-
 public final class SignedVlqCodec {
 
     private SignedVlqCodec() {
@@ -19,10 +17,7 @@ public final class SignedVlqCodec {
 
     public static void write(BinaryWriter writer, int value) {
         // ZigZag encoding
-        int encoded = Math.abs(value * 2);
-        if (value < 0) {
-            encoded = -encoded - 1;
-        }
+        int encoded = (value << 1) ^ (value >> 31);
         VlqCodec.write(writer, encoded);
     }
 }

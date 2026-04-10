@@ -12,8 +12,5 @@ public record ProxySessionId(UUID uuid) {
     public static ProxySessionId generate() {
         return new ProxySessionId(UUID.randomUUID());
     }
-    @Override
-    public String toString() {
-        return uuid.toString();
-    }
+
 }

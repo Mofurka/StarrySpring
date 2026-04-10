@@ -1,7 +1,5 @@
 package irden.space.proxy.protocol.codec;
 
-import lombok.experimental.UtilityClass;
-
 public final class StarByteArrayCodec {
 
     private StarByteArrayCodec() {
@@ -12,9 +10,8 @@ public final class StarByteArrayCodec {
         return reader.readBytes(length);
     }
 
-    public static void write(BinaryWriter writer, byte[] data) {
-        VlqCodec.write(writer, data.length);
-        writer.writeBytes(data);
+    public static void write(BinaryWriter writer, byte[] value) {
+        VlqCodec.write(writer, value.length);
+        writer.writeBytes(value);
     }
-
 }

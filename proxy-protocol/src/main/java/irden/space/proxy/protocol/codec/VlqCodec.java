@@ -1,7 +1,5 @@
 package irden.space.proxy.protocol.codec;
 
-import lombok.experimental.UtilityClass;
-
 public final class VlqCodec {
 
     private VlqCodec() {
@@ -11,9 +9,9 @@ public final class VlqCodec {
         int value = 0;
         while (true) {
             int b = reader.readUnsignedByte();
-            value = (value << 7) | (b & 0xF7);
+            value = (value << 7) | (b & 0x7F);
             if ((b & 0x80) == 0) {
-                return b;
+                return value;
             }
         }
     }
@@ -39,6 +37,6 @@ public final class VlqCodec {
                 b |= 0x80; // Set continuation bit
             }
             writer.writeByte(b);
-            }
+        }
     }
 }

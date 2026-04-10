@@ -1,0 +1,24 @@
+package irden.space.proxy.protocol.payload.registry;
+
+import irden.space.proxy.protocol.codec.BinaryReader;
+import irden.space.proxy.protocol.packet.PacketEnvelope;
+
+public class PacketDispatcher {
+
+    private final PacketParserRegistry registry;
+
+    public PacketDispatcher(PacketParserRegistry registry) {
+        this.registry = registry;
+    }
+
+    public Object parse(PacketEnvelope envelope) {
+        PacketParser<?> parser = registry.get(envelope.packetType());
+
+        if (parser == null) {
+            return null; // или raw payload
+        }
+
+        BinaryReader reader = new BinaryReader(envelope.payload());
+        return parser.parse(reader);
+    }
+}

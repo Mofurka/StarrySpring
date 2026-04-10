@@ -1,0 +1,121 @@
+package irden.space.proxy.application;
+
+import irden.space.proxy.application.port.out.SessionRegistry;
+import irden.space.proxy.application.runtime.PacketForwarder;
+import irden.space.proxy.application.runtime.RuntimePacketReader;
+import irden.space.proxy.application.runtime.RuntimePacketWriter;
+import irden.space.proxy.domain.session.ProxySession;
+import irden.space.proxy.domain.session.ProxySessionId;
+import irden.space.proxy.protocol.packet.PacketDirection;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+@Service
+@RequiredArgsConstructor
+public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
+
+    private static final Logger log = LoggerFactory.getLogger(ProxyRuntimeServiceImpl.class);
+
+    private final SessionRegistry sessionRegistry;
+    private final ProxyServerProperties properties;
+
+    private final RuntimePacketReader packetReader = new RuntimePacketReader();
+    private final RuntimePacketWriter packetWriter = new RuntimePacketWriter();
+
+    @Override
+    public void start() {
+        log.info("Starting proxy runtime: {}", properties);
+
+        try (ServerSocket serverSocket = new ServerSocket(properties.getListenPort())) {
+            log.info("Proxy listening on {}:{}", properties.getListenHost(), properties.getListenPort());
+
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                handleNewClient(clientSocket);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to start proxy runtime", e);
+        }
+    }
+
+    private void handleNewClient(Socket clientSocket) {
+        try {
+            ProxySession session = new ProxySession(
+                    ProxySessionId.generate(),
+                    clientSocket.getInetAddress().getHostAddress()
+            );
+
+            sessionRegistry.add(session);
+            log.info("Accepted client {} for session {}", session.getClientIp(), session.getId());
+
+            Socket upstreamSocket = new Socket(
+                    properties.getUpstreamHost(),
+                    properties.getUpstreamPort()
+            );
+
+            session.makeUpstreamConnecting();
+            log.info(
+                    "Connected upstream {}:{} for session {}",
+                    properties.getUpstreamHost(),
+                    properties.getUpstreamPort(),
+                    session.getId()
+            );
+
+            InputStream clientIn = clientSocket.getInputStream();
+            OutputStream clientOut = clientSocket.getOutputStream();
+
+            InputStream upstreamIn = upstreamSocket.getInputStream();
+            OutputStream upstreamOut = upstreamSocket.getOutputStream();
+
+            session.activate();
+            log.info("Session {} is ACTIVE", session.getId());
+
+            Thread clientToServer = new Thread(
+                    new PacketForwarder(
+                            session,
+                            clientIn,
+                            upstreamOut,
+                            clientSocket,
+                            upstreamSocket,
+                            sessionRegistry,
+                            packetReader,
+                            packetWriter,
+                            PacketDirection.TO_SERVER
+                    ),
+                    "proxy-c2s-" + session.getId().uuid()
+            );
+
+            Thread serverToClient = new Thread(
+                    new PacketForwarder(
+                            session,
+                            upstreamIn,
+                            clientOut,
+                            clientSocket,
+                            upstreamSocket,
+                            sessionRegistry,
+                            packetReader,
+                            packetWriter,
+                            PacketDirection.TO_CLIENT
+                    ),
+                    "proxy-s2c-" + session.getId().uuid()
+            );
+
+            clientToServer.start();
+            serverToClient.start();
+
+        } catch (Exception e) {
+            log.warn("Failed to initialize client connection: {}", e.getMessage(), e);
+            try {
+                clientSocket.close();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+}
