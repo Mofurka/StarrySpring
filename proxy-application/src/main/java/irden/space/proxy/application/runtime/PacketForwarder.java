@@ -93,7 +93,10 @@ public class PacketForwarder implements Runnable {
                     switchSessionToZstd();
                 }
 
-                if (envelope.packetType().equals(PacketType.CHAT_SENT) || envelope.packetType().equals(PacketType.CHAT_RECEIVED)) {
+                if (envelope.packetType().equals(PacketType.CHAT_SENT) ||
+                        envelope.packetType().equals(PacketType.CHAT_RECEIVED) ||
+                        envelope.packetType().equals(PacketType.ENTITY_MESSAGE) ||
+                        envelope.packetType().equals(PacketType.ENTITY_MESSAGE_RESPONSE)) {
                     log.info("[{}]", parsed);
                 }
 
