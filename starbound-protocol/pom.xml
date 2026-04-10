@@ -9,7 +9,7 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>proxy-protocol</artifactId>
+    <artifactId>starbound-protocol</artifactId>
 
     <dependencies>
         <dependency>

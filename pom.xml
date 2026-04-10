@@ -12,7 +12,7 @@
     <modules>
         <module>proxy-domain</module>
         <module>proxy-application</module>
-        <module>proxy-protocol</module>
+        <module>starbound-protocol</module>
         <module>proxy-adapters</module>
         <module>boot</module>
     </modules>

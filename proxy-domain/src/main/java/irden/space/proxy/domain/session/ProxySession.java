@@ -11,16 +11,16 @@ public final class ProxySession {
     private final ProxySessionId id;
     private final String clientIp;
     private SessionState state;
-    private CompressionMode clientCompression;
-    private CompressionMode upstreamCompression;
+    private SessionTransportMode clientCompression;
+    private SessionTransportMode upstreamCompression;
 
 
     public ProxySession(ProxySessionId id, String clientIp) {
         this.id = Objects.requireNonNull(id, "Session ID cannot be null");
         this.clientIp = Objects.requireNonNull(clientIp, "Client IP cannot be null");
         this.state = SessionState.NEW;
-        this.clientCompression = CompressionMode.NONE;
-        this.upstreamCompression = CompressionMode.NONE;
+        this.clientCompression = SessionTransportMode.PLAIN;
+        this.upstreamCompression = SessionTransportMode.PLAIN;
     }
 
     public void makeUpstreamConnecting() {
@@ -44,11 +44,11 @@ public final class ProxySession {
     }
 
     public void enableClientZstd() {
-        this.clientCompression = CompressionMode.ZSTD;
+        this.clientCompression = SessionTransportMode.ZSTD;
     }
 
     public void enableUpstreamZstd() {
-        this.upstreamCompression = CompressionMode.ZSTD;
+        this.upstreamCompression = SessionTransportMode.ZSTD;
     }
 
     private void ensureNotDisconnected() {

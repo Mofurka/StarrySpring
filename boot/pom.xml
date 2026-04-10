@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>irden.space</groupId>
-            <artifactId>proxy-protocol</artifactId>
+            <artifactId>starbound-protocol</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

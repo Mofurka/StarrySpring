@@ -1,12 +1,12 @@
 package irden.space.proxy.application;
 
 import irden.space.proxy.application.port.out.SessionRegistry;
-import irden.space.proxy.application.runtime.PacketForwarder;
-import irden.space.proxy.application.runtime.RuntimePacketReader;
-import irden.space.proxy.application.runtime.RuntimePacketWriter;
+import irden.space.proxy.application.runtime.*;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
 import irden.space.proxy.protocol.packet.PacketDirection;
+import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
+import irden.space.proxy.protocol.payload.registry.PacketParserRegistry;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +28,9 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
     private final RuntimePacketReader packetReader = new RuntimePacketReader();
     private final RuntimePacketWriter packetWriter = new RuntimePacketWriter();
+    private final PacketParserRegistry packetParserRegistry = new PacketParserRegistry();
+    private final PacketDispatcher packetDispatcher = new PacketDispatcher(packetParserRegistry);
+
 
     @Override
     public void start() {
@@ -76,7 +79,15 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
             session.activate();
             log.info("Session {} is ACTIVE", session.getId());
+            PlainSessionTransport plainTransport = new PlainSessionTransport(packetReader, packetWriter);
 
+            ProxySessionRuntimeContext context = new ProxySessionRuntimeContext(
+                    session,
+                    clientSocket,
+                    upstreamSocket,
+                    new SwitchableSessionTransport(plainTransport),
+                    new SwitchableSessionTransport(plainTransport)
+            );
             Thread clientToServer = new Thread(
                     new PacketForwarder(
                             session,
@@ -85,9 +96,10 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             clientSocket,
                             upstreamSocket,
                             sessionRegistry,
-                            packetReader,
-                            packetWriter,
-                            PacketDirection.TO_SERVER
+                            PacketDirection.TO_SERVER,
+                            packetDispatcher,
+                            context,
+                            context.clientSideTransport()
                     ),
                     "proxy-c2s-" + session.getId().uuid()
             );
@@ -100,9 +112,10 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             clientSocket,
                             upstreamSocket,
                             sessionRegistry,
-                            packetReader,
-                            packetWriter,
-                            PacketDirection.TO_CLIENT
+                            PacketDirection.TO_CLIENT,
+                            packetDispatcher,
+                            context,
+                            context.upstreamSideTransport()
                     ),
                     "proxy-s2c-" + session.getId().uuid()
             );

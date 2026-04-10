@@ -29,7 +29,7 @@ public final class VariantCodec {
 
     public static void write(BinaryWriter writer, VariantValue value) {
         switch (value) {
-            case NullVariantValue nullVariantValue -> writer.writeByte(1);
+            case NullVariantValue _ -> writer.writeByte(1);
             case DoubleVariantValue(double value1) -> {
                 writer.writeByte(2);
                 writer.writeDouble64BE(value1);

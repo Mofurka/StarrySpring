@@ -12,10 +12,13 @@ public class PacketDispatcher {
     }
 
     public Object parse(PacketEnvelope envelope) {
-        PacketParser<?> parser = registry.get(envelope.packetType());
+        if (envelope.packetType() == null) {
+            return null;
+        }
 
+        PacketParser<?> parser = registry.get(envelope.packetType());
         if (parser == null) {
-            return null; // или raw payload
+            return null;
         }
 
         BinaryReader reader = new BinaryReader(envelope.payload());

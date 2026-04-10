@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>irden.space</groupId>
-            <artifactId>proxy-protocol</artifactId>
+            <artifactId>starbound-protocol</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>

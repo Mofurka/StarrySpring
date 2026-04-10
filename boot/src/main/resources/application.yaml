@@ -5,7 +5,7 @@ spring:
 proxy:
   listen-host: 0.0.0.0
   listen-port: 7777
-  upstream-host: localhost
+  upstream-host: irden.space
   upstream-port: 21024
 
 logging:

@@ -1,6 +1,6 @@
 package irden.space.proxy.domain.session;
 
-public enum CompressionMode {
-    NONE,
+public enum SessionTransportMode {
+    PLAIN,
     ZSTD
 }
