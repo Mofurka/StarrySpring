@@ -11,6 +11,7 @@ import irden.space.proxy.protocol.payload.packet.handshake_challenge.HandshakeCh
 import irden.space.proxy.protocol.payload.packet.protocol_request.ProtocolRequestParser;
 import irden.space.proxy.protocol.payload.packet.protocol_response.ProtocolResponseParser;
 import irden.space.proxy.protocol.payload.packet.server_disconnect.ServerDisconnectParser;
+import irden.space.proxy.protocol.payload.packet.step_update.StepUpdateParser;
 import irden.space.proxy.protocol.payload.packet.universe_time_update.UniverseTimeUpdateParser;
 import irden.space.proxy.protocol.payload.packet.warp.player_warp.PlayerWarpParser;
 import irden.space.proxy.protocol.payload.packet.warp.player_warp_result.PlayerWarpResultParser;
@@ -84,7 +85,7 @@ public class PacketParserRegistry {
         register(PacketType.ENTITY_MESSAGE, new EntityMessageParser());
         register(PacketType.ENTITY_MESSAGE_RESPONSE, new EntityMessageResponseParser());
         register(PacketType.UPDATE_WORLD_PROPERTIES, null);
-        register(PacketType.STEP_UPDATE, null);
+        register(PacketType.STEP_UPDATE, new StepUpdateParser());
         register(PacketType.SYSTEM_WORLD_START, null);
         register(PacketType.SYSTEM_WORLD_UPDATE, null);
         register(PacketType.SYSTEM_OBJECT_CREATE, null);
