@@ -1,21 +1,20 @@
 package irden.space.boot;
 
-
-import irden.space.proxy.application.ProxyRuntimeService;
+import irden.space.proxy.plugin_runtime.PluginManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
-@Order(2)
+@Order(1)
 @RequiredArgsConstructor
-public class ProxyRuntimeStartup implements CommandLineRunner {
+public class PluginStartupRunner implements CommandLineRunner {
 
-    private final ProxyRuntimeService proxyRuntimeService;
+    private final PluginManager pluginManager;
 
     @Override
     public void run(String... args) {
-        proxyRuntimeService.start();
+        pluginManager.loadAndStart();
     }
 }

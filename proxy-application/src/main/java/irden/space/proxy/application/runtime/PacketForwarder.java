@@ -3,14 +3,16 @@ package irden.space.proxy.application.runtime;
 import irden.space.proxy.application.port.out.SessionRegistry;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.SessionState;
-import irden.space.proxy.protocol.codec.variant.MapVariantValue;
-import irden.space.proxy.protocol.codec.variant.StringVariantValue;
-import irden.space.proxy.protocol.codec.variant.VariantValue;
+import irden.space.proxy.domain.session.SessionTransportMode;
+import irden.space.proxy.plugin_api.DropPacketDecision;
+import irden.space.proxy.plugin_api.PacketDecision;
+import irden.space.proxy.plugin_api.PacketInterceptionContext;
+import irden.space.proxy.plugin_api.PacketInterceptionService;
+import irden.space.proxy.plugin_api.PluginSessionContext;
+import irden.space.proxy.plugin_api.ReplacePacketDecision;
+import irden.space.proxy.plugin_api.DefaultPluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
-import irden.space.proxy.protocol.packet.PacketType;
-import irden.space.proxy.protocol.payload.packet.protocol_response.ProtocolResponse;
-import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +22,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Map;
 
 public class PacketForwarder implements Runnable {
 
@@ -33,18 +34,20 @@ public class PacketForwarder implements Runnable {
     private final Socket upstreamSocket;
     private final SessionRegistry sessionRegistry;
     private final PacketDirection packetDirection;
-    private final PacketDispatcher packetDispatcher;
     private final ProxySessionRuntimeContext context;
     private final SwitchableSessionTransport transport;
+    private final RuntimePacketInspector packetInspector;
+    private final PacketInterceptionService packetInterceptionService;
 
     public PacketForwarder(
             InputStream source,
             OutputStream target,
             SessionRegistry sessionRegistry,
             PacketDirection packetDirection,
-            PacketDispatcher packetDispatcher,
             ProxySessionRuntimeContext context,
-            SwitchableSessionTransport transport
+            SwitchableSessionTransport transport,
+            RuntimePacketInspector packetInspector,
+            PacketInterceptionService packetInterceptionService
     ) {
         this.context = context;
         this.session = context.session();
@@ -55,7 +58,8 @@ public class PacketForwarder implements Runnable {
         this.upstreamSocket = context.upstreamSocket();
         this.sessionRegistry = sessionRegistry;
         this.packetDirection = packetDirection;
-        this.packetDispatcher = packetDispatcher;
+        this.packetInspector = packetInspector;
+        this.packetInterceptionService = packetInterceptionService;
     }
 
     @Override
@@ -63,14 +67,11 @@ public class PacketForwarder implements Runnable {
         try {
             while (!clientSocket.isClosed() && !upstreamSocket.isClosed()) {
                 PacketEnvelope envelope = readPacket();
-                if (envelope == null) continue;
-
-
-                Object parsed = null;
-
-                if (envelope.packetType() != null) {
-                    parsed = parsePacket(envelope);
+                if (envelope == null) {
+                    continue;
                 }
+
+                PacketInspectionResult inspection = packetInspector.inspect(envelope, packetDirection);
 
                 log.debug(
                         "[{}] session={} rawType={} type={} size={} compressed={} parsed={}",
@@ -80,36 +81,74 @@ public class PacketForwarder implements Runnable {
                         envelope.packetType(),
                         envelope.payloadSize(),
                         envelope.compressed(),
-                        parsed
+                        inspection.parsed()
                 );
 
-                boolean negotiatedZstd = packetDirection == PacketDirection.TO_CLIENT
-                        && envelope.packetType() == PacketType.PROTOCOL_RESPONSE
-                        && parsed instanceof ProtocolResponse protocolResponse
-                        && isZstdNegotiated(protocolResponse);
+                if (inspection.shouldLogPayload()) {
+                    log.info("[{}] {}", packetDirection, inspection.parsed());
+                }
+                PluginSessionContext pluginSessionContext = new DefaultPluginSessionContext(
+                        session.getId().uuid().toString(),
+                        session.getClientIp(),
+                        session.getClientCompression() == SessionTransportMode.ZSTD,
+                        session.getUpstreamCompression() == SessionTransportMode.ZSTD
+                );
 
-                if (negotiatedZstd) {
+                PacketInterceptionContext interceptionContext =
+                        new PacketInterceptionContext(
+                                pluginSessionContext,
+                                envelope,
+                                inspection.parsed(),
+                                packetDirection
+                        );
+
+                PacketDecision decision = packetInterceptionService.apply(interceptionContext);
+
+                if (decision instanceof DropPacketDecision) {
+                    continue;
+                }
+
+                PacketEnvelope envelopeToWrite = envelope;
+                if (decision instanceof ReplacePacketDecision(PacketEnvelope envelope1)) {
+                    envelopeToWrite = envelope1;
+                }
+
+                if (shouldSwitchToZstd(envelope, envelopeToWrite, inspection)) {
                     log.info("Session {} negotiated ZSTD via ProtocolResponse", session.getId());
                     switchSessionToZstd();
                 }
 
-                if (envelope.packetType().equals(PacketType.CHAT_SENT) ||
-                        envelope.packetType().equals(PacketType.CHAT_RECEIVED) ||
-                        envelope.packetType().equals(PacketType.ENTITY_MESSAGE) ||
-                        envelope.packetType().equals(PacketType.ENTITY_MESSAGE_RESPONSE)) {
-                    log.info("[{}]", parsed);
-                }
-
-                transport.write(target, envelope);
+                transport.write(target, envelopeToWrite);
             }
-        } catch (SocketException _) {
-            log.info("[{}] socket closed for session {}", packetDirection, session.getId());
+        } catch (SocketException e) {
+            log.info("[{}] socket exception for session {}: {}", packetDirection, session.getId(), e.getMessage());
         } catch (Exception e) {
             log.warn("[{}] forwarding stopped for session {}: {}", packetDirection, session.getId(), e.getMessage(), e);
         } finally {
             closeSession();
         }
     }
+
+    private PacketEnvelope readPacket() throws IOException {
+        try {
+            return transport.read(source, packetDirection);
+        } catch (SocketTimeoutException _) {
+            return null;
+        }
+    }
+
+    private boolean shouldSwitchToZstd(
+            PacketEnvelope originalEnvelope,
+            PacketEnvelope envelopeToWrite,
+            PacketInspectionResult originalInspection
+    ) {
+        if (envelopeToWrite == originalEnvelope) {
+            return originalInspection.negotiatedZstd();
+        }
+
+        return packetInspector.inspect(envelopeToWrite, packetDirection).negotiatedZstd();
+    }
+
 
     private void switchSessionToZstd() {
         synchronized (context.session()) {
@@ -125,6 +164,7 @@ public class PacketForwarder implements Runnable {
 
             waitForPlainReadersToDrain();
 
+
             context.clientSideTransport().enableZstdWrite(0);
             context.upstreamSideTransport().enableZstdWrite(1);
 
@@ -133,33 +173,6 @@ public class PacketForwarder implements Runnable {
 
             log.info("Session {} switched to ZSTD transport mode", context.session().getId());
         }
-    }
-
-    private Object parsePacket(PacketEnvelope envelope) {
-        Object parsed = null;
-        try {
-            parsed = packetDispatcher.parse(envelope);
-        } catch (Exception e) {
-            log.debug(
-                    "[{}] session={} parse failed for type={}: {}",
-                    packetDirection,
-                    session.getId(),
-                    envelope.packetType(),
-                    e.getMessage()
-            );
-        }
-        return parsed;
-    }
-
-
-    private PacketEnvelope readPacket() throws IOException {
-        PacketEnvelope envelope;
-        try {
-            envelope = transport.read(source, packetDirection);
-        } catch (SocketTimeoutException _) {
-            return null;
-        }
-        return envelope;
     }
 
     private void waitForPlainReadersToDrain() {
@@ -194,16 +207,6 @@ public class PacketForwarder implements Runnable {
         }
     }
 
-    private boolean isZstdNegotiated(ProtocolResponse response) {
-        if (!(response.info() instanceof MapVariantValue(Map<String, VariantValue> values))) {
-            return false;
-        }
-
-        VariantValue compression = values.get("compression");
-        return compression instanceof StringVariantValue(String value)
-                && "Zstd".equalsIgnoreCase(value);
-    }
-
     private void closeSession() {
         synchronized (session) {
             if (session.getState().equals(SessionState.DISCONNECTED)) {
@@ -212,25 +215,25 @@ public class PacketForwarder implements Runnable {
 
             try {
                 session.markDisconnecting();
-            } catch (Exception _) {
+            } catch (Exception e) {
                 log.warn("Failed to mark session {} as DISCONNECTING", session.getId());
             }
 
             try {
                 clientSocket.close();
-            } catch (Exception _) {
+            } catch (Exception e) {
                 log.warn("Failed to close client socket for session {}", session.getId());
             }
 
             try {
                 upstreamSocket.close();
-            } catch (Exception _) {
+            } catch (Exception e) {
                 log.warn("Failed to close upstream socket for session {}", session.getId());
             }
 
             try {
                 session.markDisconnected();
-            } catch (Exception _) {
+            } catch (Exception e) {
                 log.warn("Failed to mark session {} as DISCONNECTED", session.getId());
             }
 

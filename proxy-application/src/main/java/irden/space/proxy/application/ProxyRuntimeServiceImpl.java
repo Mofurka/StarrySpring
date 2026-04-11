@@ -4,6 +4,7 @@ import irden.space.proxy.application.port.out.SessionRegistry;
 import irden.space.proxy.application.runtime.*;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
+import irden.space.proxy.plugin_api.PacketInterceptionService;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
 import irden.space.proxy.protocol.payload.registry.PacketParserRegistry;
@@ -27,6 +28,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     private final ProxyServerProperties properties;
     private final PacketParserRegistry packetParserRegistry = new PacketParserRegistry();
     private final PacketDispatcher packetDispatcher = new PacketDispatcher(packetParserRegistry);
+    private final RuntimePacketInspector packetInspector = new RuntimePacketInspector(packetDispatcher);
+    private final PacketInterceptionService packetInterceptionService;
 
     @Override
     public void start() {
@@ -95,9 +98,11 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             upstreamOut,
                             sessionRegistry,
                             PacketDirection.TO_SERVER,
-                            packetDispatcher,
                             context,
-                            context.clientSideTransport()
+                            context.clientSideTransport(),
+                            packetInspector,
+                            packetInterceptionService
+
                     ),
                      session.getId().uuid() + "-proxy-c2s"
             );
@@ -108,9 +113,10 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             clientOut,
                             sessionRegistry,
                             PacketDirection.TO_CLIENT,
-                            packetDispatcher,
                             context,
-                            context.upstreamSideTransport()
+                            context.upstreamSideTransport(),
+                            packetInspector,
+                            packetInterceptionService
                     ),
                     session.getId().uuid() + "-proxy-s2c"
             );

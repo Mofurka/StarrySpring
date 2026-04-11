@@ -33,7 +33,21 @@
             <artifactId>proxy-adapters</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>irden.space</groupId>
+            <artifactId>proxy-plugin-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>irden.space</groupId>
+            <artifactId>proxy-plugin-runtime</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>irden.space</groupId>
+            <artifactId>plugin-debug-logger</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>

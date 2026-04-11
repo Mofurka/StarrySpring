@@ -136,4 +136,5 @@ class SwitchableSessionTransportTest {
         System.arraycopy(source, offset, result, 0, length);
         return result;
     }
+
 }

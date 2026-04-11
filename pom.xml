@@ -14,6 +14,9 @@
         <module>proxy-application</module>
         <module>starbound-protocol</module>
         <module>proxy-adapters</module>
+        <module>proxy-plugin-api</module>
+        <module>proxy-plugin-runtime</module>
+        <module>plugin-debug-logger</module>
         <module>boot</module>
     </modules>
 
