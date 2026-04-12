@@ -2,13 +2,14 @@ package irden.space.proxy.adapters.config;
 
 import irden.space.proxy.adapters.session.InMemorySessionRegistry;
 import irden.space.proxy.application.port.out.SessionRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public final class ProxyAdaptersConfiguration {
+@Configuration
+public class ProxyAdaptersConfiguration {
 
-    private ProxyAdaptersConfiguration() {
-    }
-
-    public static SessionRegistry sessionRegistry() {
+    @Bean
+    public SessionRegistry sessionRegistry() {
         return new InMemorySessionRegistry();
     }
 }

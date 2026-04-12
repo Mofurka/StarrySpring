@@ -3,12 +3,17 @@ package irden.space.proxy.plugin.runtime;
 
 import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
 import irden.space.proxy.plugin.api.PluginContext;
+import irden.space.proxy.plugin.api.PluginDescriptor;
 import irden.space.proxy.plugin.api.ProxyPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class PluginManager {
+
+    private static final Logger log = LoggerFactory.getLogger(PluginManager.class);
 
     private final PluginLoader pluginLoader;
     private final PluginDependencyResolver dependencyResolver;
@@ -31,21 +36,48 @@ public class PluginManager {
 
     public void loadAndStart() {
         List<ProxyPlugin> plugins = pluginLoader.loadPlugins();
+        log.info("Discovered {} plugin(s)", plugins.size());
+        for (ProxyPlugin plugin : plugins) {
+            log.info("Discovered plugin: {}", describePlugin(plugin));
+        }
+
         List<ProxyPlugin> ordered = dependencyResolver.resolveLoadOrder(plugins);
+        log.info(
+                "Resolved plugin load order: {}",
+                ordered.stream()
+                        .map(plugin -> plugin.descriptor().id())
+                        .toList()
+        );
 
         for (ProxyPlugin plugin : ordered) {
+            log.info("Loading plugin {}", describePlugin(plugin));
             plugin.onLoad(pluginContext);
             loadedPlugins.add(plugin);
+            log.info("Loaded plugin '{}'", plugin.descriptor().id());
         }
 
         for (ProxyPlugin plugin : loadedPlugins) {
+            log.info("Starting plugin '{}'", plugin.descriptor().id());
             plugin.onStart();
+            log.info("Started plugin '{}'", plugin.descriptor().id());
         }
+
+        log.info(
+                "Plugin runtime started with {} loaded plugin(s): {}",
+                loadedPlugins.size(),
+                loadedPlugins.stream()
+                        .map(this::describePlugin)
+                        .toList()
+        );
     }
 
     public void stopAll() {
+        log.info("Stopping {} plugin(s)", loadedPlugins.size());
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
-            loadedPlugins.get(i).onStop();
+            ProxyPlugin plugin = loadedPlugins.get(i);
+            log.info("Stopping plugin '{}'", plugin.descriptor().id());
+            plugin.onStop();
+            log.info("Stopped plugin '{}'", plugin.descriptor().id());
         }
     }
 
@@ -55,5 +87,15 @@ public class PluginManager {
 
     public PacketInterceptorRegistry interceptorRegistry() {
         return interceptorRegistry;
+    }
+
+    private String describePlugin(ProxyPlugin plugin) {
+        PluginDescriptor descriptor = plugin.descriptor();
+        return "id='" + descriptor.id() + "', name='" + descriptor.name() + "', version='" + descriptor.version()
+                + "', dependsOn=" + formatDependencies(descriptor.dependsOn());
+    }
+
+    private String formatDependencies(List<String> dependencies) {
+        return dependencies == null || dependencies.isEmpty() ? "[]" : dependencies.toString();
     }
 }
