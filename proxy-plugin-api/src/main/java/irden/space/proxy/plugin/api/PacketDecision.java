@@ -1,6 +1,7 @@
 package irden.space.proxy.plugin.api;
 
 
+import irden.space.proxy.protocol.packet.PacketEnvelope;
 import org.jetbrains.annotations.NotNull;
 
 public sealed interface PacketDecision
@@ -20,7 +21,7 @@ public sealed interface PacketDecision
     static DropPacketDecision cancel() {
         return DropPacketDecision.INSTANCE;
     }
-    static ReplacePacketDecision replace(@NotNull ReplacePacketDecision defaultValue) {
-        return defaultValue;
+    static ReplacePacketDecision replace(@NotNull PacketEnvelope defaultValue) {
+        return new ReplacePacketDecision(defaultValue);
     }
 }

@@ -9,7 +9,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
 
     @Override
-    public ConnectSuccess parse(BinaryReader reader) {
+    public ConnectSuccess parse(BinaryReader reader, int openProtocolVersion) {
         return new ConnectSuccess(
                 VlqCodec.read(reader),
                 StarUuidCodec.INSTANCE.read(reader),
@@ -24,7 +24,7 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
     }
 
     @Override
-    public byte[] write(ConnectSuccess payload) {
+    public byte[] write(ConnectSuccess payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         VlqCodec.write(writer, payload.clientId());
         StarUuidCodec.INSTANCE.write(writer, payload.playerUuid());

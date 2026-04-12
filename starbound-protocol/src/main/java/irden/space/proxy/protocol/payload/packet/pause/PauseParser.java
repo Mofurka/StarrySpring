@@ -6,7 +6,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class PauseParser implements PacketParser<Pause> {
     @Override
-    public Pause parse(BinaryReader reader) {
+    public Pause parse(BinaryReader reader, int openProtocolVersion) {
         return new Pause(
                 reader.readBoolean(),
                 reader.readFloat32BE()
@@ -14,7 +14,7 @@ public class PauseParser implements PacketParser<Pause> {
     }
 
     @Override
-    public byte[] write(Pause payload) {
+    public byte[] write(Pause payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeBoolean(payload.pause());
         writer.writeFloat32BE(payload.timescale());

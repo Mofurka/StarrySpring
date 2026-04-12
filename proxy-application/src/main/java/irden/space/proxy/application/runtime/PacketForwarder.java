@@ -65,7 +65,17 @@ public class PacketForwarder implements Runnable {
                     continue;
                 }
 
-                PacketInspectionResult inspection = packetInspector.inspect(envelope, packetDirection);
+                PacketInspectionResult inspection = packetInspector == null
+                        ? PacketInspectionResult.empty()
+                        : packetInspector.inspect(
+                                envelope,
+                                packetDirection,
+                                session.resolveOpenProtocolVersion()
+                        );
+
+                int resolvedOpenProtocolVersion = inspection.negotiatedOpenProtocolVersion() != null
+                        ? inspection.negotiatedOpenProtocolVersion()
+                        : session.resolveOpenProtocolVersion();
 
                 log.debug(
                         "[{}] session={} rawType={} type={} size={} compressed={} parsed={}",
@@ -78,14 +88,13 @@ public class PacketForwarder implements Runnable {
                         inspection.parsed()
                 );
 
-                if (inspection.shouldLogPayload()) {
-                    log.info("[{}] {}", packetDirection, inspection.parsed());
-                }
                 PluginSessionContext pluginSessionContext = new DefaultPluginSessionContext(
                         session.getId().uuid().toString(),
                         session.getClientIp(),
                         session.getClientCompression() == SessionTransportMode.ZSTD,
-                        session.getUpstreamCompression() == SessionTransportMode.ZSTD
+                        session.getUpstreamCompression() == SessionTransportMode.ZSTD,
+                        resolvedOpenProtocolVersion,
+                        this::sendPacket
                 );
 
                 PacketInterceptionContext interceptionContext =
@@ -107,12 +116,7 @@ public class PacketForwarder implements Runnable {
                     envelopeToWrite = envelope1;
                 }
 
-                if (shouldSwitchToZstd(envelope, envelopeToWrite, inspection)) {
-                    log.info("Session {} negotiated ZSTD via ProtocolResponse", session.getId());
-                    switchSessionToZstd();
-                }
-
-                transport.write(target, envelopeToWrite);
+                writePacket(packetDirection, envelopeToWrite, envelopeToWrite == envelope ? inspection : null);
             }
         } catch (SocketException e) {
             log.info("[{}] socket exception for session {}: {}", packetDirection, session.getId(), e.getMessage());
@@ -131,41 +135,105 @@ public class PacketForwarder implements Runnable {
         }
     }
 
-    private boolean shouldSwitchToZstd(
-            PacketEnvelope originalEnvelope,
-            PacketEnvelope envelopeToWrite,
-            PacketInspectionResult originalInspection
-    ) {
-        if (envelopeToWrite == originalEnvelope) {
-            return originalInspection.negotiatedZstd();
+    private void sendPacket(PacketDirection direction, PacketEnvelope envelope) {
+        try {
+            writePacket(direction, envelope, null);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to send packet for session " + session.getId(), e);
         }
-
-        return packetInspector.inspect(envelopeToWrite, packetDirection).negotiatedZstd();
     }
 
+    private void writePacket(
+            PacketDirection direction,
+            PacketEnvelope envelope,
+            PacketInspectionResult inspection
+    ) throws IOException {
+        SwitchableSessionTransport resolvedTransport = resolveTransport(direction);
+        OutputStream resolvedTarget = resolveTarget(direction);
 
-    private void switchSessionToZstd() {
+        synchronized (resolveWriteLock(direction)) {
+            PacketInspectionResult resolvedInspection = inspection;
+            if (resolvedInspection == null) {
+                resolvedInspection = packetInspector == null
+                        ? PacketInspectionResult.empty()
+                        : packetInspector.inspect(envelope, direction, session.resolveOpenProtocolVersion());
+            }
+
+            applyNegotiatedSessionState(resolvedInspection);
+
+            resolvedTransport.write(resolvedTarget, envelope);
+        }
+    }
+
+    private Object resolveWriteLock(PacketDirection direction) {
+        return direction == PacketDirection.TO_CLIENT
+                ? context.clientSocket()
+                : context.upstreamSocket();
+    }
+
+    private SwitchableSessionTransport resolveTransport(PacketDirection direction) {
+        return direction == PacketDirection.TO_CLIENT
+                ? context.upstreamSideTransport()
+                : context.clientSideTransport();
+    }
+
+    private OutputStream resolveTarget(PacketDirection direction) throws IOException {
+        if (direction == packetDirection) {
+            return target;
+        }
+
+        return direction == PacketDirection.TO_CLIENT
+                ? context.clientSocket().getOutputStream()
+                : context.upstreamSocket().getOutputStream();
+    }
+    private void applyNegotiatedSessionState(PacketInspectionResult inspection) {
+        if (inspection.negotiatedOpenProtocolVersion() != null) {
+            session.setOpenProtocolVersion(inspection.negotiatedOpenProtocolVersion());
+        }
+
+        if (inspection.negotiatedTransportMode() != null) {
+            log.info(
+                    "Session {} negotiated transport mode {} via ProtocolResponse",
+                    session.getId(),
+                    inspection.negotiatedTransportMode()
+            );
+            switchSessionTransportMode(inspection.negotiatedTransportMode());
+        }
+    }
+
+    private void switchSessionTransportMode(SessionTransportMode transportMode) {
         synchronized (context.session()) {
-            if (context.clientSideTransport().isZstdReadEnabled()
-                    && context.clientSideTransport().isZstdWriteEnabled()
-                    && context.upstreamSideTransport().isZstdReadEnabled()
-                    && context.upstreamSideTransport().isZstdWriteEnabled()) {
+            if (context.clientSideTransport().isReadModeEnabled(transportMode)
+                    && context.clientSideTransport().isWriteModeEnabled(transportMode)
+                    && context.upstreamSideTransport().isReadModeEnabled(transportMode)
+                    && context.upstreamSideTransport().isWriteModeEnabled(transportMode)) {
                 return;
             }
 
-            context.clientSideTransport().enableZstdRead();
-            context.upstreamSideTransport().enableZstdRead();
+            if (transportMode == SessionTransportMode.PLAIN) {
+                context.clientSideTransport().enableReadMode(SessionTransportMode.PLAIN);
+                context.upstreamSideTransport().enableReadMode(SessionTransportMode.PLAIN);
+                context.clientSideTransport().enableWriteMode(SessionTransportMode.PLAIN, 0);
+                context.upstreamSideTransport().enableWriteMode(SessionTransportMode.PLAIN, 0);
+                context.session().setClientTransportMode(SessionTransportMode.PLAIN);
+                context.session().setUpstreamTransportMode(SessionTransportMode.PLAIN);
+                log.info("Session {} switched to {} transport mode", context.session().getId(), transportMode);
+                return;
+            }
+
+            context.clientSideTransport().enableReadMode(transportMode);
+            context.upstreamSideTransport().enableReadMode(transportMode);
 
             waitForPlainReadersToDrain();
 
 
-            context.clientSideTransport().enableZstdWrite(0);
-            context.upstreamSideTransport().enableZstdWrite(1);
+            context.clientSideTransport().enableWriteMode(transportMode, 0);
+            context.upstreamSideTransport().enableWriteMode(transportMode, 1);
 
-            context.session().enableClientZstd();
-            context.session().enableUpstreamZstd();
+            context.session().setClientTransportMode(transportMode);
+            context.session().setUpstreamTransportMode(transportMode);
 
-            log.info("Session {} switched to ZSTD transport mode", context.session().getId());
+            log.info("Session {} switched to {} transport mode", context.session().getId(), transportMode);
         }
     }
 

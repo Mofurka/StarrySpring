@@ -1,34 +1,47 @@
 package irden.space.proxy.application.runtime;
 
-import com.github.luben.zstd.ZstdInputStream;
-import com.github.luben.zstd.ZstdOutputStream;
 import irden.space.proxy.domain.session.SessionTransportMode;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class SwitchableSessionTransport implements SessionTransport {
 
+    private static final Map<SessionTransportMode, SessionTransportCodec> DEFAULT_CODECS = defaultCodecs();
+
     private final RuntimePacketReader packetReader;
     private final RuntimePacketWriter packetWriter;
+    private final Map<SessionTransportMode, SessionTransportCodec> codecs;
 
     private InputStream readSource;
-    private ZstdInputStream zstdReadSource;
+    private InputStream wrappedReadSource;
+    private SessionTransportMode wrappedReadMode;
     private OutputStream writeTarget;
 
-    private volatile boolean zstdReadEnabled;
-    private volatile boolean zstdWriteEnabled;
+    private volatile SessionTransportMode readMode;
+    private volatile SessionTransportMode writeMode;
     private int writeSkipPackets;
 
     public SwitchableSessionTransport(SessionTransport initialTransport) {
+        this(DEFAULT_CODECS, initialTransport.mode());
+    }
+
+    public SwitchableSessionTransport(SessionTransportMode initialMode) {
+        this(DEFAULT_CODECS, initialMode);
+    }
+
+    SwitchableSessionTransport(Map<SessionTransportMode, SessionTransportCodec> codecs, SessionTransportMode initialMode) {
         this.packetReader = new RuntimePacketReader(new ZlibPayloadCompressionCodec());
         this.packetWriter = new RuntimePacketWriter();
-        this.zstdReadEnabled = initialTransport.mode() == SessionTransportMode.ZSTD;
-        this.zstdWriteEnabled = initialTransport.mode() == SessionTransportMode.ZSTD;
+        this.codecs = Map.copyOf(codecs);
+        this.readMode = requireSupportedMode(initialMode);
+        this.writeMode = requireSupportedMode(initialMode);
     }
 
     @Override
@@ -45,15 +58,17 @@ public class SwitchableSessionTransport implements SessionTransport {
             return;
         }
 
-        resolvedTarget.write(compressZstdFrame(envelope.originalData()));
+        resolvedTarget.write(resolveCodec(writeMode).encode(envelope));
         resolvedTarget.flush();
     }
 
     @Override
     public SessionTransportMode mode() {
-        return zstdReadEnabled || zstdWriteEnabled
-                ? SessionTransportMode.ZSTD
-                : SessionTransportMode.PLAIN;
+        if (writeMode != SessionTransportMode.PLAIN) {
+            return writeMode;
+        }
+
+        return readMode;
     }
 
     public boolean isZstd() {
@@ -61,20 +76,36 @@ public class SwitchableSessionTransport implements SessionTransport {
     }
 
     public synchronized void enableZstdRead() {
-        this.zstdReadEnabled = true;
+        enableReadMode(SessionTransportMode.ZSTD);
     }
 
     public synchronized void enableZstdWrite(int skipPackets) {
-        this.zstdWriteEnabled = true;
-        this.writeSkipPackets = Math.max(skipPackets, 0);
+        enableWriteMode(SessionTransportMode.ZSTD, skipPackets);
     }
 
     public synchronized boolean isZstdReadEnabled() {
-        return zstdReadEnabled;
+        return isReadModeEnabled(SessionTransportMode.ZSTD);
     }
 
     public synchronized boolean isZstdWriteEnabled() {
-        return zstdWriteEnabled;
+        return isWriteModeEnabled(SessionTransportMode.ZSTD);
+    }
+
+    public synchronized void enableReadMode(SessionTransportMode mode) {
+        this.readMode = requireSupportedMode(mode);
+    }
+
+    public synchronized void enableWriteMode(SessionTransportMode mode, int skipPackets) {
+        this.writeMode = requireSupportedMode(mode);
+        this.writeSkipPackets = Math.max(skipPackets, 0);
+    }
+
+    public synchronized boolean isReadModeEnabled(SessionTransportMode mode) {
+        return readMode == mode;
+    }
+
+    public synchronized boolean isWriteModeEnabled(SessionTransportMode mode) {
+        return writeMode == mode;
     }
 
     private synchronized InputStream resolveReadSource(InputStream inputStream) throws IOException {
@@ -84,15 +115,18 @@ public class SwitchableSessionTransport implements SessionTransport {
             throw new IOException("Transport read source cannot change within a session");
         }
 
-        if (!zstdReadEnabled) {
+        if (readMode == SessionTransportMode.PLAIN) {
             return readSource;
         }
 
-        if (zstdReadSource == null) {
-            zstdReadSource = new ZstdInputStream(readSource);
+        if (wrappedReadSource == null) {
+            wrappedReadSource = resolveCodec(readMode).wrapRead(readSource);
+            wrappedReadMode = readMode;
+        } else if (wrappedReadMode != readMode) {
+            throw new IOException("Transport read mode cannot change after wrapped stream initialization");
         }
 
-        return zstdReadSource;
+        return wrappedReadSource;
     }
 
     private synchronized OutputStream bindWriteTarget(OutputStream outputStream) throws IOException {
@@ -106,7 +140,7 @@ public class SwitchableSessionTransport implements SessionTransport {
     }
 
     private synchronized boolean shouldWritePlainPacket() {
-        if (!zstdWriteEnabled) {
+        if (writeMode == SessionTransportMode.PLAIN) {
             return true;
         }
 
@@ -118,11 +152,33 @@ public class SwitchableSessionTransport implements SessionTransport {
         return false;
     }
 
-    private byte[] compressZstdFrame(byte[] packetBytes) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (ZstdOutputStream zstdOutputStream = new ZstdOutputStream(outputStream)) {
-            zstdOutputStream.write(packetBytes);
+    private SessionTransportMode requireSupportedMode(SessionTransportMode mode) {
+        Objects.requireNonNull(mode, "Transport mode cannot be null");
+        if (!codecs.containsKey(mode)) {
+            throw new IllegalArgumentException("Unsupported transport mode: " + mode);
         }
-        return outputStream.toByteArray();
+
+        return mode;
+    }
+
+    private SessionTransportCodec resolveCodec(SessionTransportMode mode) {
+        SessionTransportCodec codec = codecs.get(mode);
+        if (codec == null) {
+            throw new IllegalStateException("No codec registered for transport mode " + mode);
+        }
+
+        return codec;
+    }
+
+    private static Map<SessionTransportMode, SessionTransportCodec> defaultCodecs() {
+        Map<SessionTransportMode, SessionTransportCodec> codecs = new EnumMap<>(SessionTransportMode.class);
+        register(codecs, new PlainSessionTransportCodec());
+        register(codecs, new ZstdSessionTransportCodec());
+        return codecs;
+    }
+
+    private static void register(Map<SessionTransportMode, SessionTransportCodec> codecs,
+                                 SessionTransportCodec codec) {
+        codecs.put(codec.mode(), codec);
     }
 }

@@ -1,9 +1,13 @@
 package irden.space.proxy.application;
 
 import irden.space.proxy.application.port.out.SessionRegistry;
-import irden.space.proxy.application.runtime.*;
+import irden.space.proxy.application.runtime.PacketForwarder;
+import irden.space.proxy.application.runtime.ProxySessionRuntimeContext;
+import irden.space.proxy.application.runtime.RuntimePacketInspector;
+import irden.space.proxy.application.runtime.SwitchableSessionTransport;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
+import irden.space.proxy.domain.session.SessionTransportMode;
 import irden.space.proxy.plugin.api.PacketInterceptionService;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
@@ -82,14 +86,12 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
             session.activate();
             log.info("Session {} is ACTIVE", session.getId());
 
-            PlainSessionTransport plainTransport = new PlainSessionTransport();
-
             ProxySessionRuntimeContext context = new ProxySessionRuntimeContext(
                     session,
                     clientSocket,
                     upstreamSocket,
-                    new SwitchableSessionTransport(plainTransport),
-                    new SwitchableSessionTransport(plainTransport)
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN)
             );
 
             Thread clientToServer = new Thread(

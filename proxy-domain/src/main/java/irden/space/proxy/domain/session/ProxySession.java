@@ -10,9 +10,10 @@ import java.util.Objects;
 public final class ProxySession {
     private final ProxySessionId id;
     private final String clientIp;
-    private SessionState state;
-    private SessionTransportMode clientCompression;
-    private SessionTransportMode upstreamCompression;
+    private volatile SessionState state;
+    private volatile SessionTransportMode clientCompression;
+    private volatile SessionTransportMode upstreamCompression;
+    private volatile Integer openProtocolVersion;
 
 
     public ProxySession(ProxySessionId id, String clientIp) {
@@ -21,6 +22,7 @@ public final class ProxySession {
         this.state = SessionState.NEW;
         this.clientCompression = SessionTransportMode.PLAIN;
         this.upstreamCompression = SessionTransportMode.PLAIN;
+        this.openProtocolVersion = null;
     }
 
     public void makeUpstreamConnecting() {
@@ -44,11 +46,29 @@ public final class ProxySession {
     }
 
     public void enableClientZstd() {
-        this.clientCompression = SessionTransportMode.ZSTD;
+        setClientTransportMode(SessionTransportMode.ZSTD);
     }
 
     public void enableUpstreamZstd() {
-        this.upstreamCompression = SessionTransportMode.ZSTD;
+        setUpstreamTransportMode(SessionTransportMode.ZSTD);
+    }
+
+    public void setClientTransportMode(SessionTransportMode transportMode) {
+        this.clientCompression = Objects.requireNonNull(transportMode, "Client transport mode cannot be null");
+    }
+
+    public void setUpstreamTransportMode(SessionTransportMode transportMode) {
+        this.upstreamCompression = Objects.requireNonNull(transportMode, "Upstream transport mode cannot be null");
+    }
+
+    public void setOpenProtocolVersion(int openProtocolVersion) {
+        this.openProtocolVersion = openProtocolVersion;
+    }
+
+    public int resolveOpenProtocolVersion() {
+        return openProtocolVersion != null
+                ? openProtocolVersion
+                : -1;
     }
 
     private void ensureNotDisconnected() {

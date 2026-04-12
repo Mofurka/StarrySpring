@@ -1,15 +1,6 @@
 package irden.space.proxy.plugin.debug;
 
-import irden.space.proxy.plugin.api.ForwardPacketDecision;
-import irden.space.proxy.plugin.api.OnLoad;
-import irden.space.proxy.plugin.api.OnStart;
-import irden.space.proxy.plugin.api.OnStop;
-import irden.space.proxy.plugin.api.PacketDecision;
-import irden.space.proxy.plugin.api.PacketHandler;
-import irden.space.proxy.plugin.api.PacketInterceptionContext;
-import irden.space.proxy.plugin.api.PluginContext;
-import irden.space.proxy.plugin.api.PluginDefinition;
-import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import org.slf4j.Logger;

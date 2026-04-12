@@ -32,7 +32,7 @@ public class PacketParserRegistry {
         register(PacketType.CONNECT_SUCCESS, new ConnectSuccessParser());
         register(PacketType.CONNECT_FAILURE, new ConnectFailureParser());
         register(PacketType.HANDSHAKE_CHALLENGE, new HandshakeChallengeParser());
-        register(PacketType.CHAT_RECEIVED, new ChatRecieveParser());
+        register(PacketType.CHAT_RECEIVE, new ChatRecieveParser());
         register(PacketType.UNIVERSE_TIME_UPDATE, new UniverseTimeUpdateParser());
         register(PacketType.CELESTIAL_RESPONSE, null);
         register(PacketType.PLAYER_WARP_RESULT, new PlayerWarpResultParser());

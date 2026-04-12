@@ -6,12 +6,12 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class ClientDisconnectRequestParser implements PacketParser<ClientDisconnectRequest> {
     @Override
-    public ClientDisconnectRequest parse(BinaryReader reader) {
+    public ClientDisconnectRequest parse(BinaryReader reader, int openProtocolVersion ) {
         return new ClientDisconnectRequest(reader.readBoolean());
     }
 
     @Override
-    public byte[] write(ClientDisconnectRequest payload) {
+    public byte[] write(ClientDisconnectRequest payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeBoolean(payload.request());
         return finish(writer);

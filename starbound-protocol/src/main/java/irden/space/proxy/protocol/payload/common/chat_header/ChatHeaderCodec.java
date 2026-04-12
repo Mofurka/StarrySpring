@@ -30,11 +30,11 @@ public enum ChatHeaderCodec implements BinaryCodec<ChatHeader> {
 
         if (header.mode().equals(ChatReceiveMode.LOCAL) || header.mode().equals(ChatReceiveMode.PARTY)) {
             StarStringCodec.write(writer, header.channel());
-            writer.writeByte(header.clientId());
+            writer.writeUInt16BE(header.clientId());
             return;
         }
 
         writer.writeByte(0);
-        writer.writeByte(header.clientId());
+        writer.writeUInt16BE(header.clientId());
     }
 }

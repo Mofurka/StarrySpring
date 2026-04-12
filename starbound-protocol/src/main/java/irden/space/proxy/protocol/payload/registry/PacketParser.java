@@ -5,9 +5,11 @@ import irden.space.proxy.protocol.codec.BinaryWriter;
 
 public interface PacketParser<T> {
 
-    T parse(BinaryReader reader);
+    int UNKNOWN_OPEN_PROTOCOL_VERSION = -1;
 
-    byte[] write(T payload);
+    T parse(BinaryReader reader, int openProtocolVersion);
+
+    byte[] write(T payload, int openProtocolVersion);
 
     default byte[] finish(BinaryWriter writer) {
         return writer.toByteArray();

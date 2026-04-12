@@ -21,14 +21,14 @@ class PacketInterceptionChainTest {
 		DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
 		PacketInterceptionChain chain = new PacketInterceptionChain(registry);
 
-		PacketDecision expectedDecision = new ReplacePacketDecision(envelope(PacketType.CHAT_RECEIVED));
+		PacketDecision expectedDecision = new ReplacePacketDecision(envelope(PacketType.CHAT_RECEIVE));
 		registry.register(PacketType.CHAT_SENT, context -> {
 			assertSame(PacketType.CHAT_SENT, context.envelope().packetType());
 			return expectedDecision;
 		});
 
 		PacketDecision matchedDecision = chain.apply(context(PacketType.CHAT_SENT));
-		PacketDecision unmatchedDecision = chain.apply(context(PacketType.CHAT_RECEIVED));
+		PacketDecision unmatchedDecision = chain.apply(context(PacketType.CHAT_RECEIVE));
 
 		assertSame(expectedDecision, matchedDecision);
 		assertSame(ForwardPacketDecision.INSTANCE, unmatchedDecision);
@@ -39,12 +39,12 @@ class PacketInterceptionChainTest {
 		DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
 		PacketInterceptionChain chain = new PacketInterceptionChain(registry);
 
-		registry.register(List.of(PacketType.CHAT_SENT, PacketType.CHAT_RECEIVED), context -> {
-			assertSame(PacketType.CHAT_RECEIVED, context.envelope().packetType());
+		registry.register(List.of(PacketType.CHAT_SENT, PacketType.CHAT_RECEIVE), context -> {
+			assertSame(PacketType.CHAT_RECEIVE, context.envelope().packetType());
 			return new ReplacePacketDecision(envelope(PacketType.PROTOCOL_RESPONSE));
 		});
 
-		PacketDecision chatReceivedDecision = chain.apply(context(PacketType.CHAT_RECEIVED));
+		PacketDecision chatReceivedDecision = chain.apply(context(PacketType.CHAT_RECEIVE));
 		PacketDecision protocolRequestDecision = chain.apply(context(PacketType.PROTOCOL_REQUEST));
 
 		ReplacePacketDecision replaceDecision = assertInstanceOf(ReplacePacketDecision.class, chatReceivedDecision);

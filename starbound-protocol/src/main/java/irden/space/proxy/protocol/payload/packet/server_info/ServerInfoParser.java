@@ -6,7 +6,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class ServerInfoParser implements PacketParser<ServerInfo> {
     @Override
-    public ServerInfo parse(BinaryReader reader) {
+    public ServerInfo parse(BinaryReader reader, int openProtocolVersion) {
         return new ServerInfo(
                 reader.readInt32BE(),
                 reader.readInt32BE()
@@ -14,7 +14,7 @@ public class ServerInfoParser implements PacketParser<ServerInfo> {
     }
 
     @Override
-    public byte[] write(ServerInfo payload) {
+    public byte[] write(ServerInfo payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeInt32BE(payload.players());
         writer.writeInt32BE(payload.maxPlayers());

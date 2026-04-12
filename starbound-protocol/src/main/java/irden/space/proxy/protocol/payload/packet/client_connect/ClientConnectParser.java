@@ -7,7 +7,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class ClientConnectParser implements PacketParser<ClientConnect> {
 
     @Override
-    public ClientConnect parse(BinaryReader reader) {
+    public ClientConnect parse(BinaryReader reader, int openProtocolVersion) {
         return new ClientConnect(
                 StarByteArrayCodec.read(reader),
                 reader.readBoolean(),
@@ -23,7 +23,7 @@ public class ClientConnectParser implements PacketParser<ClientConnect> {
     }
 
     @Override
-    public byte[] write(ClientConnect payload) {
+    public byte[] write(ClientConnect payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         StarByteArrayCodec.write(writer, payload.assetsDigest());
         writer.writeBoolean(payload.allowAssetsMismatch());
