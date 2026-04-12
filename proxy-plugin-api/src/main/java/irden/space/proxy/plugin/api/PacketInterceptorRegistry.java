@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin_api;
+package irden.space.proxy.plugin.api;
 
 
 import java.util.List;

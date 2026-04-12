@@ -3,7 +3,7 @@ package irden.space.proxy.application.runtime;
 import irden.space.proxy.application.port.out.SessionRegistry;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
-import irden.space.proxy.plugin_api.ForwardPacketDecision;
+import irden.space.proxy.plugin.api.ForwardPacketDecision;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketType;

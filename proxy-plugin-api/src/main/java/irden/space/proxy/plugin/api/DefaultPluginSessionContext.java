@@ -1,6 +1,5 @@
-package irden.space.proxy.plugin_runtime;
+package irden.space.proxy.plugin.api;
 
-import irden.space.proxy.plugin_api.PluginSessionContext;
 
 public class DefaultPluginSessionContext implements PluginSessionContext {
 
@@ -41,4 +40,3 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
         return upstreamZstdEnabled;
     }
 }
-

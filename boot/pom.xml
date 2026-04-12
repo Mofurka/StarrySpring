@@ -4,13 +4,19 @@
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>irden.space</groupId>
-        <artifactId>server-parent</artifactId>
-        <version>1.0.0</version>
-    </parent>
 
-    <artifactId>boot</artifactId>
+    <properties>
+        <java.version>25</java.version>
+        <spring-boot.version>4.0.5</spring-boot.version>
+        <lombok.version>1.18.44</lombok.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+    </properties>
+
+    <groupId>irden.space</groupId>
+    <artifactId>server-boot</artifactId>
+    <version>1.0.0</version>
 
     <dependencies>
         <dependency>
@@ -34,18 +40,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>irden.space</groupId>
+            <groupId>irden.space.plugin</groupId>
             <artifactId>proxy-plugin-api</artifactId>
-            <version>${project.version}</version>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>irden.space</groupId>
+            <groupId>irden.space.plugin</groupId>
             <artifactId>proxy-plugin-runtime</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space</groupId>
-            <artifactId>plugin-debug-logger</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -59,12 +60,41 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>

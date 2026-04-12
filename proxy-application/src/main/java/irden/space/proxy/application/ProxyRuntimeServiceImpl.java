@@ -4,7 +4,7 @@ import irden.space.proxy.application.port.out.SessionRegistry;
 import irden.space.proxy.application.runtime.*;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
-import irden.space.proxy.plugin_api.PacketInterceptionService;
+import irden.space.proxy.plugin.api.PacketInterceptionService;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
 import irden.space.proxy.protocol.payload.registry.PacketParserRegistry;

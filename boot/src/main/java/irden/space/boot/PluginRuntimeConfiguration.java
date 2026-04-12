@@ -1,9 +1,9 @@
 package irden.space.boot;
 
-import irden.space.proxy.plugin_api.PacketInterceptorRegistry;
-import irden.space.proxy.plugin_api.PacketInterceptionService;
-import irden.space.proxy.plugin_api.PluginContext;
-import irden.space.proxy.plugin_runtime.*;
+import irden.space.proxy.plugin.runtime.*;
+import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
+import irden.space.proxy.plugin.api.PacketInterceptionService;
+import irden.space.proxy.plugin.api.PluginContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

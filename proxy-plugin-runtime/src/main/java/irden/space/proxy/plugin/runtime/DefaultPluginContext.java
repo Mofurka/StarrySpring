@@ -1,8 +1,8 @@
-package irden.space.proxy.plugin_runtime;
+package irden.space.proxy.plugin.runtime;
 
 
-import irden.space.proxy.plugin_api.PacketInterceptorRegistry;
-import irden.space.proxy.plugin_api.PluginContext;
+import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
+import irden.space.proxy.plugin.api.PluginContext;
 
 public class DefaultPluginContext implements PluginContext {
 

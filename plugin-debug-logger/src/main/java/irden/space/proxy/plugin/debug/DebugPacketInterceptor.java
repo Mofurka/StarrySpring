@@ -1,10 +1,10 @@
 package irden.space.proxy.plugin.debug;
 
 
-import irden.space.proxy.plugin_api.ForwardPacketDecision;
-import irden.space.proxy.plugin_api.PacketDecision;
-import irden.space.proxy.plugin_api.PacketInterceptionContext;
-import irden.space.proxy.plugin_api.PacketInterceptor;
+import irden.space.proxy.plugin.api.ForwardPacketDecision;
+import irden.space.proxy.plugin.api.PacketDecision;
+import irden.space.proxy.plugin.api.PacketInterceptionContext;
+import irden.space.proxy.plugin.api.PacketInterceptor;
 import irden.space.proxy.protocol.packet.PacketType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

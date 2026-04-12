@@ -1,8 +1,8 @@
 package irden.space.proxy.plugin.debug;
 
-import irden.space.proxy.plugin_api.PluginContext;
-import irden.space.proxy.plugin_api.PluginDescriptor;
-import irden.space.proxy.plugin_api.ProxyPlugin;
+import irden.space.proxy.plugin.api.PluginContext;
+import irden.space.proxy.plugin.api.PluginDescriptor;
+import irden.space.proxy.plugin.api.ProxyPlugin;
 
 import java.util.List;
 

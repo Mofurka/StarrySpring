@@ -4,21 +4,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>irden.space</groupId>
-        <artifactId>server-parent</artifactId>
-        <version>1.0.0</version>
-    </parent>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <groupId>irden.space.plugin</groupId>
     <artifactId>plugin-debug-logger</artifactId>
 
     <properties>
+        <java.version>25</java.version>
+        <spring-boot.version>4.0.5</spring-boot.version>
+        <lombok.version>1.18.44</lombok.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
         <dependency>
-            <groupId>irden.space</groupId>
+            <groupId>irden.space.plugin</groupId>
             <artifactId>proxy-plugin-api</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
@@ -26,6 +27,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <version> 2.0.17</version>
         </dependency>
     </dependencies>
 

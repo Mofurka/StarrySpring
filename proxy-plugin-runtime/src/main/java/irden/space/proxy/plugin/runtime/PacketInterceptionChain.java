@@ -1,7 +1,7 @@
-package irden.space.proxy.plugin_runtime;
+package irden.space.proxy.plugin.runtime;
 
 
-import irden.space.proxy.plugin_api.*;
+import irden.space.proxy.plugin.api.*;
 
 public class PacketInterceptionChain implements PacketInterceptionService {
 

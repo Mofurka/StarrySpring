@@ -1,8 +1,8 @@
-package irden.space.proxy.plugin_runtime;
+package irden.space.proxy.plugin.runtime;
 
 
 
-import irden.space.proxy.plugin_api.ProxyPlugin;
+import irden.space.proxy.plugin.api.ProxyPlugin;
 
 import java.util.*;
 

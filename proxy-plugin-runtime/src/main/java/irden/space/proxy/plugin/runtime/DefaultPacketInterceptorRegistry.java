@@ -1,8 +1,8 @@
-package irden.space.proxy.plugin_runtime;
+package irden.space.proxy.plugin.runtime;
 
 
-import irden.space.proxy.plugin_api.PacketInterceptor;
-import irden.space.proxy.plugin_api.PacketInterceptorRegistry;
+import irden.space.proxy.plugin.api.PacketInterceptor;
+import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

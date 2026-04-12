@@ -1,6 +1,6 @@
 package irden.space.boot;
 
-import irden.space.proxy.plugin_runtime.PluginManager;
+import irden.space.proxy.plugin.runtime.PluginManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
