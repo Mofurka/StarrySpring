@@ -1,10 +1,6 @@
 package irden.space.proxy.protocol.payload.packet.client_connect;
 
-import irden.space.proxy.protocol.codec.BinaryReader;
-import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.StarByteArrayCodec;
-import irden.space.proxy.protocol.codec.StarStringCodec;
-import irden.space.proxy.protocol.codec.VariantCodec;
+import irden.space.proxy.protocol.codec.*;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuidCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 

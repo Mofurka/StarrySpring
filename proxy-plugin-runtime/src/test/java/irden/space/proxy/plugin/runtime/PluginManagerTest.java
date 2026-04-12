@@ -1,10 +1,6 @@
 package irden.space.proxy.plugin.runtime;
 
-import irden.space.proxy.plugin.api.PacketInterceptor;
-import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
-import irden.space.proxy.plugin.api.PluginContext;
-import irden.space.proxy.plugin.api.PluginDescriptor;
-import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.api.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

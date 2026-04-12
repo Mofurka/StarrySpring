@@ -3,7 +3,6 @@ package irden.space.proxy.protocol.payload.packet.entity_message;
 import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.StarStringCodec;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuidCodec;
 
