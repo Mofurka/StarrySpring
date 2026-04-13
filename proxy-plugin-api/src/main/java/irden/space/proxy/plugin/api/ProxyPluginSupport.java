@@ -7,6 +7,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.ServiceLoader;
 
 public final class ProxyPluginSupport {
 
@@ -40,6 +41,8 @@ public final class ProxyPluginSupport {
             context.packetInterceptorRegistry().registerAnnotated(plugin);
         }
 
+        registerAnnotatedExtensions(plugin, context);
+
         invokeLifecycle(plugin, OnLoad.class, context);
     }
 
@@ -56,6 +59,14 @@ public final class ProxyPluginSupport {
     private static boolean hasPacketHandlers(Class<?> pluginType) {
         return Arrays.stream(pluginType.getDeclaredMethods())
                 .anyMatch(method -> method.isAnnotationPresent(PacketHandler.class));
+    }
+
+    private static void registerAnnotatedExtensions(ProxyPlugin plugin, PluginContext context) {
+        for (PluginAnnotationRegistrar registrar : ServiceLoader.load(PluginAnnotationRegistrar.class)) {
+            if (registrar.supports(plugin.getClass())) {
+                registrar.register(plugin, context);
+            }
+        }
     }
 
     private static void invokeLifecycle(ProxyPlugin plugin, Class<? extends Annotation> annotationType, Object... arguments) {

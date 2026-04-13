@@ -3,14 +3,12 @@ package irden.space.proxy.plugin.command_handler;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
-import irden.space.proxy.protocol.payload.common.chat_header.ChatHeader;
-import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
-import irden.space.proxy.protocol.payload.packet.chat.consts.ChatReceiveMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 
 @PluginDefinition(
         id = "command-handler",
@@ -21,11 +19,8 @@ import java.util.List;
 )
 public class CommandHandlerPlugin implements ProxyPlugin {
     private static final String COMMAND_PREFIX = "/";
-    private static final String PLUGIN_COMMAND = "proxy";
     private static final Logger log = LoggerFactory.getLogger(CommandHandlerPlugin.class);
 
-
-    // Тест отправки команд и перехвата сообщений.
     @PacketHandler(value = PacketType.CHAT_SENT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onChatSent(PacketInterceptionContext context) {
         ChatSent chatSent = (ChatSent) context.parsedPayload();
@@ -36,56 +31,93 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         }
 
         String commandLine = content.substring(COMMAND_PREFIX.length()).trim();
-        log.info("Received command: {}", commandLine);
-
-        if (!commandLine.startsWith(PLUGIN_COMMAND)) {
+        if (commandLine.isBlank()) {
             return PacketDecision.forward();
         }
 
-        String pluginCommand = commandLine.substring(PLUGIN_COMMAND.length()).trim();
+        ParsedCommand parsedCommand = parse(commandLine);
+        RegisteredCommand registeredCommand = CommandRegistry.global().find(parsedCommand.commandName());
+        if (registeredCommand == null) {
+            return PacketDecision.forward();
+        }
 
-        if (pluginCommand.isBlank() || pluginCommand.equals("help")) {
-            context.session().sendToClient(PacketType.CHAT_RECEIVE, helpMessage());
+        log.info("Executing command '/{}' from plugin '{}'", registeredCommand.name(), registeredCommand.ownerPluginId());
+
+        try {
+            registeredCommand.invoke(new CommandContext(
+                    context,
+                    registeredCommand.name(),
+                    commandLine,
+                    parsedCommand.argumentsLine(),
+                    parsedCommand.arguments()
+            ));
+            return PacketDecision.cancel();
+        } catch (RuntimeException e) {
+            log.error("Failed to execute command '/{}'", registeredCommand.name(), e);
+            context.session().sendToClient(
+                    PacketType.CHAT_RECEIVE,
+                    CommandMessages.systemMessage("Command '/" + registeredCommand.name() + "' failed: " + e.getMessage())
+            );
             return PacketDecision.cancel();
         }
+    }
 
-        if (pluginCommand.startsWith("send ")) {
-            String message = pluginCommand.substring("send ".length()).trim();
-            context.session().sendToClient(PacketType.CHAT_RECEIVE, systemMessage(message));
-            return PacketDecision.cancel();
+    @ChatCommand(
+            value = "proxy",
+            usage = "[help | send <text> | rewrite <text>]",
+            description = "Built-in command handler utilities and registered command help."
+    )
+    public void proxyCommand(CommandContext context) {
+        List<String> arguments = context.arguments();
+        if (arguments.isEmpty() || arguments.getFirst().equalsIgnoreCase("help")) {
+            context.reply(CommandRegistry.global().formatHelp());
+            return;
         }
 
-        if (pluginCommand.startsWith("rewrite ")) {
-            String newMessage = pluginCommand.substring("rewrite ".length()).trim();
-            ChatSent modifiedPacket = new ChatSent(newMessage, chatSent.mode(), chatSent.arguments());
-            return context.replaceWithPayload(modifiedPacket);
+        String action = arguments.getFirst().toLowerCase(Locale.ROOT);
+        if (action.equals("send")) {
+            String message = stripLeadingToken(context.argumentsLine());
+            if (message.isBlank()) {
+                context.reply("Usage: /proxy send <text>");
+                return;
+            }
+
+            context.reply(message);
+            return;
         }
 
-        context.session().sendToClient(
-                PacketType.CHAT_RECEIVE,
-                systemMessage("Unknown /proxy command. Use /proxy help")
-        );
-        return PacketDecision.cancel();
+        if (action.equals("rewrite")) {
+            String newMessage = stripLeadingToken(context.argumentsLine());
+            if (newMessage.isBlank()) {
+                context.reply("Usage: /proxy rewrite <text>");
+                return;
+            }
+
+            ChatSent originalMessage = (ChatSent) context.packetContext().parsedPayload();
+            context.session().sendToServer(
+                    PacketType.CHAT_SENT,
+                    new ChatSent(newMessage, originalMessage.mode(), originalMessage.arguments())
+            );
+            return;
+        }
+
+        context.reply("Unknown /proxy command. Use /proxy help");
     }
 
-    private ChatReceive helpMessage() {
-        return systemMessage("Available commands: /proxy send <text>, /proxy rewrite <text>");
+    private ParsedCommand parse(String commandLine) {
+        String[] parts = commandLine.split("\\s+", 2);
+        String commandName = parts[0].trim().toLowerCase(Locale.ROOT);
+        String argumentsLine = parts.length > 1 ? parts[1].trim() : "";
+        List<String> arguments = argumentsLine.isBlank() ? List.of() : List.of(argumentsLine.split("\\s+"));
+        return new ParsedCommand(commandName, argumentsLine, arguments);
     }
 
-    @PacketHandler(value = PacketType.CHAT_RECEIVE, direction = PacketDirection.TO_CLIENT)
-    public PacketDecision onChatReceive(PacketInterceptionContext context) {
-        ChatReceive chatReceive = (ChatReceive) context.parsedPayload();
-        String content = chatReceive.message();
-        return PacketDecision.forward();
+    private String stripLeadingToken(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        int delimiterIndex = trimmed.indexOf(' ');
+        return delimiterIndex < 0 ? "" : trimmed.substring(delimiterIndex + 1).trim();
     }
 
-    private ChatReceive systemMessage(String message) {
-        return new ChatReceive(
-                new ChatHeader(ChatReceiveMode.COMMAND_RESULT, null, 0),
-                "Starry Proxy",
-                0,
-                message,
-                List.of()
-        );
+    private record ParsedCommand(String commandName, String argumentsLine, List<String> arguments) {
     }
 }

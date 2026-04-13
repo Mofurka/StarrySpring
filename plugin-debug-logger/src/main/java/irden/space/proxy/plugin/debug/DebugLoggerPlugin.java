@@ -1,6 +1,8 @@
 package irden.space.proxy.plugin.debug;
 
 import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.command_handler.CommandContext;
+import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import org.slf4j.Logger;
@@ -51,5 +53,10 @@ public class DebugLoggerPlugin implements ProxyPlugin {
                 context.parsedPayload()
         );
         return PacketDecision.forward();
+    }
+
+    @ChatCommand("debuglog")
+    public void debugLogCommand(CommandContext context) {
+        context.reply("DebugLoggerPlugin is active! Use this command to verify that the plugin is working.");
     }
 }
