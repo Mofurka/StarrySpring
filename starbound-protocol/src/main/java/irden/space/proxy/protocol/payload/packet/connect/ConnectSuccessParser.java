@@ -1,8 +1,9 @@
-package irden.space.proxy.protocol.payload.packet.connect_success;
+package irden.space.proxy.protocol.payload.packet.connect;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.VlqCodec;
+import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuidCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
@@ -10,16 +11,25 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
 
     @Override
     public ConnectSuccess parse(BinaryReader reader, int openProtocolVersion) {
+        int clientId =  VlqCodec.read(reader);
+        StarUuid serverUuid =  StarUuidCodec.read(reader); // useless piece of shit
+        int planetOrbitalLevels =  reader.readInt32BE();
+        int satelliteOrbitalLevels =  reader.readInt32BE();
+        int chunkSize =  reader.readInt32BE();
+        int xyMin =  reader.readInt32BE();
+        int xyMax =  reader.readInt32BE();
+        int zMin =  reader.readInt32BE();
+        int zMax =  reader.readInt32BE();
         return new ConnectSuccess(
-                VlqCodec.read(reader),
-                StarUuidCodec.INSTANCE.read(reader),
-                reader.readInt32BE(),
-                reader.readInt32BE(),
-                reader.readInt32BE(),
-                reader.readInt32BE(),
-                reader.readInt32BE(),
-                reader.readInt32BE(),
-                reader.readInt32BE()
+                clientId,
+                serverUuid,
+                planetOrbitalLevels,
+                satelliteOrbitalLevels,
+                chunkSize,
+                xyMin,
+                xyMax,
+                zMin,
+                zMax
         );
     }
 
@@ -27,7 +37,7 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
     public byte[] write(ConnectSuccess payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         VlqCodec.write(writer, payload.clientId());
-        StarUuidCodec.INSTANCE.write(writer, payload.playerUuid());
+        StarUuidCodec.write(writer, payload.playerUuid());
         writer.writeInt32BE(payload.planetOrbitalLevels());
         writer.writeInt32BE(payload.satelliteOrbitalLevels());
         writer.writeInt32BE(payload.chunkSize());

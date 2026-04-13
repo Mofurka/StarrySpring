@@ -11,7 +11,7 @@ public class PlayerWarpResultParser implements PacketParser<PlayerWarpResult> {
     public PlayerWarpResult parse(BinaryReader reader, int openProtocolVersion) {
         return new PlayerWarpResult(
                 reader.readBoolean(),
-                WarpActionCodec.INSTANCE.read(reader),
+                WarpActionCodec.read(reader),
                 reader.readBoolean()
         );
     }
@@ -20,7 +20,7 @@ public class PlayerWarpResultParser implements PacketParser<PlayerWarpResult> {
     public byte[] write(PlayerWarpResult payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeBoolean(payload.warpSuccess());
-        WarpActionCodec.INSTANCE.write(writer, payload.warpAction());
+        WarpActionCodec.write(writer, payload.warpAction());
         writer.writeBoolean(payload.warpActionInvalid());
         return finish(writer);
     }

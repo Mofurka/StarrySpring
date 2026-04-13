@@ -15,9 +15,9 @@ public class ChatRecieveParser implements PacketParser<ChatReceive> {
 
     @Override
     public ChatReceive parse(BinaryReader reader, int openProtocolVersion) {
-        ChatHeader header = ChatHeaderCodec.INSTANCE.read(reader);
+        ChatHeader header = ChatHeaderCodec.read(reader);
         String name = StarStringCodec.read(reader);
-        int junk = reader.readUnsignedByte();
+        reader.readUnsignedByte();
         String message = StarStringCodec.read(reader);
         List<VariantValue> variantValues = null;
         if (openProtocolVersion >= 5) {
@@ -26,7 +26,6 @@ public class ChatRecieveParser implements PacketParser<ChatReceive> {
         return new ChatReceive(
                 header,
                 name,
-                junk,
                 message,
                 variantValues
 
@@ -36,9 +35,9 @@ public class ChatRecieveParser implements PacketParser<ChatReceive> {
     @Override
     public byte[] write(ChatReceive payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        ChatHeaderCodec.INSTANCE.write(writer, payload.header());
+        ChatHeaderCodec.write(writer, payload.header());
         StarStringCodec.write(writer, payload.name());
-        writer.writeByte(payload.junk());
+        writer.writeByte(0);
         StarStringCodec.write(writer, payload.message());
         if (openProtocolVersion >= 5) {
             List<VariantValue> data = payload.data();

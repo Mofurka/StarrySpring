@@ -1,28 +1,29 @@
 package irden.space.proxy.protocol.payload.packet.entity_message_response;
 
-import irden.space.proxy.protocol.codec.*;
+import irden.space.proxy.protocol.codec.BinaryReader;
+import irden.space.proxy.protocol.codec.BinaryWriter;
+import irden.space.proxy.protocol.codec.StarStringCodec;
+import irden.space.proxy.protocol.codec.VariantCodec;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
+import lombok.experimental.UtilityClass;
 
-public enum EntityMessageResponseValueCodec implements BinaryCodec<EntityMessageRsponseValue> {
-    INSTANCE;
+@UtilityClass
+public final class EntityMessageResponseValueCodec {
 
-    @Override
-    public EntityMessageRsponseValue read(BinaryReader reader) {
+    public static EntityMessageRsponseValue read(BinaryReader reader) {
         int success = reader.readUnsignedByte();
-        if (success == 1) //1 is a failure, 2 is a success
-            return new FailedEntityMessageResponse(
+        return switch (success) {
+            case 1 -> new FailedEntityMessageResponse(
                     StarStringCodec.read(reader)
             );
-        else if (success == 2)
-            return new SuccessEntityMessageResponse(
+            case 2 -> new SuccessEntityMessageResponse(
                     VariantCodec.read(reader)
             );
-        else
-            throw new IllegalStateException("Unsupported entity message response value: " + success);
+            default -> throw new IllegalStateException("Unsupported entity message response value: " + success);
+        };
     }
 
-    @Override
-    public void write(BinaryWriter writer, EntityMessageRsponseValue value) {
+    public static void write(BinaryWriter writer, EntityMessageRsponseValue value) {
         switch (value) {
             case FailedEntityMessageResponse(String error) -> {
                 writer.writeByte(1);

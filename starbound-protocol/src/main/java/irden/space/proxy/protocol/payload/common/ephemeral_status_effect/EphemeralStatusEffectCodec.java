@@ -1,0 +1,57 @@
+package irden.space.proxy.protocol.payload.common.ephemeral_status_effect;
+
+import irden.space.proxy.protocol.codec.BinaryReader;
+import irden.space.proxy.protocol.codec.BinaryWriter;
+import irden.space.proxy.protocol.codec.StarStringCodec;
+import irden.space.proxy.protocol.codec.VlqCodec;
+import lombok.experimental.UtilityClass;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@UtilityClass
+public final class EphemeralStatusEffectCodec {
+
+    public static EphemeralStatusEffect read(BinaryReader reader) {
+        String name = StarStringCodec.read(reader);
+        int type = reader.readUnsignedByte();
+
+        if (type == 0) {
+            return new StringStatusEffect(name);
+        } else if (type == 1) {
+            float duration = reader.readFloat32BE();
+            return new JsonStatusEffect(name, duration);
+        } else {
+            throw new IllegalStateException("Unknown ephemeral status effect type: " + type);
+        }
+    }
+
+    public static void write(BinaryWriter writer, EphemeralStatusEffect value) {
+        switch (value) {
+            case StringStatusEffect(String name) -> {
+                StarStringCodec.write(writer, name);
+                writer.writeByte(0);
+            }
+            case JsonStatusEffect(String name, float duration) -> {
+                StarStringCodec.write(writer, name);
+                writer.writeByte(1);
+                writer.writeFloat32BE(duration);
+            }
+        }
+    }
+    public static List<EphemeralStatusEffect> readList(BinaryReader reader) {
+        int size = VlqCodec.read(reader);
+        List<EphemeralStatusEffect> effects = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            effects.add(read(reader));
+        }
+        return effects;
+    }
+
+    public static void writeList(BinaryWriter writer, List<EphemeralStatusEffect> effects) {
+        VlqCodec.write(writer, effects.size());
+        for (EphemeralStatusEffect effect : effects) {
+            write(writer, effect);
+        }
+    }
+}

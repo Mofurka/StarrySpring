@@ -1,4 +1,4 @@
-package irden.space.proxy.protocol.payload.packet.connect_success;
+package irden.space.proxy.protocol.payload.packet.connect;
 
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 

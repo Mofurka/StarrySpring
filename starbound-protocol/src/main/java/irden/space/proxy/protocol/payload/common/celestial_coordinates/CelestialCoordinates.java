@@ -1,9 +1,9 @@
 package irden.space.proxy.protocol.payload.common.celestial_coordinates;
 
+import irden.space.proxy.protocol.payload.common.vectors.StarVec3I;
+
 public record CelestialCoordinates(
-        int x,
-        int y,
-        int z,
+        StarVec3I location,
         int worldPlanetId,
         int worldSatelliteId
 ) {

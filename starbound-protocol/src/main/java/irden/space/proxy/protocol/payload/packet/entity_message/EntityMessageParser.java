@@ -11,10 +11,10 @@ public class EntityMessageParser implements PacketParser<EntityMessage> {
     @Override
     public EntityMessage parse(BinaryReader reader, int openProtocolVersion) {
         return new EntityMessage(
-                EntityMessageTargetCodec.INSTANCE.read(reader),
+                EntityMessageTargetCodec.read(reader),
                 StarStringCodec.read(reader),
                 VariantCodec.readList(reader),
-                StarUuidCodec.INSTANCE.read(reader),
+                StarUuidCodec.read(reader),
                 reader.readUInt16BE()
         );
     }
@@ -22,10 +22,10 @@ public class EntityMessageParser implements PacketParser<EntityMessage> {
     @Override
     public byte[] write(EntityMessage payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        EntityMessageTargetCodec.INSTANCE.write(writer, payload.entityId());
+        EntityMessageTargetCodec.write(writer, payload.entityId());
         StarStringCodec.write(writer, payload.message());
         VariantCodec.writeList(writer, payload.args());
-        StarUuidCodec.INSTANCE.write(writer, payload.uuid());
+        StarUuidCodec.write(writer, payload.uuid());
         writer.writeUInt16BE(payload.fromConnection());
         return finish(writer);
     }

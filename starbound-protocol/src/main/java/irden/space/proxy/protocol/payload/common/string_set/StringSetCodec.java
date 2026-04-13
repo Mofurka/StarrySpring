@@ -1,12 +1,15 @@
 package irden.space.proxy.protocol.payload.common.string_set;
 
-import irden.space.proxy.protocol.codec.*;
+import irden.space.proxy.protocol.codec.BinaryReader;
+import irden.space.proxy.protocol.codec.BinaryWriter;
+import irden.space.proxy.protocol.codec.StarStringCodec;
+import irden.space.proxy.protocol.codec.VlqCodec;
+import lombok.experimental.UtilityClass;
 
-public enum StringSetCodec implements BinaryCodec<StringSet> {
-    INSTANCE;
+@UtilityClass
+public final class StringSetCodec {
 
-    @Override
-    public StringSet read(BinaryReader reader) {
+    public static StringSet read(BinaryReader reader) {
         int size = VlqCodec.read(reader);
         String[] strings = new String[size];
         for (int i = 0; i < size; i++) {
@@ -15,8 +18,7 @@ public enum StringSetCodec implements BinaryCodec<StringSet> {
         return new StringSet(strings);
     }
 
-    @Override
-    public void write(BinaryWriter writer, StringSet value) {
+    public static void write(BinaryWriter writer, StringSet value) {
         VlqCodec.write(writer, value.strings().length);
         for (String string : value.strings()) {
             StarStringCodec.write(writer, string);

@@ -1,18 +1,17 @@
 package irden.space.proxy.protocol.payload.packet.client_connect;
 
-import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.VlqCodec;
+import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public enum WorldChunksCodec implements BinaryCodec<WorldChunks> {
-    INSTANCE;
+@UtilityClass
+public final class WorldChunksCodec {
 
-    @Override
-    public WorldChunks read(BinaryReader reader) {
+    public static WorldChunks read(BinaryReader reader) {
         int length = VlqCodec.read(reader);
         List<WorldChunks.Chunk> content = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
@@ -26,8 +25,7 @@ public enum WorldChunksCodec implements BinaryCodec<WorldChunks> {
         return new WorldChunks(length, content);
     }
 
-    @Override
-    public void write(BinaryWriter writer, WorldChunks value) {
+    public static void write(BinaryWriter writer, WorldChunks value) {
         VlqCodec.write(writer, value.length());
         for (WorldChunks.Chunk chunk : value.content()) {
             VlqCodec.write(writer, chunk.first().length);

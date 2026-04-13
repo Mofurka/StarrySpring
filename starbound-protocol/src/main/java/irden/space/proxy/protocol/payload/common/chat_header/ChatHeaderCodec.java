@@ -1,16 +1,16 @@
 package irden.space.proxy.protocol.payload.common.chat_header;
 
-import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.StarStringCodec;
 import irden.space.proxy.protocol.payload.packet.chat.consts.ChatReceiveMode;
+import lombok.experimental.UtilityClass;
 
-public enum ChatHeaderCodec implements BinaryCodec<ChatHeader> {
-    INSTANCE;
+@UtilityClass
+public final class ChatHeaderCodec {
 
-    @Override
-    public ChatHeader read(BinaryReader reader) {
+
+    public static ChatHeader read(BinaryReader reader) {
         ChatReceiveMode mode = ChatReceiveMode.fromId(reader.readUnsignedByte());
 
         if (mode.equals(ChatReceiveMode.LOCAL) || mode.equals(ChatReceiveMode.PARTY)) {
@@ -24,8 +24,8 @@ public enum ChatHeaderCodec implements BinaryCodec<ChatHeader> {
         return new ChatHeader(mode, null, clientId);
     }
 
-    @Override
-    public void write(BinaryWriter writer, ChatHeader header) {
+
+    public static void write(BinaryWriter writer, ChatHeader header) {
         writer.writeByte(header.mode().id());
 
         if (header.mode().equals(ChatReceiveMode.LOCAL) || header.mode().equals(ChatReceiveMode.PARTY)) {

@@ -1,9 +1,9 @@
-package irden.space.proxy.protocol.payload.packet.damage_notification;
+package irden.space.proxy.protocol.payload.packet.damage;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.VlqCodec;
-import irden.space.proxy.protocol.payload.common.damage_notification.DamageNotificationCodec;
+import irden.space.proxy.protocol.payload.common.damage.DamageNotificationCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class RemoteDamageNotificationParser implements PacketParser<RemoteDamageNotification> {
@@ -11,7 +11,7 @@ public class RemoteDamageNotificationParser implements PacketParser<RemoteDamage
     public RemoteDamageNotification parse(BinaryReader reader, int openProtocolVersion) {
         return new RemoteDamageNotification(
                 VlqCodec.read(reader),
-                DamageNotificationCodec.INSTANCE.read(reader
+                DamageNotificationCodec.read(reader
                 )
         );
     }
@@ -20,7 +20,7 @@ public class RemoteDamageNotificationParser implements PacketParser<RemoteDamage
     public byte[] write(RemoteDamageNotification payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         VlqCodec.write(writer, payload.entityId());
-        DamageNotificationCodec.INSTANCE.write(writer, payload.damageNotification());
+        DamageNotificationCodec.write(writer, payload.damageNotification());
         return finish(writer);
     }
 }

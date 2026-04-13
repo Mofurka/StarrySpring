@@ -1,4 +1,4 @@
-package irden.space.proxy.protocol.payload.packet.connect_failure;
+package irden.space.proxy.protocol.payload.packet.connect;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;

@@ -1,6 +1,6 @@
-package irden.space.proxy.protocol.payload.packet.damage_notification.consts;
+package irden.space.proxy.protocol.payload.common.damage.consts;
 
-public enum HitType {
+public enum TeamType {
     NULL(1),
     FRIENDLY(2),
     ENEMY(3),
@@ -13,7 +13,7 @@ public enum HitType {
 
     private final int id;
 
-    HitType(int id) {
+    TeamType(int id) {
         this.id = id;
     }
 
@@ -21,8 +21,8 @@ public enum HitType {
         return id;
     }
 
-    public static HitType fromId(int id) {
-        for (HitType hitType : values()) {
+    public static TeamType fromId(int id) {
+        for (TeamType hitType : values()) {
             if (hitType.id == id) {
                 return hitType;
             }

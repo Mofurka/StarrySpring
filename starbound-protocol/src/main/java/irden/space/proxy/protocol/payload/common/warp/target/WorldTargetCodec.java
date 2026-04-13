@@ -1,6 +1,5 @@
 package irden.space.proxy.protocol.payload.common.warp.target;
 
-import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.StarStringCodec;
@@ -9,23 +8,23 @@ import irden.space.proxy.protocol.payload.common.celestial_coordinates.Celestial
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuidCodec;
 import irden.space.proxy.protocol.payload.packet.warp.consts.WarpWorldType;
+import lombok.experimental.UtilityClass;
 
-public enum WorldTargetCodec implements BinaryCodec<WorldTarget> {
-    INSTANCE;
+@UtilityClass
+public final class WorldTargetCodec  {
 
-    @Override
-    public WorldTarget read (BinaryReader reader) {
+    public static WorldTarget read (BinaryReader reader) {
         WarpWorldType worldId = WarpWorldType.fromId(reader.readUnsignedByte());
 
         return switch (worldId) {
             case CELESTIAL_WORLD -> {
-                CelestialCoordinates coordinates = CelestialCoordinatesCodec.INSTANCE.read(reader);
+                CelestialCoordinates coordinates = CelestialCoordinatesCodec.read(reader);
                 int isTeleporter = reader.readUnsignedByte();
                 String teleporter = isTeleporter == 1 ? StarStringCodec.read(reader) : null;
                 yield new CelestialWorldTarget(coordinates, teleporter);
             }
             case PLAYER_WORLD -> {
-                StarUuid shipUuid = StarUuidCodec.INSTANCE.read(reader);
+                StarUuid shipUuid = StarUuidCodec.read(reader);
                 int flag = reader.readUnsignedByte();
                 Integer posX = null;
                 Integer posY = null;
@@ -39,7 +38,7 @@ public enum WorldTargetCodec implements BinaryCodec<WorldTarget> {
                 String worldName = StarStringCodec.read(reader);
 
                 int isInstance = reader.readUnsignedByte();
-                StarUuid instanceUuid = isInstance == 1 ? StarUuidCodec.INSTANCE.read(reader) : null;
+                StarUuid instanceUuid = isInstance == 1 ? StarUuidCodec.read(reader) : null;
 
                 int isSomething = reader.readUnsignedByte();
                 Float something = isSomething == 1 ? reader.readFloat32BE() : null;
@@ -57,12 +56,11 @@ public enum WorldTargetCodec implements BinaryCodec<WorldTarget> {
 
     }
 
-    @Override
-    public void write(BinaryWriter writer, WorldTarget target) {
+    public static void write(BinaryWriter writer, WorldTarget target) {
         switch (target) {
             case CelestialWorldTarget(CelestialCoordinates celestialCoordinates, String teleporter) -> {
                 writer.writeByte(WarpWorldType.CELESTIAL_WORLD.id());
-                CelestialCoordinatesCodec.INSTANCE.write(writer, celestialCoordinates);
+                CelestialCoordinatesCodec.write(writer, celestialCoordinates);
                 if (teleporter != null) {
                     writer.writeByte(1);
                     StarStringCodec.write(writer, teleporter);
@@ -72,7 +70,7 @@ public enum WorldTargetCodec implements BinaryCodec<WorldTarget> {
             }
             case PlayerWorldTarget(StarUuid shipUuid, Integer posX, Integer posY) -> {
                 writer.writeByte(WarpWorldType.PLAYER_WORLD.id());
-                StarUuidCodec.INSTANCE.write(writer, shipUuid);
+                StarUuidCodec.write(writer, shipUuid);
                 if (posX != null && posY != null) {
                     writer.writeByte(2);
                     writer.writeInt32BE(posX);
@@ -89,7 +87,7 @@ public enum WorldTargetCodec implements BinaryCodec<WorldTarget> {
 
                 if (instanceUuid != null) {
                     writer.writeByte(1);
-                    StarUuidCodec.INSTANCE.write(writer, instanceUuid);
+                    StarUuidCodec.write(writer, instanceUuid);
                 } else {
                     writer.writeByte(0);
                 }
@@ -108,9 +106,9 @@ public enum WorldTargetCodec implements BinaryCodec<WorldTarget> {
                     writer.writeByte(0);
                 }
             }
-            case MissionWorldTarget p -> {
+            case MissionWorldTarget(String worldName) -> {
                 writer.writeByte(WarpWorldType.MISSION_WORLD.id());
-                StarStringCodec.write(writer, p.worldName());
+                StarStringCodec.write(writer, worldName);
             }
             default -> throw new IllegalStateException("Unsupported world target: " + target);
         }

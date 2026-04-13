@@ -16,5 +16,5 @@ public @interface ChatCommand {
 
     String description() default "";
 
-    String usage() default "";
+    String usage() default ""; // TODO maybe its better to use regex for this in a future
 }
