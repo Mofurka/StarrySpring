@@ -7,27 +7,27 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class VariantCodec {
+public enum VariantCodec implements BinaryCodec<VariantValue> {
+    INSTANCE;
 
-    private VariantCodec() {
-    }
-
-    public static VariantValue read(BinaryReader reader) {
+    @Override
+    public VariantValue read(BinaryReader reader) {
         int type = reader.readUnsignedByte();
 
         return switch (type) {
             case 1 -> NullVariantValue.INSTANCE;
             case 2 -> new DoubleVariantValue(reader.readDouble64BE());
             case 3 -> new BooleanVariantValue(reader.readBoolean());
-            case 4 -> new IntVariantValue(SignedVlqCodec.read(reader));
-            case 5 -> new StringVariantValue(StarStringCodec.read(reader));
+            case 4 -> new IntVariantValue(SignedVlqCodec.INSTANCE.read(reader));
+            case 5 -> new StringVariantValue(StarStringCodec.INSTANCE.read(reader));
             case 6 -> new ListVariantValue(readList(reader));
             case 7 -> new MapVariantValue(readMap(reader));
             default -> throw new IllegalStateException("Unknown variant type: " + type);
         };
     }
 
-    public static void write(BinaryWriter writer, VariantValue value) {
+    @Override
+    public void write(BinaryWriter writer, VariantValue value) {
         switch (value) {
             case NullVariantValue _ -> writer.writeByte(1);
             case DoubleVariantValue(double value1) -> {
@@ -40,11 +40,11 @@ public final class VariantCodec {
             }
             case IntVariantValue(int value1) -> {
                 writer.writeByte(4);
-                SignedVlqCodec.write(writer, value1);
+                SignedVlqCodec.INSTANCE.write(writer, value1);
             }
             case StringVariantValue(String value1) -> {
                 writer.writeByte(5);
-                StarStringCodec.write(writer, value1);
+                StarStringCodec.INSTANCE.write(writer, value1);
             }
             case ListVariantValue(List<VariantValue> values) -> {
                 writer.writeByte(6);
@@ -58,8 +58,8 @@ public final class VariantCodec {
         }
     }
 
-    public static List<VariantValue> readList(BinaryReader reader) {
-        int size = VlqCodec.read(reader);
+    public List<VariantValue> readList(BinaryReader reader) {
+        int size = VlqCodec.INSTANCE.read(reader);
         List<VariantValue> result = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             result.add(read(reader));
@@ -67,28 +67,28 @@ public final class VariantCodec {
         return result;
     }
 
-    public static void writeList(BinaryWriter writer, List<VariantValue> values) {
-        VlqCodec.write(writer, values.size());
+    public void writeList(BinaryWriter writer, List<VariantValue> values) {
+        VlqCodec.INSTANCE.write(writer, values.size());
         for (VariantValue value : values) {
             write(writer, value);
         }
     }
 
-    public static Map<String, VariantValue> readMap(BinaryReader reader) {
-        int size = VlqCodec.read(reader);
+    public Map<String, VariantValue> readMap(BinaryReader reader) {
+        int size = VlqCodec.INSTANCE.read(reader);
         Map<String, VariantValue> result = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
-            String key = StarStringCodec.read(reader);
+            String key = StarStringCodec.INSTANCE.read(reader);
             VariantValue value = read(reader);
             result.put(key, value);
         }
         return result;
     }
 
-    public static void writeMap(BinaryWriter writer, Map<String, VariantValue> values) {
-        VlqCodec.write(writer, values.size());
+    public void writeMap(BinaryWriter writer, Map<String, VariantValue> values) {
+        VlqCodec.INSTANCE.write(writer, values.size());
         for (Map.Entry<String, VariantValue> entry : values.entrySet()) {
-            StarStringCodec.write(writer, entry.getKey());
+            StarStringCodec.INSTANCE.write(writer, entry.getKey());
             write(writer, entry.getValue());
         }
     }

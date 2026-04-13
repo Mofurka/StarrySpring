@@ -1,19 +1,20 @@
 package irden.space.proxy.protocol.payload.common.ephemeral_status_effect;
 
+import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.StarStringCodec;
 import irden.space.proxy.protocol.codec.VlqCodec;
-import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@UtilityClass
-public final class EphemeralStatusEffectCodec {
+public enum EphemeralStatusEffectCodec implements BinaryCodec<EphemeralStatusEffect> {
+    INSTANCE;
 
-    public static EphemeralStatusEffect read(BinaryReader reader) {
-        String name = StarStringCodec.read(reader);
+    @Override
+    public EphemeralStatusEffect read(BinaryReader reader) {
+        String name = StarStringCodec.INSTANCE.read(reader);
         int type = reader.readUnsignedByte();
 
         if (type == 0) {
@@ -26,21 +27,23 @@ public final class EphemeralStatusEffectCodec {
         }
     }
 
-    public static void write(BinaryWriter writer, EphemeralStatusEffect value) {
+    @Override
+    public void write(BinaryWriter writer, EphemeralStatusEffect value) {
         switch (value) {
             case StringStatusEffect(String name) -> {
-                StarStringCodec.write(writer, name);
+                StarStringCodec.INSTANCE.write(writer, name);
                 writer.writeByte(0);
             }
             case JsonStatusEffect(String name, float duration) -> {
-                StarStringCodec.write(writer, name);
+                StarStringCodec.INSTANCE.write(writer, name);
                 writer.writeByte(1);
                 writer.writeFloat32BE(duration);
             }
         }
     }
-    public static List<EphemeralStatusEffect> readList(BinaryReader reader) {
-        int size = VlqCodec.read(reader);
+
+    public List<EphemeralStatusEffect> readList(BinaryReader reader) {
+        int size = VlqCodec.INSTANCE.read(reader);
         List<EphemeralStatusEffect> effects = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             effects.add(read(reader));
@@ -48,8 +51,8 @@ public final class EphemeralStatusEffectCodec {
         return effects;
     }
 
-    public static void writeList(BinaryWriter writer, List<EphemeralStatusEffect> effects) {
-        VlqCodec.write(writer, effects.size());
+    public void writeList(BinaryWriter writer, List<EphemeralStatusEffect> effects) {
+        VlqCodec.INSTANCE.write(writer, effects.size());
         for (EphemeralStatusEffect effect : effects) {
             write(writer, effect);
         }

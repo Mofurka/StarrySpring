@@ -10,16 +10,16 @@ public class EntityMessageResponseParser implements PacketParser<EntityMessageRe
     @Override
     public EntityMessageResponse parse(BinaryReader reader, int openProtocolVersion) {
         return new EntityMessageResponse(
-                EntityMessageResponseValueCodec.read(reader),
-                StarUuidCodec.read(reader)
+                EntityMessageResponseValueCodec.INSTANCE.read(reader),
+                StarUuidCodec.INSTANCE.read(reader)
         );
     }
 
     @Override
     public byte[] write(EntityMessageResponse payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        EntityMessageResponseValueCodec.write(writer, payload.response());
-        StarUuidCodec.write(writer, payload.uuid());
+        EntityMessageResponseValueCodec.INSTANCE.write(writer, payload.response());
+        StarUuidCodec.INSTANCE.write(writer, payload.uuid());
         return finish(writer);
     }
 }

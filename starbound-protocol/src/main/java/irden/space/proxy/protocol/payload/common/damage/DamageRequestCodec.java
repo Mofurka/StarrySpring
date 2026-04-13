@@ -1,5 +1,6 @@
 package irden.space.proxy.protocol.payload.common.damage;
 
+import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.StarStringCodec;
@@ -9,30 +10,30 @@ import irden.space.proxy.protocol.payload.common.ephemeral_status_effect.Ephemer
 import irden.space.proxy.protocol.payload.common.ephemeral_status_effect.EphemeralStatusEffectCodec;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2F;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2FCodec;
-import lombok.experimental.UtilityClass;
 
 import java.util.List;
 
-@UtilityClass
-public final class DamageRequestCodec {
+public enum DamageRequestCodec implements BinaryCodec<DamageRequest> {
+    INSTANCE;
 
-
-    public static DamageRequest read(BinaryReader reader) {
+    @Override
+    public DamageRequest read(BinaryReader reader) {
         HitType hitType = HitType.fromId(reader.readUInt16BE());
         DamageType type = DamageType.fromId(reader.readUnsignedByte());
-        StarVec2F knockbackMomentum = StarVec2FCodec.read(reader);
+        StarVec2F knockbackMomentum = StarVec2FCodec.INSTANCE.read(reader);
         int sourceEntityId = reader.readInt32BE();
-        String damageSourceKind = StarStringCodec.read(reader);
-        List<EphemeralStatusEffect> statusEffects = EphemeralStatusEffectCodec.readList(reader);
+        String damageSourceKind = StarStringCodec.INSTANCE.read(reader);
+        List<EphemeralStatusEffect> statusEffects = EphemeralStatusEffectCodec.INSTANCE.readList(reader);
         return new DamageRequest(hitType, type, knockbackMomentum, sourceEntityId, damageSourceKind, statusEffects);
     }
 
-    public static void write(BinaryWriter writer, DamageRequest value) {
+    @Override
+    public void write(BinaryWriter writer, DamageRequest value) {
         writer.writeUInt16BE(value.hitType().id());
         writer.writeByte(value.type().id());
-        StarVec2FCodec.write(writer, value.knockbackMomentum());
+        StarVec2FCodec.INSTANCE.write(writer, value.knockbackMomentum());
         writer.writeInt32BE(value.sourceEntityId());
-        StarStringCodec.write(writer, value.damageSourceKind());
-        EphemeralStatusEffectCodec.writeList(writer, value.statusEffects());
+        StarStringCodec.INSTANCE.write(writer, value.damageSourceKind());
+        EphemeralStatusEffectCodec.INSTANCE.writeList(writer, value.statusEffects());
     }
 }

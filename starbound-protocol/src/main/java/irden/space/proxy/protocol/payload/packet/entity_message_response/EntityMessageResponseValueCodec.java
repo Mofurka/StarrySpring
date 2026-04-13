@@ -1,37 +1,39 @@
 package irden.space.proxy.protocol.payload.packet.entity_message_response;
 
+import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.StarStringCodec;
 import irden.space.proxy.protocol.codec.VariantCodec;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
-import lombok.experimental.UtilityClass;
 
-@UtilityClass
-public final class EntityMessageResponseValueCodec {
+public enum EntityMessageResponseValueCodec implements BinaryCodec<EntityMessageRsponseValue> {
+    INSTANCE;
 
-    public static EntityMessageRsponseValue read(BinaryReader reader) {
+    @Override
+    public EntityMessageRsponseValue read(BinaryReader reader) {
         int success = reader.readUnsignedByte();
         return switch (success) {
             case 1 -> new FailedEntityMessageResponse(
-                    StarStringCodec.read(reader)
+                    StarStringCodec.INSTANCE.read(reader)
             );
             case 2 -> new SuccessEntityMessageResponse(
-                    VariantCodec.read(reader)
+                    VariantCodec.INSTANCE.read(reader)
             );
             default -> throw new IllegalStateException("Unsupported entity message response value: " + success);
         };
     }
 
-    public static void write(BinaryWriter writer, EntityMessageRsponseValue value) {
+    @Override
+    public void write(BinaryWriter writer, EntityMessageRsponseValue value) {
         switch (value) {
             case FailedEntityMessageResponse(String error) -> {
                 writer.writeByte(1);
-                StarStringCodec.write(writer, error);
+                StarStringCodec.INSTANCE.write(writer, error);
             }
             case SuccessEntityMessageResponse(VariantValue response) -> {
                 writer.writeByte(2);
-                VariantCodec.write(writer, response);
+                VariantCodec.INSTANCE.write(writer, response);
             }
             default -> throw new IllegalStateException("Unsupported entity message response value: " + value);
         }

@@ -84,7 +84,7 @@ public class RuntimePacketReader {
 
         byte[] rawBytes = rawWriter.toByteArray();
         BinaryReader reader = new BinaryReader(rawBytes);
-        int value = SignedVlqCodec.read(reader);
+        int value = SignedVlqCodec.INSTANCE.read(reader);
 
         return new SignedVlqReadResult(value, rawBytes);
     }

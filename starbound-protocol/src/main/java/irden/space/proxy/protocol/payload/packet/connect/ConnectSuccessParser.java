@@ -11,8 +11,8 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
 
     @Override
     public ConnectSuccess parse(BinaryReader reader, int openProtocolVersion) {
-        int clientId =  VlqCodec.read(reader);
-        StarUuid serverUuid =  StarUuidCodec.read(reader); // useless piece of shit
+        int clientId =  VlqCodec.INSTANCE.read(reader);
+        StarUuid serverUuid =  StarUuidCodec.INSTANCE.read(reader); // useless piece of shit
         int planetOrbitalLevels =  reader.readInt32BE();
         int satelliteOrbitalLevels =  reader.readInt32BE();
         int chunkSize =  reader.readInt32BE();
@@ -36,8 +36,8 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
     @Override
     public byte[] write(ConnectSuccess payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        VlqCodec.write(writer, payload.clientId());
-        StarUuidCodec.write(writer, payload.playerUuid());
+        VlqCodec.INSTANCE.write(writer, payload.clientId());
+        StarUuidCodec.INSTANCE.write(writer, payload.playerUuid());
         writer.writeInt32BE(payload.planetOrbitalLevels());
         writer.writeInt32BE(payload.satelliteOrbitalLevels());
         writer.writeInt32BE(payload.chunkSize());

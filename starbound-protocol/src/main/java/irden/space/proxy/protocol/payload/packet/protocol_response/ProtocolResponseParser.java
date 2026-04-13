@@ -10,7 +10,7 @@ public class ProtocolResponseParser implements PacketParser<ProtocolResponse> {
     @Override
     public ProtocolResponse parse(BinaryReader reader, int openProtocolVersion) {
         int serverResponse = reader.readUnsignedByte();
-        VariantValue info = VariantCodec.read(reader);
+        VariantValue info = VariantCodec.INSTANCE.read(reader);
         return new ProtocolResponse(serverResponse, info);
     }
 
@@ -18,7 +18,7 @@ public class ProtocolResponseParser implements PacketParser<ProtocolResponse> {
     public byte[] write(ProtocolResponse payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeByte(payload.serverResponse());
-        VariantCodec.write(writer, payload.info());
+        VariantCodec.INSTANCE.write(writer, payload.info());
         return finish(writer);
     }
 }

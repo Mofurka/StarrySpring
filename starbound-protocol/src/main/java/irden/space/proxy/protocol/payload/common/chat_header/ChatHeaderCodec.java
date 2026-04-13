@@ -14,7 +14,7 @@ public final class ChatHeaderCodec {
         ChatReceiveMode mode = ChatReceiveMode.fromId(reader.readUnsignedByte());
 
         if (mode.equals(ChatReceiveMode.LOCAL) || mode.equals(ChatReceiveMode.PARTY)) {
-            String channel = StarStringCodec.read(reader);
+            String channel = StarStringCodec.INSTANCE.read(reader);
             int clientId = reader.readUInt16BE();
             return new ChatHeader(mode, channel, clientId);
         }
@@ -29,7 +29,7 @@ public final class ChatHeaderCodec {
         writer.writeByte(header.mode().id());
 
         if (header.mode().equals(ChatReceiveMode.LOCAL) || header.mode().equals(ChatReceiveMode.PARTY)) {
-            StarStringCodec.write(writer, header.channel());
+            StarStringCodec.INSTANCE.write(writer, header.channel());
             writer.writeUInt16BE(header.clientId());
             return;
         }

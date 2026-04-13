@@ -13,11 +13,11 @@ import java.util.List;
 public class ChatSentParser implements PacketParser<ChatSent> {
     @Override
     public ChatSent parse(BinaryReader reader, int openProtocolVersion) {
-        String read = StarStringCodec.read(reader);
+        String read = StarStringCodec.INSTANCE.read(reader);
         ChatSentMode chatSentMode = ChatSentMode.fromId(reader.readUnsignedByte());
         List<VariantValue> variantValues = null;
         if (openProtocolVersion >= 5) {
-            variantValues = VariantCodec.readList(reader);
+            variantValues = VariantCodec.INSTANCE.readList(reader);
         }
         return new ChatSent(
                 read,
@@ -29,14 +29,14 @@ public class ChatSentParser implements PacketParser<ChatSent> {
     @Override
     public byte[] write(ChatSent payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        StarStringCodec.write(writer, payload.content());
+        StarStringCodec.INSTANCE.write(writer, payload.content());
         writer.writeByte(payload.mode().id());
         if (openProtocolVersion >= 5) {
             List<VariantValue> arguments = payload.arguments();
             if (arguments == null) {
                 arguments = List.of();
             }
-            VariantCodec.writeList(writer, arguments);
+            VariantCodec.INSTANCE.writeList(writer, arguments);
         }
         return finish(writer);
     }

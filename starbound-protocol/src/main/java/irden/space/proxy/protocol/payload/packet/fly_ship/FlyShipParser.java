@@ -15,11 +15,11 @@ public class FlyShipParser implements PacketParser<FlyShip> {
 
     @Override
     public FlyShip parse(BinaryReader reader, int openProtocolVersion) {
-        StarVec3I system = StarVec3ICodec.read(reader);
-        SystemLocation systemLocation = SystemLocationCodec.read(reader);
+        StarVec3I system = StarVec3ICodec.INSTANCE.read(reader);
+        SystemLocation systemLocation = SystemLocationCodec.INSTANCE.read(reader);
         VariantValue settings = null;
         if (openProtocolVersion >= 3) {
-            settings = VariantCodec.read(reader);
+            settings = VariantCodec.INSTANCE.read(reader);
         }
         return new FlyShip(system, systemLocation, settings);
     }
@@ -27,10 +27,10 @@ public class FlyShipParser implements PacketParser<FlyShip> {
     @Override
     public byte[] write(FlyShip payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        StarVec3ICodec.write(writer, payload.system());
-        SystemLocationCodec.write(writer, payload.location());
+        StarVec3ICodec.INSTANCE.write(writer, payload.system());
+        SystemLocationCodec.INSTANCE.write(writer, payload.location());
         if (openProtocolVersion >= 3) {
-            VariantCodec.write(writer, payload.settings());
+            VariantCodec.INSTANCE.write(writer, payload.settings());
         }
         return finish(writer);
     }

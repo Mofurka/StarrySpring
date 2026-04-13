@@ -146,7 +146,7 @@ public final class PacketEnvelopes {
     private static byte[] buildOriginalData(int rawPacketTypeId, byte[] wirePayload, boolean compressed) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeByte(rawPacketTypeId);
-        SignedVlqCodec.write(writer, compressed ? -wirePayload.length : wirePayload.length);
+        SignedVlqCodec.INSTANCE.write(writer, compressed ? -wirePayload.length : wirePayload.length);
         writer.writeBytes(wirePayload);
         return writer.toByteArray();
     }

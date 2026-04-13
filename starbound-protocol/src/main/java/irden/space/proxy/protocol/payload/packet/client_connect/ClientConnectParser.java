@@ -10,18 +10,18 @@ public class ClientConnectParser implements PacketParser<ClientConnect> {
 
     @Override
     public ClientConnect parse(BinaryReader reader, int openProtocolVersion) {
-        byte[] assetsDigest = StarByteArrayCodec.read(reader);
+        byte[] assetsDigest = StarByteArrayCodec.INSTANCE.read(reader);
         boolean allowAssetsMismatch = reader.readBoolean();
-        StarUuid playerUuid = StarUuidCodec.read(reader);
-        String playerName = StarStringCodec.read(reader);
-        String shipSpecies = StarStringCodec.read(reader);
-        WorldChunks shipChunks = WorldChunksCodec.read(reader);
-        ShipUpgrades shipUpgrades = ShipUpgradesCodec.read(reader);
+        StarUuid playerUuid = StarUuidCodec.INSTANCE.read(reader);
+        String playerName = StarStringCodec.INSTANCE.read(reader);
+        String shipSpecies = StarStringCodec.INSTANCE.read(reader);
+        WorldChunks shipChunks = WorldChunksCodec.INSTANCE.read(reader);
+        ShipUpgrades shipUpgrades = ShipUpgradesCodec.INSTANCE.read(reader);
         boolean introComplete = reader.readBoolean();
-        String account = StarStringCodec.read(reader);
+        String account = StarStringCodec.INSTANCE.read(reader);
         VariantValue info = null;
         if (openProtocolVersion >= 3) {
-            info = VariantCodec.read(reader);
+            info = VariantCodec.INSTANCE.read(reader);
         }
         return new ClientConnect(
                 assetsDigest,
@@ -40,17 +40,17 @@ public class ClientConnectParser implements PacketParser<ClientConnect> {
     @Override
     public byte[] write(ClientConnect payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        StarByteArrayCodec.write(writer, payload.assetsDigest());
+        StarByteArrayCodec.INSTANCE.write(writer, payload.assetsDigest());
         writer.writeBoolean(payload.allowAssetsMismatch());
-        StarUuidCodec.write(writer, payload.playerUuid());
-        StarStringCodec.write(writer, payload.playerName());
-        StarStringCodec.write(writer, payload.shipSpecies());
-        WorldChunksCodec.write(writer, payload.shipChunks());
-        ShipUpgradesCodec.write(writer, payload.shipUpgrades());
+        StarUuidCodec.INSTANCE.write(writer, payload.playerUuid());
+        StarStringCodec.INSTANCE.write(writer, payload.playerName());
+        StarStringCodec.INSTANCE.write(writer, payload.shipSpecies());
+        WorldChunksCodec.INSTANCE.write(writer, payload.shipChunks());
+        ShipUpgradesCodec.INSTANCE.write(writer, payload.shipUpgrades());
         writer.writeBoolean(payload.introComplete());
-        StarStringCodec.write(writer, payload.account());
+        StarStringCodec.INSTANCE.write(writer, payload.account());
         if (openProtocolVersion >= 3) {
-            VariantCodec.write(writer, payload.info());
+            VariantCodec.INSTANCE.write(writer, payload.info());
         }
         return finish(writer);
     }

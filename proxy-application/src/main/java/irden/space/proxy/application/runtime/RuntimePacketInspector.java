@@ -38,7 +38,7 @@ public class RuntimePacketInspector {
             try {
                 parsed = packetDispatcher.parse(envelope, openProtocolVersion);
             } catch (Exception e) {
-                log.debug(
+                log.info(
                         "[{}] parse failed for rawType={} type={}: {}",
                         direction,
                         envelope.rawPacketTypeId(),

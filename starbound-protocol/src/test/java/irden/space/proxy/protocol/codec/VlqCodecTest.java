@@ -10,7 +10,7 @@ public class VlqCodecTest {
 
         for (int val : testValues) {
             BinaryWriter writer = new BinaryWriter();
-            VlqCodec.write(writer, val);
+            VlqCodec.INSTANCE.write(writer, val);
             byte[] result = writer.toByteArray();
 
             StringBuilder hex = new StringBuilder();

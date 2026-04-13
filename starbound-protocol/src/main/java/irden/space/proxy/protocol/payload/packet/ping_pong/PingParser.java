@@ -10,7 +10,7 @@ public class PingParser implements PacketParser<Ping> {
     public Ping parse(BinaryReader reader, int openProtocolVersion) {
         reader.readBoolean(); //trash
         if (openProtocolVersion >= 0) {
-            return new Ping(VlqCodec.read(reader));
+            return new Ping(VlqCodec.INSTANCE.read(reader));
         }
         return new Ping(0);
     }
@@ -20,7 +20,7 @@ public class PingParser implements PacketParser<Ping> {
         BinaryWriter writer = new BinaryWriter();
         writer.writeBoolean(true); //trash
         if (openProtocolVersion >= 0) {
-            VlqCodec.write(writer, payload.time());
+            VlqCodec.INSTANCE.write(writer, payload.time());
         }
         return finish(writer);
     }

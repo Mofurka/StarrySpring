@@ -11,7 +11,7 @@ public class RemoteDamageRequestParser implements PacketParser<RemoteDamageReque
     public RemoteDamageRequest parse(BinaryReader reader, int openProtocolVersion) {
         int sourceId = reader.readInt32BE();
         int targetId = reader.readInt32BE();
-        DamageRequest damageRequest = DamageRequestCodec.read(reader);
+        DamageRequest damageRequest = DamageRequestCodec.INSTANCE.read(reader);
         return new RemoteDamageRequest(sourceId, targetId, damageRequest);
     }
 
@@ -20,7 +20,7 @@ public class RemoteDamageRequestParser implements PacketParser<RemoteDamageReque
         BinaryWriter writer = new BinaryWriter();
         writer.writeInt32BE(payload.sourceId());
         writer.writeInt32BE(payload.targetId());
-        DamageRequestCodec.write(writer, payload.damageRequest());
+        DamageRequestCodec.INSTANCE.write(writer, payload.damageRequest());
         return finish(writer);
     }
 }

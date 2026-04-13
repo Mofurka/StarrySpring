@@ -14,13 +14,13 @@ class VlqCodecCodecTest {
     void readsMultiByteVlq() {
         BinaryReader reader = new BinaryReader(new byte[]{(byte) 0x81, 0x17});
 
-        assertEquals(151, VlqCodec.read(reader));
+        assertEquals(151, VlqCodec.INSTANCE.read(reader));
     }
 
     @Test
     void writesSignedVlqUsingZigZagEncoding() {
         BinaryWriter writer = new BinaryWriter();
-        SignedVlqCodec.write(writer, -151);
+        SignedVlqCodec.INSTANCE.write(writer, -151);
 
         assertArrayEquals(encodeSignedVlqExpected(-151), writer.toByteArray());
     }
@@ -31,10 +31,10 @@ class VlqCodecCodecTest {
 
         for (int value : values) {
             BinaryWriter writer = new BinaryWriter();
-            SignedVlqCodec.write(writer, value);
+            SignedVlqCodec.INSTANCE.write(writer, value);
 
             BinaryReader reader = new BinaryReader(writer.toByteArray());
-            assertEquals(value, SignedVlqCodec.read(reader), "value=" + value);
+            assertEquals(value, SignedVlqCodec.INSTANCE.read(reader), "value=" + value);
         }
     }
 

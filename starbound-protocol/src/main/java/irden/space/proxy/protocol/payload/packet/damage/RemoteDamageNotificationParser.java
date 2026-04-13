@@ -10,8 +10,8 @@ public class RemoteDamageNotificationParser implements PacketParser<RemoteDamage
     @Override
     public RemoteDamageNotification parse(BinaryReader reader, int openProtocolVersion) {
         return new RemoteDamageNotification(
-                VlqCodec.read(reader),
-                DamageNotificationCodec.read(reader
+                VlqCodec.INSTANCE.read(reader),
+                DamageNotificationCodec.INSTANCE.read(reader
                 )
         );
     }
@@ -19,8 +19,8 @@ public class RemoteDamageNotificationParser implements PacketParser<RemoteDamage
     @Override
     public byte[] write(RemoteDamageNotification payload, int openProtocolVersion) {
         BinaryWriter writer = new BinaryWriter();
-        VlqCodec.write(writer, payload.entityId());
-        DamageNotificationCodec.write(writer, payload.damageNotification());
+        VlqCodec.INSTANCE.write(writer, payload.entityId());
+        DamageNotificationCodec.INSTANCE.write(writer, payload.damageNotification());
         return finish(writer);
     }
 }

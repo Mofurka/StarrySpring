@@ -1,11 +1,10 @@
 package irden.space.proxy.protocol.codec;
 
-public final class VlqCodec {
+public enum VlqCodec implements BinaryCodec<Integer> {
+    INSTANCE;
 
-    private VlqCodec() {
-    }
-
-    public static int read(BinaryReader reader) {
+    @Override
+    public Integer read(BinaryReader reader) {
         int value = 0;
         while (true) {
             int b = reader.readUnsignedByte();
@@ -16,7 +15,8 @@ public final class VlqCodec {
         }
     }
 
-    public static void write(BinaryWriter writer, int value) {
+    @Override
+    public void write(BinaryWriter writer, Integer value) {
         if (value < 0) {
             throw new IllegalArgumentException("VLQ does not support negative values");
         }

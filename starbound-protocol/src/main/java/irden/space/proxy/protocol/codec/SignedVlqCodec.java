@@ -1,12 +1,11 @@
 package irden.space.proxy.protocol.codec;
 
-public final class SignedVlqCodec {
+public enum SignedVlqCodec implements BinaryCodec<Integer> {
+    INSTANCE;
 
-    private SignedVlqCodec() {
-    }
-
-    public static int read(BinaryReader reader) {
-        int value = VlqCodec.read(reader);
+    @Override
+    public Integer read(BinaryReader reader) {
+        int value = VlqCodec.INSTANCE.read(reader);
         // ZigZag decoding
         if ((value & 1) == 0) {
             return value >>> 1; // Positive number
@@ -15,9 +14,10 @@ public final class SignedVlqCodec {
         }
     }
 
-    public static void write(BinaryWriter writer, int value) {
+    @Override
+    public void write(BinaryWriter writer, Integer value) {
         // ZigZag encoding
         int encoded = (value << 1) ^ (value >> 31);
-        VlqCodec.write(writer, encoded);
+        VlqCodec.INSTANCE.write(writer, encoded);
     }
 }
