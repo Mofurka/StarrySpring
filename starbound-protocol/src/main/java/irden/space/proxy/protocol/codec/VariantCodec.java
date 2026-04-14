@@ -20,7 +20,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
             case 3 -> new BooleanVariantValue(reader.readBoolean());
             case 4 -> new IntVariantValue(SignedVlqCodec.INSTANCE.read(reader));
             case 5 -> new StringVariantValue(StarStringCodec.INSTANCE.read(reader));
-            case 6 -> new ListVariantValue(readList(reader));
+            case 6 -> new ListVariantValue(readList(reader)); // tuple
             case 7 -> new MapVariantValue(readMap(reader));
             default -> throw new IllegalStateException("Unknown variant type: " + type);
         };

@@ -17,6 +17,7 @@ import irden.space.proxy.protocol.payload.packet.entity_message_response.EntityM
 import irden.space.proxy.protocol.payload.packet.fly_ship.FlyShipParser;
 import irden.space.proxy.protocol.payload.packet.handshake.HandshakeChallengeParser;
 import irden.space.proxy.protocol.payload.packet.handshake.HandshakeResponseParser;
+import irden.space.proxy.protocol.payload.packet.modify_tile_list.ModifyTileListCodec;
 import irden.space.proxy.protocol.payload.packet.pause.PauseParser;
 import irden.space.proxy.protocol.payload.packet.ping_pong.PingParser;
 import irden.space.proxy.protocol.payload.packet.ping_pong.PongParser;
@@ -40,6 +41,8 @@ public class PacketParserRegistry {
     public PacketParserRegistry() {
         register(PacketType.PROTOCOL_REQUEST, new ProtocolRequestParser());
         register(PacketType.PROTOCOL_RESPONSE, new ProtocolResponseParser());
+
+        // universe server -> universe client
         register(PacketType.SERVER_DISCONNECT, new ServerDisconnectParser());
         register(PacketType.CONNECT_SUCCESS, new ConnectSuccessParser());
         register(PacketType.CONNECT_FAILURE, new ConnectFailureParser());
@@ -51,6 +54,8 @@ public class PacketParserRegistry {
         register(PacketType.PLANET_TYPE_UPDATE, null);
         register(PacketType.PAUSE, new PauseParser());
         register(PacketType.SERVER_INFO, null);
+
+        // univere client -> universe server
         register(PacketType.CLIENT_CONNECT, new ClientConnectParser());
         register(PacketType.CLIENT_DISCONNECT_REQUEST, new ClientDisconnectRequestParser());
         register(PacketType.HANDSHAKE_RESPONSE, new HandshakeResponseParser());
@@ -58,7 +63,11 @@ public class PacketParserRegistry {
         register(PacketType.FLY_SHIP, new FlyShipParser());
         register(PacketType.CHAT_SENT, new ChatSentParser());
         register(PacketType.CELESTIAL_REQUEST, null);
+
+        // universe client <-> universe server
         register(PacketType.CLIENT_CONTEXT_UPDATE, null);
+
+        //world server -> world client
         register(PacketType.WORLD_START, new WorldStartParser());
         register(PacketType.WORLD_STOP, new WorldStopParser());
         register(PacketType.WORLD_LAYOUT_UPDATE, null);
@@ -77,7 +86,9 @@ public class PacketParserRegistry {
         register(PacketType.SET_PLAYER_START, null);
         register(PacketType.FIND_UNIQUE_ENTITY_RESPONSE, null);
         register(PacketType.PONG, new PongParser());
-        register(PacketType.MODIFY_TILE_LIST, null);
+
+        // world client -> world server
+        register(PacketType.MODIFY_TILE_LIST, new ModifyTileListCodec());
         register(PacketType.DAMAGE_TILE_GROUP, null);
         register(PacketType.COLLECT_LIQUID, null);
         register(PacketType.REQUEST_DROP, null);
@@ -88,6 +99,8 @@ public class PacketParserRegistry {
         register(PacketType.FIND_UNIQUE_ENTITY, null);
         register(PacketType.WORLD_START_ACKNOWLEDGE, null);
         register(PacketType.PING, new PingParser());
+
+        // system server <-> client
         register(PacketType.ENTITY_CREATE, new EntityCreateParser());
         register(PacketType.ENTITY_UPDATE, null);
         register(PacketType.ENTITY_DESTROY, null);
@@ -100,13 +113,22 @@ public class PacketParserRegistry {
         register(PacketType.ENTITY_MESSAGE_RESPONSE, new EntityMessageResponseParser());
         register(PacketType.UPDATE_WORLD_PROPERTIES, null);
         register(PacketType.STEP_UPDATE, new StepUpdateParser());
+
+        // system server -> system client
         register(PacketType.SYSTEM_WORLD_START, null);
         register(PacketType.SYSTEM_WORLD_UPDATE, null);
         register(PacketType.SYSTEM_OBJECT_CREATE, null);
         register(PacketType.SYSTEM_OBJECT_DESTROY, null);
         register(PacketType.SYSTEM_SHIP_CREATE, null);
         register(PacketType.SYSTEM_SHIP_DESTROY, null);
+
+        // client -> system server
         register(PacketType.SYSTEM_OBJECT_SPAWN, null);
+
+        // OpenStarbound packets
+        // client -> server
+        register(PacketType.REPALCE_TILE_LIST, null);
+        register(PacketType.UPDATE_WORLD_TEMPLATE, null);
 
     }
 
