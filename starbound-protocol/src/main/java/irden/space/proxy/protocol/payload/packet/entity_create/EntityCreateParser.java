@@ -1,6 +1,7 @@
 package irden.space.proxy.protocol.payload.packet.entity_create;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
+import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class EntityCreateParser implements PacketParser<EntityCreate> {
@@ -23,6 +24,14 @@ public class EntityCreateParser implements PacketParser<EntityCreate> {
 
     @Override
     public byte[] write(EntityCreate payload, int openProtocolVersion) {
-        return new byte[0];
+        BinaryWriter writer = new BinaryWriter();
+        switch (payload) {
+            case PlayerEntity playerEntity -> {
+                writer.writeByte((byte) EntityType.PLAYER.id());
+                PlayerEntityCodec.INSTANCE.write(writer, playerEntity);
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + payload);
+        }
+        return finish(writer);
     }
 }

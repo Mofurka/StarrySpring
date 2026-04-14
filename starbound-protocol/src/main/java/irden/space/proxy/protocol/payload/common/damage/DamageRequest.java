@@ -10,6 +10,7 @@ import java.util.List;
 public record DamageRequest(
         HitType hitType,
         DamageType type,
+        float damage,
         StarVec2F knockbackMomentum,
         int sourceEntityId,
         String damageSourceKind,

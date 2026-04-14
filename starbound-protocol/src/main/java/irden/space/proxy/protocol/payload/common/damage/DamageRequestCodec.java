@@ -18,19 +18,21 @@ public enum DamageRequestCodec implements BinaryCodec<DamageRequest> {
 
     @Override
     public DamageRequest read(BinaryReader reader) {
-        HitType hitType = HitType.fromId(reader.readUInt16BE());
+        HitType hitType = HitType.fromId(reader.readInt32BE());
         DamageType type = DamageType.fromId(reader.readUnsignedByte());
+        float damage = reader.readFloat32BE();
         StarVec2F knockbackMomentum = StarVec2FCodec.INSTANCE.read(reader);
         int sourceEntityId = reader.readInt32BE();
         String damageSourceKind = StarStringCodec.INSTANCE.read(reader);
         List<EphemeralStatusEffect> statusEffects = EphemeralStatusEffectCodec.INSTANCE.readList(reader);
-        return new DamageRequest(hitType, type, knockbackMomentum, sourceEntityId, damageSourceKind, statusEffects);
+        return new DamageRequest(hitType, type, damage, knockbackMomentum, sourceEntityId, damageSourceKind, statusEffects);
     }
 
     @Override
     public void write(BinaryWriter writer, DamageRequest value) {
-        writer.writeUInt16BE(value.hitType().id());
+        writer.writeInt32BE(value.hitType().id());
         writer.writeByte(value.type().id());
+        writer.writeFloat32BE(value.damage());
         StarVec2FCodec.INSTANCE.write(writer, value.knockbackMomentum());
         writer.writeInt32BE(value.sourceEntityId());
         StarStringCodec.INSTANCE.write(writer, value.damageSourceKind());
