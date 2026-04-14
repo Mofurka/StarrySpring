@@ -1,7 +1,8 @@
 package irden.space.proxy.protocol.payload.packet.entity_create;
 
 import irden.space.proxy.protocol.payload.common.rgba.Rgba;
-import irden.space.proxy.protocol.payload.common.star_maybe.StarMaybe;
+
+import java.util.Optional;
 
 public record HumanoidIdentity(
         String name,
@@ -20,6 +21,6 @@ public record HumanoidIdentity(
         String facialMaskDirectives,
         Personality personality,
         Rgba color,
-        StarMaybe<String> imagePath
+        Optional<String> imagePath
 ) {
 }

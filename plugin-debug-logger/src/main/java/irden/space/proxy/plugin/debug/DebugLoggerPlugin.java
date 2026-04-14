@@ -169,6 +169,11 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return PacketDecision.forward();
     }
 
+    @PacketHandler(value = PacketType.MODIFY_TILE_LIST)
+    public PacketDecision onModifyTileList(PacketInterceptionContext context) {
+        return logPacket("onModifyTileList", context);
+    }
+
     @PacketHandler(value = PacketType.ENTITY_INTERACT)
     public PacketDecision onEntityInteract(PacketInterceptionContext context) {
         return logPacket("onEntityInteract", context);

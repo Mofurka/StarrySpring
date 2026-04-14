@@ -6,8 +6,8 @@ import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.StarStringCodec;
 import irden.space.proxy.protocol.payload.common.rgba.Rgba;
 import irden.space.proxy.protocol.payload.common.rgba.RgbaCodec;
-import irden.space.proxy.protocol.payload.common.star_maybe.StarMaybe;
-import irden.space.proxy.protocol.payload.common.star_maybe.StarMaybeCodec;
+
+import java.util.Optional;
 
 public enum HumanoidIdentityCodec implements BinaryCodec<HumanoidIdentity> {
     INSTANCE;
@@ -30,7 +30,12 @@ public enum HumanoidIdentityCodec implements BinaryCodec<HumanoidIdentity> {
         String facialMaskDirectives = StarStringCodec.INSTANCE.read(reader);
         Personality personality = PersonalityCodec.INSTANCE.read(reader);
         Rgba color = RgbaCodec.INSTANCE.read(reader);
-        StarMaybe<String> imagePath = new StarMaybeCodec<>(StarStringCodec.INSTANCE).read(reader);
+        Optional<String> imagePath;
+        if (reader.readBoolean()) {
+            imagePath = Optional.of(StarStringCodec.INSTANCE.read(reader));
+        } else {
+            imagePath = Optional.empty();
+        }
         return new HumanoidIdentity(
                 name,
                 species,
@@ -70,6 +75,11 @@ public enum HumanoidIdentityCodec implements BinaryCodec<HumanoidIdentity> {
         StarStringCodec.INSTANCE.write(writer, value.facialMaskDirectives());
         PersonalityCodec.INSTANCE.write(writer, value.personality());
         RgbaCodec.INSTANCE.write(writer, value.color());
-        new StarMaybeCodec<>(StarStringCodec.INSTANCE).write(writer, value.imagePath());
+        if (value.imagePath().isPresent()) {
+            writer.writeBoolean(true);
+            StarStringCodec.INSTANCE.write(writer, value.imagePath().get());
+        } else {
+            writer.writeBoolean(false);
+        }
     }
 }

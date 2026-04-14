@@ -4,6 +4,6 @@ import irden.space.proxy.protocol.payload.packet.modify_tile_list.tile_modificat
 
 public record PlaceMaterialColor(
         TileLayer layer,
-        short color
+        int color
 ) implements TileModification {
 }
