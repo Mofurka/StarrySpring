@@ -10,15 +10,14 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class EntityInteractResultParser implements PacketParser<EntityInteractResult> {
     @Override
-    public EntityInteractResult parse(BinaryReader reader, int openProtocolVersion) {
+    public EntityInteractResult parse(BinaryReader reader) {
         InteractAction action = InteractActionCodec.INSTANCE.read(reader);
         StarUuid requestId = StarUuidCodec.INSTANCE.read(reader);
         return new EntityInteractResult(action, requestId);
     }
 
     @Override
-    public byte[] write(EntityInteractResult payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, EntityInteractResult payload) {
         InteractActionCodec.INSTANCE.write(writer, payload.interactAction());
         StarUuidCodec.INSTANCE.write(writer, payload.requestId());
         return finish(writer);

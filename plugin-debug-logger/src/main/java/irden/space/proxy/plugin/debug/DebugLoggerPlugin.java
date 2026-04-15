@@ -16,8 +16,8 @@ import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
 import irden.space.proxy.protocol.payload.packet.entity_create.EntityCreate;
-import irden.space.proxy.protocol.payload.packet.entity_create.player.HumanoidIdentity;
 import irden.space.proxy.protocol.payload.packet.entity_create.PlayerEntity;
+import irden.space.proxy.protocol.payload.packet.entity_create.player.HumanoidIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,7 @@ public class DebugLoggerPlugin implements ProxyPlugin {
                     log.info("Currently connected players: {}", playersByUuid.values().stream().map(Player::name).toList());
                 }
             }
-        }).start();
+        }, "Online Checker").start();
     }
 
     @OnStop
@@ -71,10 +71,10 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return logPacket("onProtocolRequest", context);
     }
 
-    @PacketHandler(value = PacketType.CELESTIAL_REQUEST)
-    public PacketDecision onCelestialRequest(PacketInterceptionContext context) {
-        return logPacket("onCelestialRequest", context);
-    }
+//    @PacketHandler(value = PacketType.CELESTIAL_REQUEST)
+//    public PacketDecision onCelestialRequest(PacketInterceptionContext context) {
+//        return logPacket("onCelestialRequest", context);
+//    }
 
     // This packet is sent by the client when it tries to connect to the server. We can use it to track player connections.
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)

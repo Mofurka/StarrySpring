@@ -1,10 +1,25 @@
 package irden.space.proxy.protocol.codec;
 
+import irden.space.proxy.protocol.payload.registry.PacketParser;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 public final class BinaryWriter {
     private final ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private final int openProtocolVersion;
+
+    public BinaryWriter() {
+        this.openProtocolVersion = PacketParser.LEGACY_PROTOCOL_VERSION;
+    }
+
+    public BinaryWriter(int openProtocolVersion) {
+        this.openProtocolVersion = openProtocolVersion;
+    }
+
+    public int openProtocolVersion() {
+        return openProtocolVersion;
+    }
 
     public void writeByte(int value) {
         output.write(value & 0xFF);

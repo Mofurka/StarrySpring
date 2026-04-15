@@ -8,14 +8,13 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class UniverseTimeUpdateParser implements PacketParser<UniverseTimeUpdate> {
 
     @Override
-    public UniverseTimeUpdate parse(BinaryReader reader, int openProtocolVersion) {
+    public UniverseTimeUpdate parse(BinaryReader reader) {
         double universeTime = VlqCodec.INSTANCE.read(reader);
         return new UniverseTimeUpdate(universeTime);
     }
 
     @Override
-    public byte[] write(UniverseTimeUpdate payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, UniverseTimeUpdate payload) {
         writer.writeDouble64BE(payload.universeTime());
         return finish(writer);
     }

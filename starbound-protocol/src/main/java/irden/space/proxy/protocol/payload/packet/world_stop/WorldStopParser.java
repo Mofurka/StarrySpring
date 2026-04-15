@@ -7,14 +7,13 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class WorldStopParser implements PacketParser<WorldStop> {
     @Override
-    public WorldStop parse(BinaryReader reader, int openProtocolVersion) {
+    public WorldStop parse(BinaryReader reader) {
         String reason = StarStringCodec.INSTANCE.read(reader);
         return new WorldStop(reason);
     }
 
     @Override
-    public byte[] write(WorldStop payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, WorldStop payload) {
         StarStringCodec.INSTANCE.write(writer, payload.reason());
         return finish(writer);
 

@@ -18,7 +18,7 @@ public interface PluginSessionContext {
     boolean upstreamZstdEnabled();
 
     default int openProtocolVersion() {
-        return PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION;
+        return PacketParser.LEGACY_PROTOCOL_VERSION;
     }
 
     default void send(PacketDirection direction, PacketEnvelope envelope) {

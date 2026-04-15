@@ -8,7 +8,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class RemoteDamageRequestParser implements PacketParser<RemoteDamageRequest> {
     @Override
-    public RemoteDamageRequest parse(BinaryReader reader, int openProtocolVersion) {
+    public RemoteDamageRequest parse(BinaryReader reader) {
         int sourceId = reader.readInt32BE();
         int targetId = reader.readInt32BE();
         DamageRequest damageRequest = DamageRequestCodec.INSTANCE.read(reader);
@@ -16,8 +16,7 @@ public class RemoteDamageRequestParser implements PacketParser<RemoteDamageReque
     }
 
     @Override
-    public byte[] write(RemoteDamageRequest payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, RemoteDamageRequest payload) {
         writer.writeInt32BE(payload.sourceId());
         writer.writeInt32BE(payload.targetId());
         DamageRequestCodec.INSTANCE.write(writer, payload.damageRequest());

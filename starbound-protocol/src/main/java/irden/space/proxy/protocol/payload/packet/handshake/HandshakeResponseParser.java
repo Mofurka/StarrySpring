@@ -7,14 +7,13 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class HandshakeResponseParser implements PacketParser<HandshakeResponse> {
     @Override
-    public HandshakeResponse parse(BinaryReader reader, int openProtocolVersion) {
+    public HandshakeResponse parse(BinaryReader reader) {
         byte[] passHash = StarByteArrayCodec.INSTANCE.read(reader);
         return new HandshakeResponse(passHash);
     }
 
     @Override
-    public byte[] write(HandshakeResponse payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, HandshakeResponse payload) {
         StarByteArrayCodec.INSTANCE.write(writer, payload.passHash());
         return finish(writer);
     }

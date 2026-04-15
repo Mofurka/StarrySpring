@@ -7,13 +7,12 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class ProtocolRequestParser implements PacketParser<ProtocolRequest> {
 
     @Override
-    public ProtocolRequest parse(BinaryReader reader, int openProtocolVersion) {
+    public ProtocolRequest parse(BinaryReader reader) {
         return new ProtocolRequest(reader.readUInt32BE());
     }
 
     @Override
-    public byte[] write(ProtocolRequest payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, ProtocolRequest payload) {
         writer.writeInt32BE(payload.clientBuild());
         return finish(writer);
     }

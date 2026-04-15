@@ -36,14 +36,26 @@ public class RuntimePacketInspector {
 
         if (packetDispatcher != null) {
             try {
+                long startTime = System.currentTimeMillis();
                 parsed = packetDispatcher.parse(envelope, openProtocolVersion);
+                long duration = System.currentTimeMillis() - startTime;
+                if (duration > 100) {
+                    log.warn(
+                            "[{}] parsing took {} ms for rawType={} type={}",
+                            direction,
+                            duration,
+                            envelope.rawPacketTypeId(),
+                            envelope.packetType()
+                    );
+                }
+
             } catch (Exception e) {
                 log.info(
                         "[{}] parse failed for rawType={} type={}: {}",
                         direction,
                         envelope.rawPacketTypeId(),
                         envelope.packetType(),
-                        e.getMessage()
+                        e
                 );
             }
         }

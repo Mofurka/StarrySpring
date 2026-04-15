@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 public class CelestialRequestParser implements PacketParser<CelestialRequest> {
     @Override
-    public CelestialRequest parse(BinaryReader reader, int openProtocolVersion) {
+    public CelestialRequest parse(BinaryReader reader) {
         int size = VlqCodec.INSTANCE.read(reader); // list size
         var request = new ArrayList<StarEither<StarVec2I, StarVec3I>>();
         for (int i = 0; i < size; i++) {
@@ -30,8 +30,7 @@ public class CelestialRequestParser implements PacketParser<CelestialRequest> {
     }
 
     @Override
-    public byte[] write(CelestialRequest payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, CelestialRequest payload) {
         VlqCodec.INSTANCE.write(writer, payload.celestialRequests().size());
         for (StarEither<StarVec2I, StarVec3I> request : payload.celestialRequests()) {
             if (request.isLeft()) {

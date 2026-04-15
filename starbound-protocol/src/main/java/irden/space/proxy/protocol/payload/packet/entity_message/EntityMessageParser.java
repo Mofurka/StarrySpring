@@ -9,7 +9,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class EntityMessageParser implements PacketParser<EntityMessage> {
     @Override
-    public EntityMessage parse(BinaryReader reader, int openProtocolVersion) {
+    public EntityMessage parse(BinaryReader reader) {
         return new EntityMessage(
                 EntityMessageTargetCodec.INSTANCE.read(reader),
                 StarStringCodec.INSTANCE.read(reader),
@@ -20,8 +20,7 @@ public class EntityMessageParser implements PacketParser<EntityMessage> {
     }
 
     @Override
-    public byte[] write(EntityMessage payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, EntityMessage payload) {
         EntityMessageTargetCodec.INSTANCE.write(writer, payload.entityId());
         StarStringCodec.INSTANCE.write(writer, payload.message());
         VariantCodec.INSTANCE.writeList(writer, payload.args());

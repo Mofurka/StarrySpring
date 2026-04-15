@@ -18,7 +18,7 @@ public final class PacketEnvelopes {
     }
 
     public static PacketEnvelope fromPayload(PacketType packetType, Object payload, PacketDirection direction) {
-        return fromPayload(packetType, payload, PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION, direction);
+        return fromPayload(packetType, payload, PacketParser.LEGACY_PROTOCOL_VERSION, direction);
     }
 
     public static PacketEnvelope fromPayload(
@@ -36,7 +36,7 @@ public final class PacketEnvelopes {
             boolean compressed,
             PacketDirection direction
     ) {
-        return fromPayload(packetType, payload, compressed, PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION, direction);
+        return fromPayload(packetType, payload, compressed, PacketParser.LEGACY_PROTOCOL_VERSION, direction);
     }
 
     public static PacketEnvelope fromPayload(
@@ -50,7 +50,8 @@ public final class PacketEnvelopes {
         Objects.requireNonNull(payload, "payload");
 
         PacketParser<Object> parser = resolveParser(packetType);
-        byte[] payloadBytes = parser.write(payload, openProtocolVersion);
+        BinaryWriter binaryWriter = new BinaryWriter(openProtocolVersion);
+        byte[] payloadBytes = parser.write(binaryWriter, payload);
         return fromRawPayload(packetType.id(), packetType, payloadBytes, compressed, direction);
     }
 
@@ -93,7 +94,7 @@ public final class PacketEnvelopes {
     }
 
     public static PacketEnvelope rewrite(PacketEnvelope originalEnvelope, Object payload) {
-        return rewrite(originalEnvelope, payload, PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION);
+        return rewrite(originalEnvelope, payload, PacketParser.LEGACY_PROTOCOL_VERSION);
     }
 
     public static PacketEnvelope rewrite(PacketEnvelope originalEnvelope, Object payload, int openProtocolVersion) {
@@ -130,7 +131,8 @@ public final class PacketEnvelopes {
         Objects.requireNonNull(payload, "payload");
 
         PacketParser<Object> parser = resolveParser(packetType);
-        byte[] payloadBytes = parser.write(payload, openProtocolVersion);
+        BinaryWriter binaryWriter = new BinaryWriter(openProtocolVersion);// Ensure the open protocol version is valid
+        byte[] payloadBytes = parser.write(binaryWriter, payload);
         return fromRawPayload(rawPacketTypeId, packetType, payloadBytes, compressed, direction);
     }
 

@@ -15,7 +15,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
 
 
     @Override
-    public WorldStart parse(BinaryReader reader, int openProtocolVersion) {
+    public WorldStart parse(BinaryReader reader) {
         VariantValue templateData = VariantCodec.INSTANCE.read(reader);
         byte[] skyData = StarByteArrayCodec.INSTANCE.read(reader);
         byte[] weatherData = StarByteArrayCodec.INSTANCE.read(reader);
@@ -66,8 +66,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
     }
 
     @Override
-    public byte[] write(WorldStart payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, WorldStart payload) {
         VariantCodec.INSTANCE.write(writer, payload.templateData());
         StarByteArrayCodec.INSTANCE.write(writer, payload.skyData());
         StarByteArrayCodec.INSTANCE.write(writer, payload.weatherData());

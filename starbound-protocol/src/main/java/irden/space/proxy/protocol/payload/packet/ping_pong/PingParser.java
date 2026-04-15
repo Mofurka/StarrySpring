@@ -7,19 +7,18 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class PingParser implements PacketParser<Ping> {
     @Override
-    public Ping parse(BinaryReader reader, int openProtocolVersion) {
+    public Ping parse(BinaryReader reader) {
         reader.readBoolean(); //trash
-        if (openProtocolVersion >= 0) {
+        if (reader.openProtocolVersion() >= 0) {
             return new Ping(VlqCodec.INSTANCE.read(reader));
         }
         return new Ping(0);
     }
 
     @Override
-    public byte[] write(Ping payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, Ping payload) {
         writer.writeBoolean(true); //trash
-        if (openProtocolVersion >= 0) {
+        if (writer.openProtocolVersion() >= 0) {
             VlqCodec.INSTANCE.write(writer, payload.time());
         }
         return finish(writer);

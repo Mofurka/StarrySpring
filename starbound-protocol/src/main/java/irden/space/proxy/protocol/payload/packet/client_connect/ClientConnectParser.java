@@ -9,7 +9,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class ClientConnectParser implements PacketParser<ClientConnect> {
 
     @Override
-    public ClientConnect parse(BinaryReader reader, int openProtocolVersion) {
+    public ClientConnect parse(BinaryReader reader) {
         byte[] assetsDigest = StarByteArrayCodec.INSTANCE.read(reader);
         boolean allowAssetsMismatch = reader.readBoolean();
         StarUuid playerUuid = StarUuidCodec.INSTANCE.read(reader);
@@ -20,7 +20,7 @@ public class ClientConnectParser implements PacketParser<ClientConnect> {
         boolean introComplete = reader.readBoolean();
         String account = StarStringCodec.INSTANCE.read(reader);
         VariantValue info = null;
-        if (openProtocolVersion >= 3) {
+        if (reader.openProtocolVersion() >= 3) {
             info = VariantCodec.INSTANCE.read(reader);
         }
         return new ClientConnect(
@@ -38,8 +38,7 @@ public class ClientConnectParser implements PacketParser<ClientConnect> {
     }
 
     @Override
-    public byte[] write(ClientConnect payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, ClientConnect payload) {
         StarByteArrayCodec.INSTANCE.write(writer, payload.assetsDigest());
         writer.writeBoolean(payload.allowAssetsMismatch());
         StarUuidCodec.INSTANCE.write(writer, payload.playerUuid());
@@ -49,7 +48,7 @@ public class ClientConnectParser implements PacketParser<ClientConnect> {
         ShipUpgradesCodec.INSTANCE.write(writer, payload.shipUpgrades());
         writer.writeBoolean(payload.introComplete());
         StarStringCodec.INSTANCE.write(writer, payload.account());
-        if (openProtocolVersion >= 3) {
+        if (writer.openProtocolVersion() >= 3) {
             VariantCodec.INSTANCE.write(writer, payload.info());
         }
         return finish(writer);

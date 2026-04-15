@@ -10,7 +10,7 @@ public enum PlayerFirstNetStateCodec implements BinaryCodec<PlayerFirstNetState>
     @Override
     @SuppressWarnings("unused")
     public PlayerFirstNetState read(BinaryReader reader) {
-            BinaryReader storeDataReader = new BinaryReader(StarByteArrayCodec.INSTANCE.read(reader));
+            BinaryReader storeDataReader = new BinaryReader(StarByteArrayCodec.INSTANCE.read(reader), reader.openProtocolVersion());
             boolean fullUpdate = storeDataReader.readBoolean();
             int state = VlqCodec.INSTANCE.read(storeDataReader);
             boolean shifting = storeDataReader.readBoolean();

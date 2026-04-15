@@ -8,17 +8,16 @@ public class ModifyTileListCodec implements PacketParser<ModifyTileList> {
 
 
     @Override
-    public ModifyTileList parse(BinaryReader reader, int openProtocolVersion) {
+    public ModifyTileList parse(BinaryReader reader) {
         TileModificationList read = TileModificationListCodec.INSTANCE.read(reader);
         boolean allowEntityOverlap = reader.readBoolean();
         return new ModifyTileList(read, allowEntityOverlap);
     }
 
     @Override
-    public byte[] write(ModifyTileList payload, int openProtocolVersion) {
-        BinaryWriter reader = new BinaryWriter();
-        TileModificationListCodec.INSTANCE.write(reader, payload.modificationList());
-        reader.writeBoolean(payload.allowEntityOverlap());
-        return finish(reader);
+    public byte[] write(BinaryWriter writer, ModifyTileList payload) {
+        TileModificationListCodec.INSTANCE.write(writer, payload.modificationList());
+        writer.writeBoolean(payload.allowEntityOverlap());
+        return finish(writer);
     }
 }

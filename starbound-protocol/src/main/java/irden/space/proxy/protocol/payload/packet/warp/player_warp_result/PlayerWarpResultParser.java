@@ -8,7 +8,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class PlayerWarpResultParser implements PacketParser<PlayerWarpResult> {
 
     @Override
-    public PlayerWarpResult parse(BinaryReader reader, int openProtocolVersion) {
+    public PlayerWarpResult parse(BinaryReader reader) {
         return new PlayerWarpResult(
                 reader.readBoolean(),
                 WarpActionCodec.INSTANCE.read(reader),
@@ -17,8 +17,7 @@ public class PlayerWarpResultParser implements PacketParser<PlayerWarpResult> {
     }
 
     @Override
-    public byte[] write(PlayerWarpResult payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, PlayerWarpResult payload) {
         writer.writeBoolean(payload.warpSuccess());
         WarpActionCodec.INSTANCE.write(writer, payload.warpAction());
         writer.writeBoolean(payload.warpActionInvalid());

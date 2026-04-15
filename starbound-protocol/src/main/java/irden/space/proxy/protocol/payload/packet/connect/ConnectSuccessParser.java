@@ -10,7 +10,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
 
     @Override
-    public ConnectSuccess parse(BinaryReader reader, int openProtocolVersion) {
+    public ConnectSuccess parse(BinaryReader reader) {
         int clientId =  VlqCodec.INSTANCE.read(reader);
         StarUuid serverUuid =  StarUuidCodec.INSTANCE.read(reader); // useless piece of shit
         int planetOrbitalLevels =  reader.readInt32BE();
@@ -34,8 +34,7 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
     }
 
     @Override
-    public byte[] write(ConnectSuccess payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, ConnectSuccess payload) {
         VlqCodec.INSTANCE.write(writer, payload.clientId());
         StarUuidCodec.INSTANCE.write(writer, payload.playerUuid());
         writer.writeInt32BE(payload.planetOrbitalLevels());

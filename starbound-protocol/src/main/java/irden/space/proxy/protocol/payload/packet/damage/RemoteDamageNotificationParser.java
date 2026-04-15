@@ -8,15 +8,14 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class RemoteDamageNotificationParser implements PacketParser<RemoteDamageNotification> {
     @Override
-    public RemoteDamageNotification parse(BinaryReader reader, int openProtocolVersion) {
+    public RemoteDamageNotification parse(BinaryReader reader) {
         int entityId = reader.readInt32BE();
         DamageNotification damageNotification = DamageNotificationCodec.INSTANCE.read(reader);
         return new RemoteDamageNotification(entityId, damageNotification);
     }
 
     @Override
-    public byte[] write(RemoteDamageNotification payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, RemoteDamageNotification payload) {
         writer.writeInt32BE(payload.entityId());
         DamageNotificationCodec.INSTANCE.write(writer, payload.damageNotification());
         return finish(writer);

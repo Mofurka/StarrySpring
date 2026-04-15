@@ -27,7 +27,7 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
                 clientIp,
                 clientZstdEnabled,
                 upstreamZstdEnabled,
-                PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION,
+                PacketParser.LEGACY_PROTOCOL_VERSION,
                 null
         );
     }
@@ -54,7 +54,7 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
                 clientIp,
                 clientZstdEnabled,
                 upstreamZstdEnabled,
-                PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION,
+                PacketParser.LEGACY_PROTOCOL_VERSION,
                 packetSender
         );
     }

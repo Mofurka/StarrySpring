@@ -7,7 +7,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class EntityCreateParser implements PacketParser<EntityCreate> {
     @Override
-    public EntityCreate parse(BinaryReader reader, int openProtocolVersion) {
+    public EntityCreate parse(BinaryReader reader) {
         EntityType entityType = EntityType.fromId(reader.readUnsignedByte());
         return switch (entityType) {
             case PLANT -> null; // TODO: Imlepement all of this
@@ -24,8 +24,7 @@ public class EntityCreateParser implements PacketParser<EntityCreate> {
     }
 
     @Override
-    public byte[] write(EntityCreate payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, EntityCreate payload) {
         switch (payload) {
             case PlayerEntity playerEntity -> {
                 writer.writeByte((byte) EntityType.PLAYER.id());

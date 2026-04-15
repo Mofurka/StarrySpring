@@ -8,15 +8,14 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class ProtocolResponseParser implements PacketParser<ProtocolResponse> {
     @Override
-    public ProtocolResponse parse(BinaryReader reader, int openProtocolVersion) {
+    public ProtocolResponse parse(BinaryReader reader) {
         int serverResponse = reader.readUnsignedByte();
         VariantValue info = VariantCodec.INSTANCE.read(reader);
         return new ProtocolResponse(serverResponse, info);
     }
 
     @Override
-    public byte[] write(ProtocolResponse payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, ProtocolResponse payload) {
         writer.writeByte(payload.serverResponse());
         VariantCodec.INSTANCE.write(writer, payload.info());
         return finish(writer);

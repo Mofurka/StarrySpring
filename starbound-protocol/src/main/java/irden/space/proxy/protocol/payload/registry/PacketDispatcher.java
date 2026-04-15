@@ -12,7 +12,7 @@ public class PacketDispatcher {
     }
 
     public Object parse(PacketEnvelope envelope) {
-        return parse(envelope, PacketParser.UNKNOWN_OPEN_PROTOCOL_VERSION);
+        return parse(envelope, PacketParser.LEGACY_PROTOCOL_VERSION);
     }
 
     public Object parse(PacketEnvelope envelope, int openProtocolVersion) {
@@ -26,6 +26,6 @@ public class PacketDispatcher {
         }
 
         BinaryReader reader = new BinaryReader(envelope.payload(), openProtocolVersion);
-        return parser.parse(reader, openProtocolVersion);
+        return parser.parse(reader);
     }
 }

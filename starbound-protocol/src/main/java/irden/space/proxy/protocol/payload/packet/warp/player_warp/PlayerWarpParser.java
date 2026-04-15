@@ -9,17 +9,16 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class PlayerWarpParser implements PacketParser<PlayerWarp> {
 
     @Override
-    public PlayerWarp parse(BinaryReader reader, int openProtocolVersion) {
+    public PlayerWarp parse(BinaryReader reader) {
         WarpAction action = WarpActionCodec.INSTANCE.read(reader);
         boolean deploy = reader.readBoolean();
         return new PlayerWarp(action, deploy);
     }
 
     @Override
-    public byte[] write(PlayerWarp payload, int openProtocolVersion) {
-        BinaryWriter binaryWriter = new BinaryWriter();
-        WarpActionCodec.INSTANCE.write(binaryWriter, payload.warpAction());
-        binaryWriter.writeBoolean(payload.deploy());
-        return finish(binaryWriter);
+    public byte[] write(BinaryWriter writer, PlayerWarp payload) {
+        WarpActionCodec.INSTANCE.write(writer, payload.warpAction());
+        writer.writeBoolean(payload.deploy());
+        return finish(writer);
     }
 }

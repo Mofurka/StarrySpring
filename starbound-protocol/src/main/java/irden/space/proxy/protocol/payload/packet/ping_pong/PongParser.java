@@ -7,19 +7,18 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class PongParser implements PacketParser<Pong> {
     @Override
-    public Pong parse(BinaryReader reader, int openProtocolVersion) {
+    public Pong parse(BinaryReader reader) {
         reader.readBoolean(); //trash
-        if (openProtocolVersion >= 0) {
+        if (reader.openProtocolVersion() >= 0) {
             return new Pong(VlqCodec.INSTANCE.read(reader));
         }
         return new Pong(0);
     }
 
     @Override
-    public byte[] write(Pong payload, int openProtocolVersion) {
-        BinaryWriter writer = new BinaryWriter();
+    public byte[] write(BinaryWriter writer, Pong payload) {
         writer.writeBoolean(true); //trash
-        if (openProtocolVersion >= 0) {
+        if (writer.openProtocolVersion() >= 0) {
             VlqCodec.INSTANCE.write(writer, payload.time());
         }
         return finish(writer);

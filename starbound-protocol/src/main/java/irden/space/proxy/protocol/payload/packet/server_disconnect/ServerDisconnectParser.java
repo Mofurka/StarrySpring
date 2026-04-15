@@ -7,15 +7,14 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class ServerDisconnectParser implements PacketParser<ServerDisconnect> {
     @Override
-    public ServerDisconnect parse(BinaryReader reader, int openProtocolVersion) {
+    public ServerDisconnect parse(BinaryReader reader) {
         String reason = StarStringCodec.INSTANCE.read(reader);
         return new ServerDisconnect(reason);
     }
 
     @Override
-    public byte[] write(ServerDisconnect payload, int openProtocolVersion) {
-        BinaryWriter write = new BinaryWriter();
-        StarStringCodec.INSTANCE.write(write, payload.reason());
-        return finish(write);
+    public byte[] write(BinaryWriter writer, ServerDisconnect payload) {
+        StarStringCodec.INSTANCE.write(writer, payload.reason());
+        return finish(writer);
     }
 }

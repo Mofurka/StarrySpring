@@ -1,5 +1,7 @@
 package irden.space.proxy.protocol.codec;
 
+import irden.space.proxy.protocol.payload.registry.PacketParser;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -7,9 +9,20 @@ import java.nio.charset.StandardCharsets;
 
 public final class BinaryReader {
     private final ByteArrayInputStream input;
+    private final int openProtocolVersion;
+
+    public BinaryReader(byte[] data, int openProtocolVersion) {
+        this.input = new ByteArrayInputStream(data);
+        this.openProtocolVersion = openProtocolVersion;
+    }
 
     public BinaryReader (byte[] data) {
         this.input = new ByteArrayInputStream(data);
+        this.openProtocolVersion = PacketParser.LEGACY_PROTOCOL_VERSION;
+    }
+
+    public int openProtocolVersion() {
+        return openProtocolVersion;
     }
 
     public int remaining() {
