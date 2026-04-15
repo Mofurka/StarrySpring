@@ -1,4 +1,4 @@
-package irden.space.proxy.protocol.payload.packet.entity_create;
+package irden.space.proxy.protocol.payload.packet.entity_create.player;
 
 import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;

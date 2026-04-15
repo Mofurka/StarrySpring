@@ -1,10 +1,6 @@
 package irden.space.proxy.protocol.payload.packet.entity_message_response;
 
-import irden.space.proxy.protocol.codec.BinaryCodec;
-import irden.space.proxy.protocol.codec.BinaryReader;
-import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.StarStringCodec;
-import irden.space.proxy.protocol.codec.VariantCodec;
+import irden.space.proxy.protocol.codec.*;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 
 public enum EntityMessageResponseValueCodec implements BinaryCodec<EntityMessageRsponseValue> {

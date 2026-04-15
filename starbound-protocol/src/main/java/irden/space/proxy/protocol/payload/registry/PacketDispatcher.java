@@ -25,7 +25,7 @@ public class PacketDispatcher {
             return null;
         }
 
-        BinaryReader reader = new BinaryReader(envelope.payload());
+        BinaryReader reader = new BinaryReader(envelope.payload(), openProtocolVersion);
         return parser.parse(reader, openProtocolVersion);
     }
 }

@@ -2,6 +2,7 @@ package irden.space.proxy.protocol.payload.packet.entity_create;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
+import irden.space.proxy.protocol.payload.packet.entity_create.player.PlayerEntityCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class EntityCreateParser implements PacketParser<EntityCreate> {

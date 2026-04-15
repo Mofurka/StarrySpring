@@ -1,10 +1,6 @@
 package irden.space.proxy.protocol.payload.common.string_set;
 
-import irden.space.proxy.protocol.codec.BinaryCodec;
-import irden.space.proxy.protocol.codec.BinaryReader;
-import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.StarStringCodec;
-import irden.space.proxy.protocol.codec.VlqCodec;
+import irden.space.proxy.protocol.codec.*;
 
 public enum StringSetCodec implements BinaryCodec<StringSet> {
     INSTANCE;
