@@ -1,22 +1,29 @@
 package irden.space.proxy.protocol.payload.packet.entity_create.player;
 
 import irden.space.proxy.protocol.codec.*;
+import irden.space.proxy.protocol.codec.variant.MapVariantValue;
+import irden.space.proxy.protocol.codec.variant.StringVariantValue;
+import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptorCodec;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariant;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariantCodec;
+import irden.space.proxy.protocol.payload.common.star_map.StarNetMapCodec;
+import irden.space.proxy.protocol.payload.common.vectors.StarVec2FCodec;
 import irden.space.proxy.protocol.payload.packet.entity_create.player.custom_bar_link.CustomBarLink;
 import irden.space.proxy.protocol.payload.packet.entity_create.player.custom_bar_link.CustomBarkLinkCodec;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
     INSTANCE;
     private final StarMVariantCodec starMVariantCodec = new StarMVariantCodec(
-                    VlqCodec.INSTANCE,
-                    VlqCodec.INSTANCE
+            VlqCodec.INSTANCE,
+            VlqCodec.INSTANCE
+    );
+    private final StarNetMapCodec<String, String> starNetMapCodec = new StarNetMapCodec<>(
+            StarStringCodec.INSTANCE,
+            StarStringCodec.INSTANCE
     );
 
 
@@ -66,9 +73,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptor wireTool = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor paintTool = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor inspectionTool = StarItemDescriptorCodec.INSTANCE.read(reader);
-        StarItemDescriptor a = StarItemDescriptorCodec.INSTANCE.read(reader);
-        float v = SignedVlqCodec.INSTANCE.read(reader) * 1.f / 60.f; //TODO
-        StarItemDescriptor b = StarItemDescriptorCodec.INSTANCE.read(reader);
+        readPrimaryHandItem(reader);
         return new PlayerInventory(equipment, bags, cursorItem, trashSlot, stringMap, customBarState, customBar, activeSlot, beamAxe, wireTool, paintTool, inspectionTool);
     }
 
@@ -112,4 +117,84 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptorCodec.INSTANCE.write(writer, value.paintTool());
         StarItemDescriptorCodec.INSTANCE.write(writer, value.inspectionTool());
     }
+
+    @SuppressWarnings("unused")
+    public void readPrimaryHandItem(BinaryReader reader) {
+        StarItemDescriptor a = StarItemDescriptorCodec.INSTANCE.read(reader);
+        String directives = StarStringCodec.INSTANCE.read(reader);
+        float zoom = reader.readFloat32BE();
+        boolean flipped = reader.readBoolean();
+        float flippedRelativeCenterLine = reader.readFloat32BE();
+        float animationRate = reader.readFloat32BE();
+        Map<String, String> globalTags = starNetMapCodec.read(reader);
+        MapVariantValue parameters = (MapVariantValue) a.parameters();
+        var animationParts = (MapVariantValue) parameters.value().get("animationParts");
+        if (animationParts != null) {
+            Map<String, Map<String, String>> animatedPartsMap = new LinkedHashMap<>();
+            for (String partName : animationParts.value().keySet()) {
+                Map<String, String> partTags = starNetMapCodec.read(reader);
+                animatedPartsMap.put(partName, partTags);
+            }
+            int l = 1;
+        }
+        var animationCustom = (MapVariantValue) parameters.value().get("animationCustom");
+        if (animationCustom != null) {
+            MapVariantValue animatedParts = (MapVariantValue) animationCustom.value().get("animatedParts");
+            if (animatedParts != null) {
+                MapVariantValue stateTypes = (MapVariantValue) animatedParts.value().get("stateTypes");
+                if (stateTypes != null) {
+                    Set<String> strings = stateTypes.value().keySet();
+                    for (int i = 0; i < strings.size() + 3; i++) {
+                        // 1. reverse (NetElementBool) - uint8
+                        boolean reverseValue = false;
+                        if (reader.openProtocolVersion() >= 10) {
+                            reverseValue = reader.readBoolean();
+                        }
+
+
+                        // 2. stateIndex    (NetElementSize) - VLQ с NPos encoding
+                        long stateIndexVlq = VlqCodec.INSTANCE.read(reader);
+
+                        // 3. startedEvent (NetElementEvent/NetElementUInt) - VLQ uint64
+                        long startedEventCount = VlqCodec.INSTANCE.read(reader);
+                    }
+                }
+            }
+            MapVariantValue transformationGroups = (MapVariantValue) animationCustom.value().get("transformationGroups");
+            if (transformationGroups != null) {
+                for (String groupName : transformationGroups.value().keySet()) {
+                    var xTranslation = reader.readFloat32BE();
+                    var yTranslation = reader.readFloat32BE();
+                    var xScale = reader.readFloat32BE();
+                    var yScale = reader.readFloat32BE();
+                    var xShear = reader.readFloat32BE();
+                    var yShear = reader.readFloat32BE();
+                }
+
+            }
+            MapVariantValue rotationGroups = (MapVariantValue) animationCustom.value().get("rotationGroups");
+            if (rotationGroups != null) {
+                for (String groupName : rotationGroups.value().keySet()) {
+                    var targetAngle = reader.readFloat32BE();
+                    var netImmediateEvent = VlqCodec.INSTANCE.read(reader);
+                }
+            }
+            MapVariantValue particleEmitters = (MapVariantValue) animationCustom.value().get("particleEmitters");
+            if (particleEmitters != null) {
+                for (String emitterName : particleEmitters.value().keySet()) {
+                    var emissionRate = reader.readFloat32BE();
+                    var burstCount = reader.readUnsignedByte();
+                    var randomSelectCount = reader.readUnsignedByte();
+                    var offsetRegion = StarVec2FCodec.INSTANCE.read(reader);
+                    var active = reader.readBoolean();
+                    var burstEvent = VlqCodec.INSTANCE.read(reader);
+                }
+            }
+        }
+        // TODO: Incompleted cuz of the base game package needs. Do it later
+    }
+
+
 }
+
+
