@@ -66,6 +66,9 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptor wireTool = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor paintTool = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor inspectionTool = StarItemDescriptorCodec.INSTANCE.read(reader);
+        StarItemDescriptor a = StarItemDescriptorCodec.INSTANCE.read(reader);
+        float v = SignedVlqCodec.INSTANCE.read(reader) * 1.f / 60.f; //TODO
+        StarItemDescriptor b = StarItemDescriptorCodec.INSTANCE.read(reader);
         return new PlayerInventory(equipment, bags, cursorItem, trashSlot, stringMap, customBarState, customBar, activeSlot, beamAxe, wireTool, paintTool, inspectionTool);
     }
 
