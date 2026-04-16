@@ -5,11 +5,11 @@ import irden.space.proxy.protocol.payload.common.damage.consts.TeamType;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2F;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2FCodec;
 
-public enum PlayerFirstNetStateCodec implements BinaryCodec<PlayerFirstNetState> {
+public enum PlayerNetStateCodec implements BinaryCodec<PlayerNetState> {
     INSTANCE;
     @Override
     @SuppressWarnings("unused")
-    public PlayerFirstNetState read(BinaryReader reader) {
+    public PlayerNetState read(BinaryReader reader) {
             BinaryReader storeDataReader = new BinaryReader(StarByteArrayCodec.INSTANCE.read(reader), reader.openProtocolVersion());
             boolean fullUpdate = storeDataReader.readBoolean();
             int state = VlqUCodec.INSTANCE.read(storeDataReader);
@@ -27,7 +27,7 @@ public enum PlayerFirstNetStateCodec implements BinaryCodec<PlayerFirstNetState>
     }
 
     @Override
-    public void write(BinaryWriter writer, PlayerFirstNetState value) {
+    public void write(BinaryWriter writer, PlayerNetState value) {
 
     }
 }

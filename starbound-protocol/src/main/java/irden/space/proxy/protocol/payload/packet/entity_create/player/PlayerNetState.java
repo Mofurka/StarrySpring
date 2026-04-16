@@ -3,7 +3,7 @@ package irden.space.proxy.protocol.payload.packet.entity_create.player;
 import irden.space.proxy.protocol.payload.common.damage.consts.TeamType;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2F;
 
-public record PlayerFirstNetState(
+public record PlayerNetState(
         int state, //VLQ
         boolean shifting,
         StarVec2F mousePos, //accuracy 0.003125

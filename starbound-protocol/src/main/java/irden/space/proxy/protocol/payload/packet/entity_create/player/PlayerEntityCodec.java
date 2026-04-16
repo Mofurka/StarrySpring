@@ -17,7 +17,7 @@ public enum PlayerEntityCodec implements BinaryCodec<PlayerEntity> {
         int modeType = storeDataReader.readInt32BE();
         HumanoidIdentity humanoidIdentity = HumanoidIdentityCodec.INSTANCE.read(storeDataReader);
 
-        PlayerFirstNetState firstNetState = PlayerFirstNetStateCodec.INSTANCE.read(reader); // We need to parse it soon, but its pretty hard due to dynamical inventory. We need to know the scheme first
+        PlayerNetState firstNetState = PlayerNetStateCodec.INSTANCE.read(reader); // We need to parse it soon, but its pretty hard due to dynamical inventory. We need to know the scheme first
         int entityId = VlqCodec.INSTANCE.read(reader);
         return new PlayerEntity(uuid, description, modeType, humanoidIdentity, firstNetState, entityId);
     }
@@ -32,7 +32,7 @@ public enum PlayerEntityCodec implements BinaryCodec<PlayerEntity> {
 
         byte[] storeDataBytes = storeDataWriter.toByteArray();
         StarByteArrayCodec.INSTANCE.write(writer, storeDataBytes);
-        PlayerFirstNetStateCodec.INSTANCE.write(writer, value.firstNetState());
+        PlayerNetStateCodec.INSTANCE.write(writer, value.firstNetState());
         VlqCodec.INSTANCE.write(writer, value.entityId());
     }
 }
