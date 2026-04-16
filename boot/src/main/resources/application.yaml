@@ -8,6 +8,16 @@ proxy:
   upstream-host: irden.space
   upstream-port: 21024
 
+assets:
+  store:
+    enabled: true
+    archives:
+      - D:/Steam/steamapps/common/Starbound/assets/packed.pak
+    excluded-extensions:
+      - .ogg
+      - .png
+      - .wav
+
 logging:
   level:
     root: INFO
