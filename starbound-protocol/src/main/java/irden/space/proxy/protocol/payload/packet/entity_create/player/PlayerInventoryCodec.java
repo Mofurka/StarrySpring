@@ -1,31 +1,42 @@
 package irden.space.proxy.protocol.payload.packet.entity_create.player;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import irden.space.proxy.protocol.assets.item.ActiveItem;
+import irden.space.proxy.protocol.assets.pak.GameAssetStores;
 import irden.space.proxy.protocol.codec.*;
 import irden.space.proxy.protocol.codec.variant.MapVariantValue;
-import irden.space.proxy.protocol.codec.variant.StringVariantValue;
-import irden.space.proxy.protocol.codec.variant.VariantValue;
+import irden.space.proxy.protocol.payload.common.rectangles.StarRect4FCodec;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptorCodec;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariant;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariantCodec;
 import irden.space.proxy.protocol.payload.common.star_map.StarNetMapCodec;
+import irden.space.proxy.protocol.payload.common.star_maybe.StarMaybeCodec;
+import irden.space.proxy.protocol.payload.common.vectors.StarVec2F;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2FCodec;
 import irden.space.proxy.protocol.payload.packet.entity_create.player.custom_bar_link.CustomBarLink;
 import irden.space.proxy.protocol.payload.packet.entity_create.player.custom_bar_link.CustomBarkLinkCodec;
+import irden.space.proxy.protocol.util.JsonUtils;
+import irden.space.proxy.protocol.util.MapVariantUtils;
 
+import java.io.IOException;
 import java.util.*;
 
 public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
     INSTANCE;
+    private final ObjectMapper objectMapper = new ObjectMapper().configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     private final StarMVariantCodec starMVariantCodec = new StarMVariantCodec(
-            VlqCodec.INSTANCE,
-            VlqCodec.INSTANCE
+            VlqUCodec.INSTANCE,
+            VlqUCodec.INSTANCE
     );
     private final StarNetMapCodec<String, String> starNetMapCodec = new StarNetMapCodec<>(
             StarStringCodec.INSTANCE,
             StarStringCodec.INSTANCE
     );
-
+    private final StarMaybeCodec<String> stringMaybe = new StarMaybeCodec<>(StarStringCodec.INSTANCE);
+    private final StarMaybeCodec<Integer> intMaybe = new StarMaybeCodec<>(VlqUCodec.INSTANCE);
 
     @Override
     public PlayerInventory read(BinaryReader reader) {
@@ -50,7 +61,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptor cursorItem = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor trashSlot = StarItemDescriptorCodec.INSTANCE.read(reader);
 
-        int currenciesMapSize = VlqCodec.INSTANCE.read(reader); // currencies
+        int currenciesMapSize = VlqUCodec.INSTANCE.read(reader); // currencies
         Map<String, Long> stringMap = LinkedHashMap.newLinkedHashMap(currenciesMapSize);
         for (int i = 0; i < currenciesMapSize; i++) {
             String key = StarStringCodec.INSTANCE.read(reader);
@@ -58,7 +69,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
             stringMap.put(key, ammount);
         }
 
-        int customBarState = VlqCodec.INSTANCE.read(reader); // state
+        int customBarState = VlqUCodec.INSTANCE.read(reader); // state
         final int customBarIndexes = 6;
         final int customBarSize = 2;
         Map<Integer, Map<Integer, CustomBarLink>> customBar = LinkedHashMap.newLinkedHashMap(customBarIndexes);
@@ -97,12 +108,12 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptorCodec.INSTANCE.write(writer, value.cursorItem());
         StarItemDescriptorCodec.INSTANCE.write(writer, value.trashSlot());
         int currenciesMapSize = value.currencies().size();
-        VlqCodec.INSTANCE.write(writer, currenciesMapSize);
+        VlqUCodec.INSTANCE.write(writer, currenciesMapSize);
         for (Map.Entry<String, Long> entry : value.currencies().entrySet()) {
             StarStringCodec.INSTANCE.write(writer, entry.getKey());
             writer.writeInt64BE(entry.getValue());
         }
-        VlqCodec.INSTANCE.write(writer, value.customBarState());
+        VlqUCodec.INSTANCE.write(writer, value.customBarState());
         final int customBarIndexes = 6;
         final int customBarSize = 2;
         for (int i = 0; i < customBarSize; i++) {
@@ -118,51 +129,83 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptorCodec.INSTANCE.write(writer, value.inspectionTool());
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "unchecked"})
     public void readPrimaryHandItem(BinaryReader reader) {
-        StarItemDescriptor a = StarItemDescriptorCodec.INSTANCE.read(reader);
+        StarItemDescriptor packetItem = StarItemDescriptorCodec.INSTANCE.read(reader);
+        if (packetItem.name().isBlank()) return;
+        ActiveItem originalItem = GameAssetStores.defaultStore().findItem(packetItem.name()).orElseThrow(() -> new IllegalStateException("ActiveItem not found for name: " + packetItem.name()));
+        JsonNode finalItem = MapVariantUtils.merge(originalItem.getData(), (MapVariantValue) packetItem.parameters());
+        JsonNode animationPath = finalItem.get("animation");
+        JsonNode animationCustom = null;
+        if (animationPath != null && animationPath.isTextual()) {
+            String textAnimationPath = animationPath.asText();
+            String fullAnimationPath;
+            if (textAnimationPath.startsWith("/")) {
+                fullAnimationPath = textAnimationPath;
+            } else {
+                fullAnimationPath = originalItem.getItemDirectory().concat("/").concat(textAnimationPath).replace("\\", "/");
+            }
+            byte[] bytes = GameAssetStores.defaultStore().findAsset(fullAnimationPath).orElseThrow(() -> new IllegalStateException("Active Item animation not found for item: " + originalItem.getItemName() + ", animation path: " + fullAnimationPath));
+            JsonNode animationNode;
+            try {
+                animationNode = objectMapper.readTree(bytes);
+            } catch (IOException e) {
+                throw new IllegalStateException("Incorrect animation: " + fullAnimationPath);
+            }
+            JsonNode animationCustom1 = finalItem.get("animationCustom");
+            if (animationCustom1 != null && animationCustom1.isObject()) {
+                animationCustom = JsonUtils.merge(animationNode, animationCustom1);
+            } else {
+                animationCustom = animationNode;
+            }
+        }
+        var originalItemAnimationCustom = originalItem.get("animationCustom");
+        if (originalItemAnimationCustom != null && originalItemAnimationCustom.isObject()) {
+            animationCustom = JsonUtils.merge(originalItemAnimationCustom, animationCustom);
+        }
+
+
         String directives = StarStringCodec.INSTANCE.read(reader);
         float zoom = reader.readFloat32BE();
         boolean flipped = reader.readBoolean();
         float flippedRelativeCenterLine = reader.readFloat32BE();
         float animationRate = reader.readFloat32BE();
         Map<String, String> globalTags = starNetMapCodec.read(reader);
-        MapVariantValue parameters = (MapVariantValue) a.parameters();
-        var animationParts = (MapVariantValue) parameters.value().get("animationParts");
+        var animationParts = animationCustom.get("animatedParts").get("parts");
         if (animationParts != null) {
             Map<String, Map<String, String>> animatedPartsMap = new LinkedHashMap<>();
-            for (String partName : animationParts.value().keySet()) {
+            for (Iterator<String> it = animationParts.fieldNames(); it.hasNext(); ) {
+                String partName = it.next();
                 Map<String, String> partTags = starNetMapCodec.read(reader);
                 animatedPartsMap.put(partName, partTags);
             }
-            int l = 1;
         }
-        var animationCustom = (MapVariantValue) parameters.value().get("animationCustom");
-        if (animationCustom != null) {
-            MapVariantValue animatedParts = (MapVariantValue) animationCustom.value().get("animatedParts");
-            if (animatedParts != null) {
-                MapVariantValue stateTypes = (MapVariantValue) animatedParts.value().get("stateTypes");
-                if (stateTypes != null) {
-                    Set<String> strings = stateTypes.value().keySet();
-                    for (int i = 0; i < strings.size() + 3; i++) {
-                        // 1. reverse (NetElementBool) - uint8
-                        boolean reverseValue = false;
-                        if (reader.openProtocolVersion() >= 10) {
-                            reverseValue = reader.readBoolean();
-                        }
 
-
-                        // 2. stateIndex    (NetElementSize) - VLQ с NPos encoding
-                        long stateIndexVlq = VlqCodec.INSTANCE.read(reader);
-
-                        // 3. startedEvent (NetElementEvent/NetElementUInt) - VLQ uint64
-                        long startedEventCount = VlqCodec.INSTANCE.read(reader);
+        var animatedParts = animationCustom.get("animatedParts");
+        if (animatedParts != null) {
+            var stateTypes = animatedParts.get("stateTypes");
+            if (stateTypes != null) {
+                Iterator<String> strings = stateTypes.fieldNames();
+                for (String str; strings.hasNext(); ) {
+                    strings.next();
+                    boolean reverseValue = false;
+                    if (reader.openProtocolVersion() >= 10) {
+//                        reverseValue = reader.readBoolean();
                     }
+
+
+                    var stateIndexVlq = VlqCodec.INSTANCE.read(reader);
+
+                    boolean startedEvent = reader.readBoolean();
+                    int l = 1;
                 }
             }
-            MapVariantValue transformationGroups = (MapVariantValue) animationCustom.value().get("transformationGroups");
+
+
+            var transformationGroups = animationCustom.get("transformationGroups");
             if (transformationGroups != null) {
-                for (String groupName : transformationGroups.value().keySet()) {
+                for (Iterator<String> it = transformationGroups.fieldNames(); it.hasNext(); ) {
+                    String groupName = it.next();
                     var xTranslation = reader.readFloat32BE();
                     var yTranslation = reader.readFloat32BE();
                     var xScale = reader.readFloat32BE();
@@ -172,28 +215,85 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
                 }
 
             }
-            MapVariantValue rotationGroups = (MapVariantValue) animationCustom.value().get("rotationGroups");
+            var rotationGroups = animationCustom.get("rotationGroups");
             if (rotationGroups != null) {
-                for (String groupName : rotationGroups.value().keySet()) {
+                for (Iterator<String> it = rotationGroups.fieldNames(); it.hasNext(); ) {
+                    String groupName = it.next();
                     var targetAngle = reader.readFloat32BE();
-                    var netImmediateEvent = VlqCodec.INSTANCE.read(reader);
+                    var netImmediateEvent = VlqUCodec.INSTANCE.read(reader);
                 }
             }
-            MapVariantValue particleEmitters = (MapVariantValue) animationCustom.value().get("particleEmitters");
+            var particleEmitters = animationCustom.get("particleEmitters");
             if (particleEmitters != null) {
-                for (String emitterName : particleEmitters.value().keySet()) {
+                for (Iterator<String> it = particleEmitters.fieldNames(); it.hasNext(); ) {
+                    String emitterName = it.next();
                     var emissionRate = reader.readFloat32BE();
                     var burstCount = reader.readUnsignedByte();
                     var randomSelectCount = reader.readUnsignedByte();
-                    var offsetRegion = StarVec2FCodec.INSTANCE.read(reader);
+                    var offsetRegion = StarRect4FCodec.INSTANCE.read(reader);
                     var active = reader.readBoolean();
-                    var burstEvent = VlqCodec.INSTANCE.read(reader);
+                    var burstEvent = VlqUCodec.INSTANCE.read(reader);
+                    int l = 1;
                 }
             }
+
+            var lights = animationCustom.get("lights");
+            if (lights != null) {
+                for (Iterator<String> it = lights.fieldNames(); it.hasNext(); ) {
+                    String lightName = it.next();
+                    var active = reader.readBoolean();
+                    var offset = StarVec2FCodec.INSTANCE.readFixedPointBased(reader, 0.0125f);
+                    var color = StarRect4FCodec.INSTANCE.read(reader);
+                    var pointAngle = VlqCodec.INSTANCE.read(reader) * 0.01f;
+                    int l = 1;
+                }
+            }
+
+            var sounds = animationCustom.get("sounds");
+            if (sounds != null) {
+                for (Iterator<String> it = sounds.fieldNames(); it.hasNext(); ) {
+                    it.next();
+                    Integer stringListSize = VlqUCodec.INSTANCE.read(reader);
+                    List<String> stringList = new ArrayList<>(stringListSize);
+                    for (int i = 0; i < stringListSize; i++) {
+                        String s = StarStringCodec.INSTANCE.read(reader);
+                        stringList.add(s);
+                    }
+                    StarVec2F starVec2F = StarVec2FCodec.INSTANCE.readFixedPointBased(reader, 0.0125f);
+                    var volumeTarget = reader.readFloat32BE();
+                    var volumeRampTime = reader.readFloat32BE();
+                    var pitchMultiplierTarget = reader.readFloat32BE();
+                    var pitchMultiplierRampTime = reader.readFloat32BE();
+                    var loopCount = VlqCodec.INSTANCE.read(reader);
+                    int l = 1;
+                }
+            }
+
+
+            var effects = animationCustom.get("effects");
+            if (effects != null) {
+                for (Iterator<String> it = effects.fieldNames(); it.hasNext(); ) {
+                    String effectName = it.next();
+                    var enabled = reader.readBoolean();
+                }
+            }
+
+            var holdingItem = reader.readBoolean();
+            var backArmFrame = stringMaybe.read(reader);
+            var frontArmFrame = stringMaybe.read(reader);
+            var twoHanded = reader.readBoolean();
+            var recoil = reader.readBoolean();
+            var outsideOfHand = reader.readBoolean();
+            var armAngle = reader.readFloat32BE();
+            var facingDirection = intMaybe.read(reader);
+            var damageSource = 1;
+
         }
-        // TODO: Incompleted cuz of the base game package needs. Do it later
     }
 
+    private void readDamageSource(BinaryReader reader) {
+
+    }
 
 }
 

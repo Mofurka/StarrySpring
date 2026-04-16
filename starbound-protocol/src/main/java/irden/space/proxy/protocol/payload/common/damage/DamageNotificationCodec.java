@@ -10,8 +10,8 @@ public enum DamageNotificationCodec implements BinaryCodec<DamageNotification> {
 
     @Override
     public DamageNotification read(BinaryReader reader) {
-        int sourceEntityId = SignedVlqCodec.INSTANCE.read(reader);
-        int targetEntityId = SignedVlqCodec.INSTANCE.read(reader);
+        int sourceEntityId = VlqCodec.INSTANCE.read(reader);
+        int targetEntityId = VlqCodec.INSTANCE.read(reader);
         StarVec2F position = StarVec2FCodec.INSTANCE.readFixedPointBased(reader, 0.01f);
         float damageDealt = reader.readFloat32BE();
         float healthLost = reader.readFloat32BE();
@@ -33,8 +33,8 @@ public enum DamageNotificationCodec implements BinaryCodec<DamageNotification> {
 
     @Override
     public void write(BinaryWriter writer, DamageNotification value) {
-        SignedVlqCodec.INSTANCE.write(writer, value.sourceEntityId());
-        SignedVlqCodec.INSTANCE.write(writer, value.targetEntityId());
+        VlqCodec.INSTANCE.write(writer, value.sourceEntityId());
+        VlqCodec.INSTANCE.write(writer, value.targetEntityId());
         StarVec2FCodec.INSTANCE.writeFixedPointBased(writer, value.position(), 0.01f);
         writer.writeFloat32BE(value.damageDealt());
         writer.writeFloat32BE(value.healthLost());

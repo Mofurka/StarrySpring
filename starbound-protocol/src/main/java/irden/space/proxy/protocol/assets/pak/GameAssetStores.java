@@ -1,6 +1,9 @@
 package irden.space.proxy.protocol.assets.pak;
 
+import irden.space.proxy.protocol.assets.item.ActiveItem;
+
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -55,6 +58,21 @@ public final class GameAssetStores {
 
         @Override
         public int size() {
+            return 0;
+        }
+
+        @Override
+        public Map<String, ActiveItem> getItemDatabase() {
+            return Map.of();
+        }
+
+        @Override
+        public Optional<ActiveItem> findItem(String itemName) {
+            return Optional.empty();
+        }
+
+        @Override
+        public int itemCount() {
             return 0;
         }
     }

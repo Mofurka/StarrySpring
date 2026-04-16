@@ -4,7 +4,6 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.debug.model.Player;
-import irden.space.proxy.protocol.assets.pak.GameAssetStores;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.damage.DamageRequest;
@@ -60,8 +59,6 @@ public class DebugLoggerPlugin implements ProxyPlugin {
                 }
             }
         }, "Online Checker").start();
-        byte[] bytes = GameAssetStores.defaultStore().readAsset("/monsters/nightcolors.config");
-        new String(bytes).lines().forEach(line -> log.info("/monsters/nightcolors.config line: {}", line));
     }
 
     @OnStop

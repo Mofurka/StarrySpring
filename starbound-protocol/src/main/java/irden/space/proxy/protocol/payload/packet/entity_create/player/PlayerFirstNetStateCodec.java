@@ -12,7 +12,7 @@ public enum PlayerFirstNetStateCodec implements BinaryCodec<PlayerFirstNetState>
     public PlayerFirstNetState read(BinaryReader reader) {
             BinaryReader storeDataReader = new BinaryReader(StarByteArrayCodec.INSTANCE.read(reader), reader.openProtocolVersion());
             boolean fullUpdate = storeDataReader.readBoolean();
-            int state = VlqCodec.INSTANCE.read(storeDataReader);
+            int state = VlqUCodec.INSTANCE.read(storeDataReader);
             boolean shifting = storeDataReader.readBoolean();
             StarVec2F mousePos = StarVec2FCodec.INSTANCE.readFixedPointBased(storeDataReader, 0.003125f);
             HumanoidIdentity humanoidIdentity = HumanoidIdentityCodec.INSTANCE.read(storeDataReader);

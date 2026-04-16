@@ -2,7 +2,7 @@ package irden.space.proxy.application.runtime;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.SignedVlqCodec;
+import irden.space.proxy.protocol.codec.VlqCodec;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -84,7 +84,7 @@ public class RuntimePacketReader {
 
         byte[] rawBytes = rawWriter.toByteArray();
         BinaryReader reader = new BinaryReader(rawBytes);
-        int value = SignedVlqCodec.INSTANCE.read(reader);
+        int value = VlqCodec.INSTANCE.read(reader);
 
         return new SignedVlqReadResult(value, rawBytes);
     }

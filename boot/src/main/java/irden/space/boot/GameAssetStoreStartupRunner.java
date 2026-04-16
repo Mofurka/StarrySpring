@@ -24,6 +24,7 @@ public class GameAssetStoreStartupRunner implements CommandLineRunner {
         GameAssetStores.setDefault(gameAssetStore);
         var endTime = System.currentTimeMillis();
         var duration = endTime - startTime;
-        log.info("GameAssetStore initialized with {} assets in {} ms", gameAssetStore.size(), duration);
+        log.info("GameAssetStore initialized with {} assets ({} items) in {} ms",
+                gameAssetStore.size(), gameAssetStore.itemCount(), duration);
     }
 }

@@ -2,7 +2,7 @@ package irden.space.proxy.protocol.codec;
 
 import org.junit.jupiter.api.Test;
 
-public class VlqCodecTest {
+public class VlqUCodecTest {
 
     @Test
     public void testEncoding() {
@@ -10,7 +10,7 @@ public class VlqCodecTest {
 
         for (int val : testValues) {
             BinaryWriter writer = new BinaryWriter();
-            VlqCodec.INSTANCE.write(writer, val);
+            VlqUCodec.INSTANCE.write(writer, val);
             byte[] result = writer.toByteArray();
 
             StringBuilder hex = new StringBuilder();

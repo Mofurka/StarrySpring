@@ -1,6 +1,9 @@
 package irden.space.proxy.protocol.payload.common.star_map;
 
-import irden.space.proxy.protocol.codec.*;
+import irden.space.proxy.protocol.codec.BinaryCodec;
+import irden.space.proxy.protocol.codec.BinaryReader;
+import irden.space.proxy.protocol.codec.BinaryWriter;
+import irden.space.proxy.protocol.codec.VlqUCodec;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,7 +20,7 @@ public class StarNetMapCodec<A,B> implements BinaryCodec<Map<A, B>> {
 
     @Override
     public Map<A, B> read(BinaryReader reader) {
-        int size = VlqCodec.INSTANCE.read(reader); // VLQ, не byte!
+        int size = VlqUCodec.INSTANCE.read(reader); // VLQ, не byte!
         Map<A, B> map = LinkedHashMap.newLinkedHashMap(size);
         for (int i = 0; i < size; i++) {
             int changeCode = reader.readUnsignedByte(); // 0=Set, 1=Remove, 2=Clear
@@ -38,7 +41,7 @@ public class StarNetMapCodec<A,B> implements BinaryCodec<Map<A, B>> {
 
     @Override
     public void write(BinaryWriter writer, Map<A, B> value) {
-        VlqCodec.INSTANCE.write(writer, value.size());
+        VlqUCodec.INSTANCE.write(writer, value.size());
         for (Map.Entry<A, B> entry : value.entrySet()) {
             writer.writeByte(0); // SetChange
             keyCodec.write(writer, entry.getKey());

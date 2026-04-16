@@ -5,38 +5,19 @@ public enum VlqCodec implements BinaryCodec<Integer> {
 
     @Override
     public Integer read(BinaryReader reader) {
-        int value = 0;
-        while (true) {
-            int b = reader.readUnsignedByte();
-            value = (value << 7) | (b & 0x7F);
-            if ((b & 0x80) == 0) {
-                return value;
-            }
+        int value = VlqUCodec.INSTANCE.read(reader);
+        // ZigZag decoding
+        if ((value & 1) == 0) {
+            return value >>> 1; // Positive number
+        } else {
+            return -(value >>> 1) - 1; // Negative number
         }
     }
 
     @Override
     public void write(BinaryWriter writer, Integer value) {
-        if (value < 0) {
-            throw new IllegalArgumentException("VLQ does not support negative values");
-        }
-        if (value == 0) {
-            writer.writeByte(0);
-            return;
-        }
-        int[] tmp = new int[10]; // Max 10 bytes for 32-bit int
-        int count = 0;
-        int current = value;
-        while (current > 0) {
-            tmp[count++] = current & 0x7F;
-            current >>>= 7;
-        }
-        for (int i = count - 1; i >= 0; i--) {
-            int b = tmp[i];
-            if (i != 0) {
-                b |= 0x80; // Set continuation bit
-            }
-            writer.writeByte(b);
-        }
+        // ZigZag encoding
+        int encoded = (value << 1) ^ (value >> 31);
+        VlqUCodec.INSTANCE.write(writer, encoded);
     }
 }

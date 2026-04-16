@@ -8,7 +8,7 @@ public enum StarInventoryCodec implements BinaryCodec<StarInventorySlot> {
 
     @Override
     public StarInventorySlot read(BinaryReader reader) {
-        int variant = VlqCodec.INSTANCE.read(reader);
+        int variant = VlqUCodec.INSTANCE.read(reader);
         return switch (variant) {
             case 0 -> {
                 var equipmentSlot = EquipmentSlot.fromId(reader.readUnsignedByte());

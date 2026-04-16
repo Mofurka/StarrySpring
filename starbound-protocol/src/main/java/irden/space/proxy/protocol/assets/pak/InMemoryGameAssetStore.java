@@ -1,24 +1,23 @@
 package irden.space.proxy.protocol.assets.pak;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import irden.space.proxy.protocol.assets.item.ActiveItem;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public final class InMemoryGameAssetStore implements GameAssetStore {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+
     private final boolean enabled;
     private final List<Path> archives;
     private final Set<String> excludedExtensions;
 
     private volatile Map<String, byte[]> assets = Collections.emptyMap();
+    private volatile Map<String, ActiveItem> itemDatabase = Collections.emptyMap();
     private volatile boolean initialized = false;
 
     public InMemoryGameAssetStore(boolean enabled, List<Path> archives, Collection<String> excludedExtensions) {
@@ -31,6 +30,7 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
     public synchronized void initialize() {
         if (!enabled) {
             assets = Collections.emptyMap();
+            itemDatabase = Collections.emptyMap();
             initialized = true;
             return;
         }
@@ -41,17 +41,45 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
 
         try (StarboundAssetRepository repository = StarboundAssetRepository.open(archives)) {
             Map<String, byte[]> loaded = new LinkedHashMap<>();
+            Map<String, ActiveItem> items = new LinkedHashMap<>();
+            int skippedItems = 0;
 
             for (String path : repository.listPaths()) {
                 String normalizedPath = normalizePath(path);
                 if (isExcluded(normalizedPath)) {
                     continue;
                 }
-                loaded.put(normalizedPath, repository.readAsset(normalizedPath));
+                byte[] data = repository.readAsset(normalizedPath);
+                loaded.put(normalizedPath, data);
+                
+                if (normalizedPath.endsWith(".activeitem")) {
+                    try {
+                        JsonNode jsonNode = OBJECT_MAPPER.readTree(data);
+                        JsonNode itemNameNode = jsonNode.get("itemName");
+
+                        if (itemNameNode != null && itemNameNode.isTextual()) {
+                            String itemName = itemNameNode.asText();
+                            Path itemPath = Path.of(normalizedPath);
+                            String itemDirectory = itemPath.getParent().toString();
+                            ActiveItem activeItem = new ActiveItem(itemName, jsonNode, itemDirectory);
+                            items.put(itemName, activeItem);
+
+                        } else {
+                            skippedItems++;
+                        }
+                    } catch (Exception e) {
+                        skippedItems++;
+                    }
+                }
             }
 
             assets = Collections.unmodifiableMap(loaded);
+            itemDatabase = Collections.unmodifiableMap(items);
             initialized = true;
+
+            if (skippedItems > 0) {
+                System.err.println("Warning: Skipped " + skippedItems + " .activeitem files due to missing itemName or parse errors");
+            }
         } catch (IOException e) {
             throw new IllegalStateException("Failed to initialize in-memory asset store", e);
         }
@@ -85,6 +113,21 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
     @Override
     public int size() {
         return assets.size();
+    }
+
+    @Override
+    public Map<String, ActiveItem> getItemDatabase() {
+        return itemDatabase;
+    }
+
+    @Override
+    public Optional<ActiveItem> findItem(String itemName) {
+        return Optional.ofNullable(itemDatabase.get(itemName));
+    }
+
+    @Override
+    public int itemCount() {
+        return itemDatabase.size();
     }
 
     private boolean isExcluded(String path) {

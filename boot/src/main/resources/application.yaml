@@ -12,7 +12,7 @@ assets:
   store:
     enabled: true
     archives:
-      - D:/Steam/steamapps/common/Starbound/assets/packed.pak
+      - D:/SteamLibrary/steamapps/common/Starbound/assets/packed.pak
     excluded-extensions:
       - .ogg
       - .png

@@ -5,13 +5,13 @@ public enum StarByteArrayCodec implements BinaryCodec<byte[]> {
 
     @Override
     public byte[] read(BinaryReader reader) {
-        int length = VlqCodec.INSTANCE.read(reader);
+        int length = VlqUCodec.INSTANCE.read(reader);
         return reader.readBytes(length);
     }
 
     @Override
     public void write(BinaryWriter writer, byte[] value) {
-        VlqCodec.INSTANCE.write(writer, value.length);
+        VlqUCodec.INSTANCE.write(writer, value.length);
         writer.writeBytes(value);
     }
 }

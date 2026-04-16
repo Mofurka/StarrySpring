@@ -8,19 +8,19 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class VlqCodecCodecTest {
+class VlqCodecUCodecTest {
 
     @Test
     void readsMultiByteVlq() {
         BinaryReader reader = new BinaryReader(new byte[]{(byte) 0x81, 0x17});
 
-        assertEquals(151, VlqCodec.INSTANCE.read(reader));
+        assertEquals(151, VlqUCodec.INSTANCE.read(reader));
     }
 
     @Test
     void writesSignedVlqUsingZigZagEncoding() {
         BinaryWriter writer = new BinaryWriter();
-        SignedVlqCodec.INSTANCE.write(writer, -151);
+        VlqCodec.INSTANCE.write(writer, -151);
 
         assertArrayEquals(encodeSignedVlqExpected(-151), writer.toByteArray());
     }
@@ -31,10 +31,10 @@ class VlqCodecCodecTest {
 
         for (int value : values) {
             BinaryWriter writer = new BinaryWriter();
-            SignedVlqCodec.INSTANCE.write(writer, value);
+            VlqCodec.INSTANCE.write(writer, value);
 
             BinaryReader reader = new BinaryReader(writer.toByteArray());
-            assertEquals(value, SignedVlqCodec.INSTANCE.read(reader), "value=" + value);
+            assertEquals(value, VlqCodec.INSTANCE.read(reader), "value=" + value);
         }
     }
 
