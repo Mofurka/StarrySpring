@@ -1,28 +1,20 @@
 package irden.space.proxy.protocol.payload.packet.entity_create.player;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import irden.space.proxy.protocol.assets.item.ActiveItem;
-import irden.space.proxy.protocol.assets.pak.GameAssetStores;
 import irden.space.proxy.protocol.codec.*;
-import irden.space.proxy.protocol.codec.variant.MapVariantValue;
-import irden.space.proxy.protocol.payload.common.rectangles.StarRect4FCodec;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptorCodec;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariant;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariantCodec;
 import irden.space.proxy.protocol.payload.common.star_map.StarNetMapCodec;
 import irden.space.proxy.protocol.payload.common.star_maybe.StarMaybeCodec;
-import irden.space.proxy.protocol.payload.common.vectors.StarVec2F;
-import irden.space.proxy.protocol.payload.common.vectors.StarVec2FCodec;
 import irden.space.proxy.protocol.payload.packet.entity_create.player.custom_bar_link.CustomBarLink;
 import irden.space.proxy.protocol.payload.packet.entity_create.player.custom_bar_link.CustomBarkLinkCodec;
-import irden.space.proxy.protocol.util.JsonUtils;
-import irden.space.proxy.protocol.util.MapVariantUtils;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
     INSTANCE;
@@ -36,7 +28,6 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
             StarStringCodec.INSTANCE
     );
     private final StarMaybeCodec<String> stringMaybe = new StarMaybeCodec<>(StarStringCodec.INSTANCE);
-    private final StarMaybeCodec<Integer> intMaybe = new StarMaybeCodec<>(VlqUCodec.INSTANCE);
 
     @Override
     public PlayerInventory read(BinaryReader reader) {
@@ -84,7 +75,6 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptor wireTool = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor paintTool = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor inspectionTool = StarItemDescriptorCodec.INSTANCE.read(reader);
-        readPrimaryHandItem(reader);
         return new PlayerInventory(equipment, bags, cursorItem, trashSlot, stringMap, customBarState, customBar, activeSlot, beamAxe, wireTool, paintTool, inspectionTool);
     }
 
@@ -129,6 +119,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptorCodec.INSTANCE.write(writer, value.inspectionTool());
     }
 
+/*
     @SuppressWarnings({"unused", "unchecked"})
     public void readPrimaryHandItem(BinaryReader reader) {
         StarItemDescriptor packetItem = StarItemDescriptorCodec.INSTANCE.read(reader);
@@ -285,15 +276,13 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
             var recoil = reader.readBoolean();
             var outsideOfHand = reader.readBoolean();
             var armAngle = reader.readFloat32BE();
-            var facingDirection = intMaybe.read(reader);
-            var damageSource = 1;
+            // Incompleted implemetation. A lot of variant shit
 
         }
     }
 
-    private void readDamageSource(BinaryReader reader) {
+*/
 
-    }
 
 }
 
