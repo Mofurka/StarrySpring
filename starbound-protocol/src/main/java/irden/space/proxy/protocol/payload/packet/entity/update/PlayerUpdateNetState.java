@@ -1,4 +1,4 @@
-package irden.space.proxy.protocol.payload.packet.entity;
+package irden.space.proxy.protocol.payload.packet.entity.update;
 
 import irden.space.proxy.protocol.payload.common.damage.consts.TeamType;
 import irden.space.proxy.protocol.payload.packet.entity.player.HumanoidIdentity;

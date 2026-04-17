@@ -1,10 +1,11 @@
-package irden.space.proxy.protocol.payload.packet.entity;
+package irden.space.proxy.protocol.payload.packet.entity.update;
 
 import irden.space.proxy.protocol.codec.*;
 import irden.space.proxy.protocol.payload.common.damage.consts.TeamType;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptorCodec;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariantCodec;
+import irden.space.proxy.protocol.payload.common.star_map.StarNetMapCodec;
 import irden.space.proxy.protocol.payload.common.star_pair.StarPair;
 import irden.space.proxy.protocol.payload.common.star_poly.StarPolyFCodec;
 import irden.space.proxy.protocol.payload.packet.entity.player.EquipmentSlot;
@@ -14,15 +15,17 @@ import irden.space.proxy.protocol.payload.packet.entity.player.PlayerInventory;
 import irden.space.proxy.protocol.payload.packet.entity.player.custom_bar_link.CustomBarLink;
 import irden.space.proxy.protocol.payload.packet.entity.player.custom_bar_link.CustomBarkLinkCodec;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState> {
     INSTANCE;
     private final StarMVariantCodec starMVariantCodec = new StarMVariantCodec(
             VlqUCodec.INSTANCE,
             VlqUCodec.INSTANCE
+    );
+    private final StarNetMapCodec<String, String> starNetMapCodec = new StarNetMapCodec<>(
+            StarStringCodec.INSTANCE,
+            StarStringCodec.INSTANCE
     );
 
     @Override
@@ -33,6 +36,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
             throw new UnsupportedOperationException("Full player entity update is not supported in entity update packet, only in entity create packet");
         }
         var player = PlayerUpdateNetState.builder();
+        updateLoop:
         while (reader.hasRemaining()) {
             var magicNumber = VlqUCodec.INSTANCE.read(reader);
             if (magicNumber == 0) {
@@ -50,11 +54,17 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
                 case 9 -> player.newChatMessage(reader.readBoolean());
                 case 10 -> player.emote(StarStringCodec.INSTANCE.read(reader));
                 case 11 -> player.inventory(this.readInventory(reader));
-                case 12 -> reader.readRemainingBytes(); // ХУЙНЯ с очень большим хвостом после. Слишком много параметров
+                case 12 -> reader.readRemainingBytes(); // ХУЙНЯ с очень большим хвостом после. Слишком много параметров, что даже смысла нет парсить.
                 case 13 -> reader.readRemainingBytes(); // Armor, not implemented yet
                 case 14 -> reader.readRemainingBytes(); // Songbook, not implemented yet
                 case 15 -> player.movementController(this.readMcontroller(reader));
-                default -> reader.readRemainingBytes();
+                case 16 -> readEffectEmitter(reader); // Effect emitter, not implemented yet
+                case 17 -> readEffectsAnimator(reader); // m_effectsAnimator - not implemented yet
+//                case 18 -> reader.readRemainingBytes(); // techController - not implemented yet
+                default -> {
+                    reader.readRemainingBytes();
+                    break updateLoop;
+                }
             }
 
         }
@@ -66,27 +76,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
 
     }
 
-
-    public void readToolUser(BinaryReader reader) {
-        while (true) {
-                var magicNumber = VlqUCodec.INSTANCE.read(reader);
-                if (magicNumber == 0 || magicNumber > 8) {
-                    break;
-                }
-                switch (magicNumber) {
-                    case 1 -> StarItemDescriptorCodec.INSTANCE.read(reader);
-                    case 2 -> StarItemDescriptorCodec.INSTANCE.read(reader);
-                    case 3 -> reader.readFloat32BE();
-                    case 4 -> reader.readFloat32BE();
-                    case 5 -> reader.readFloat32BE();
-                    case 6 -> reader.readFloat32BE();
-                    case 7 -> reader.readBoolean();
-                    case 8 -> reader.readBoolean();
-                    default -> throw new IllegalStateException("Unknown magic number in tool user data: " + magicNumber);
-                }
-        }
-    }
-
+    // todo раскидать всё по кодекам, а не держать в одном.
     public MovementController readMcontroller(BinaryReader reader) {
         var mc = MovementController.builder();
         while (true) {
@@ -115,6 +105,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
                 ));
                 case 15 -> mc.xRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
                 case 16 -> mc.yRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
+                default -> throw new IllegalStateException("Unexpected value: " + magicNumber);
             }
         }
         return mc.build();
@@ -228,5 +219,49 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
         }
 
         return pi.build();
+    }
+
+    public List<StarPair<String, String>> readEffectEmitter(BinaryReader reader) {
+        int listSize = VlqUCodec.INSTANCE.read(reader);
+        List<StarPair<String, String>> starPairList = new ArrayList<>(listSize);
+        for (int i = 0; i < listSize; i++) {
+            String key = StarStringCodec.INSTANCE.read(reader);
+            String value = StarStringCodec.INSTANCE.read(reader);
+            starPairList.add(new StarPair<>(key, value));
+        }
+        return starPairList;
+    }
+
+    public void readEffectsAnimator(BinaryReader reader) {
+//        var processingDirectives = StarStringCodec.INSTANCE.read(reader);
+        while (reader.hasRemaining()) {
+            int magicNumber = VlqUCodec.INSTANCE.read(reader);
+            if (magicNumber == 0) {
+                break;
+            }
+            switch (magicNumber) {
+                case 1 -> {
+                    var processingDirectives = StarStringCodec.INSTANCE.read(reader);
+                }
+                case 2 -> {
+                    var zoom = reader.readFloat32BE();
+                }
+                case 3 -> {
+                    var flipped = reader.readBoolean();
+                }
+                case 4 -> {
+                    var flippedRelativeCenterLine = reader.readFloat32BE();
+                }
+                case 5 -> {
+                    var animationRate = reader.readFloat32BE();
+                }
+                case 6 -> {
+                    var globalTags = starNetMapCodec.readDelta(reader);
+                    int l = 1;
+                }
+                default -> reader.readRemainingBytes();
+            }
+        }
+        reader.readRemainingBytes();
     }
 }

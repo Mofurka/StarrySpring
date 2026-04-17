@@ -15,10 +15,7 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
-import irden.space.proxy.protocol.payload.packet.entity.PlayerUpdateNetState;
-import irden.space.proxy.protocol.payload.packet.entity.create.Entity;
-import irden.space.proxy.protocol.payload.packet.entity.create.PlayerEntity;
-import irden.space.proxy.protocol.payload.packet.entity.player.HumanoidIdentity;
+import irden.space.proxy.protocol.payload.packet.entity.update.PlayerUpdateNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,59 +116,6 @@ public class DebugLoggerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.PROTOCOL_RESPONSE, direction = PacketDirection.TO_CLIENT)
     public PacketDecision onProtocolResponse(PacketInterceptionContext context) {
         return logPacket("onProtocolResponse", context);
-    }
-
-    @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
-    //test
-    public PacketDecision onEntityCreate(PacketInterceptionContext context) {
-        Entity entity = (Entity) context.parsedPayload();
-        if (entity instanceof PlayerEntity player) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Session ID: ").append(context.session().sessionId()).append(System.lineSeparator());
-            sb.append("Direction: ").append(context.direction()).append(System.lineSeparator());
-            sb.append(player.uuid()).append(System.lineSeparator());
-            sb.append(player.description()).append(System.lineSeparator());
-            sb.append(player.modeType()).append(System.lineSeparator());
-            HumanoidIdentity hi = player.humanoidIdentity();
-            sb.append(hi.name()).append(System.lineSeparator());
-            sb.append(hi.species()).append(System.lineSeparator());
-            log.info("PlayerEntity created with the following details:\n{}", sb);
-
-
-            new PlayerEntity(
-                    player.uuid(),
-                    player.description(),
-                    player.modeType(),
-                    new HumanoidIdentity(
-                            "Неизвестный",
-                            hi.species(),
-                            hi.gender(),
-                            hi.hairGroup(),
-                            hi.hairType(),
-                            hi.hairDirectives(),
-                            hi.bodyDirectives(),
-                            hi.emoteDirectives(),
-                            hi.facialHairGroup(),
-                            hi.facialHairType(),
-                            hi.facialHairDirectives(),
-                            hi.facialMaskGroup(),
-                            hi.facialMaskType(),
-                            hi.facialMaskDirectives(),
-                            hi.personality(),
-                            hi.color(),
-                            hi.imagePath()
-                    ),
-                    player.firstNetState(),
-                    player.entityId()
-            );
-            context.session().sendToClient(PacketType.ENTITY_CREATE, player);
-            return PacketDecision.cancel(); // Cancel the original packet since we've sent a modified one.
-
-
-        }
-
-
-        return PacketDecision.forward();
     }
 
     @PacketHandler(value = PacketType.MODIFY_TILE_LIST)

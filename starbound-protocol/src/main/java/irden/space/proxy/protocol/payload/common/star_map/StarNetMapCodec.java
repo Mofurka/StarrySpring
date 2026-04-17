@@ -39,6 +39,42 @@ public class StarNetMapCodec<A,B> implements BinaryCodec<Map<A, B>> {
         return map;
     }
 
+    public Map<A, B> readDelta(BinaryReader reader) {
+        Map<A, B> map = new LinkedHashMap<>();
+
+        while (true) {
+            int code = VlqUCodec.INSTANCE.read(reader);  // ← VLQ!
+
+            if (code == 0) {
+                break;
+            }
+            else if (code == 1) {  // Full reload
+                map = this.read(reader);
+            }
+            else if (code == 2) {  // Single change
+                int changeCode = reader.readUnsignedByte();  // ← byte!
+
+                if (changeCode == 0) {
+                    A key = keyCodec.read(reader);
+                    B value = valueCodec.read(reader);
+                    map.put(key, value);
+                }
+                else if (changeCode == 1) {
+                    A key = keyCodec.read(reader);
+                    map.remove(key);
+                }
+                else if (changeCode == 2) {
+                    map.clear();
+                }
+            }
+            else {
+                throw new IllegalStateException("Unknown NetElementHashMap delta code: " + code);
+            }
+        }
+
+        return map;
+    }
+
     @Override
     public void write(BinaryWriter writer, Map<A, B> value) {
         VlqUCodec.INSTANCE.write(writer, value.size());

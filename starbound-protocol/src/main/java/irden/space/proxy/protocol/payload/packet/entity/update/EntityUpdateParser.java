@@ -1,4 +1,4 @@
-package irden.space.proxy.protocol.payload.packet.entity;
+package irden.space.proxy.protocol.payload.packet.entity.update;
 
 import irden.space.proxy.protocol.codec.*;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
@@ -10,6 +10,8 @@ public class EntityUpdateParser implements PacketParser<PlayerUpdateNetState> {
         int playerEntityid = connectionId * - 65536;
         int entityCount = VlqUCodec.INSTANCE.read(reader);
         // since we dont know what entities type are for update - we will read only player entities, and skip the rest
+        // однако позже можно создать хранилище на основе entityCreate и положить уже туда сущности которые были созданы.
+        // Так можно будет определить тип сущности при обновлении. Но пока что так.
         for (int i = 0; i < entityCount; i++) {
             int entityId = VlqCodec.INSTANCE.read(reader);
             var raw = StarByteArrayCodec.INSTANCE.read(reader);

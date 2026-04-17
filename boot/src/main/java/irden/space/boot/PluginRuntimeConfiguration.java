@@ -6,8 +6,10 @@ import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.runtime.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
 @Configuration
+@ImportRuntimeHints(PluginNativeRuntimeHints.class)
 public class PluginRuntimeConfiguration {
 
     @Bean
