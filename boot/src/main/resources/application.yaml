@@ -10,9 +10,8 @@ proxy:
 
 assets:
   store:
-    enabled: true
-    archives:
-      - D:/SteamLibrary/steamapps/common/Starbound/assets/packed.pak
+    enabled: false
+    archives: []
     excluded-extensions:
       - .ogg
       - .png

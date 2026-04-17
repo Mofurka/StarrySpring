@@ -15,9 +15,10 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
-import irden.space.proxy.protocol.payload.packet.entity_create.EntityCreate;
-import irden.space.proxy.protocol.payload.packet.entity_create.PlayerEntity;
-import irden.space.proxy.protocol.payload.packet.entity_create.player.HumanoidIdentity;
+import irden.space.proxy.protocol.payload.packet.entity.PlayerUpdateNetState;
+import irden.space.proxy.protocol.payload.packet.entity.create.Entity;
+import irden.space.proxy.protocol.payload.packet.entity.create.PlayerEntity;
+import irden.space.proxy.protocol.payload.packet.entity.player.HumanoidIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,8 +124,8 @@ public class DebugLoggerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
     //test
     public PacketDecision onEntityCreate(PacketInterceptionContext context) {
-        EntityCreate entityCreate = (EntityCreate) context.parsedPayload();
-        if (entityCreate instanceof PlayerEntity player) {
+        Entity entity = (Entity) context.parsedPayload();
+        if (entity instanceof PlayerEntity player) {
             StringBuilder sb = new StringBuilder();
             sb.append("Session ID: ").append(context.session().sessionId()).append(System.lineSeparator());
             sb.append("Direction: ").append(context.direction()).append(System.lineSeparator());
@@ -170,7 +171,6 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         }
 
 
-
         return PacketDecision.forward();
     }
 
@@ -189,6 +189,32 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return logPacket("onEntityInteractResult", context);
     }
 
+    @PacketHandler(value = PacketType.ENTITY_UPDATE, direction = PacketDirection.TO_SERVER)
+    public PacketDecision onEntityUpdate(PacketInterceptionContext context) {
+        if (context.parsedPayload() != null) {
+            PlayerUpdateNetState playerUpdateNetState = (PlayerUpdateNetState) context.parsedPayload();
+            if (playerUpdateNetState.movementController() != null) {
+                var mc = playerUpdateNetState.movementController();
+                if (mc.xPosition() != null || mc.yPosition() != null) {
+                    log.info(
+                            "Player movement update: sessionId={}, x={}, y={}",
+                            context.session().sessionId(),
+                            mc.xPosition(),
+                            mc.yPosition()
+                    );
+                }
+            }
+            if (playerUpdateNetState.inventory() != null) {
+                log.info(
+                        "Player inventory update: sessionId={}, inventory={}",
+                        context.session().sessionId(),
+                        playerUpdateNetState.inventory()
+                );
+            }
+        }
+        return null;
+    }
+
     private PacketDecision logPacket(String handlerName, PacketInterceptionContext context) {
         log.info(
                 "[PLUGIN][{}][{}] packetType={} parsed={}",
@@ -204,6 +230,7 @@ public class DebugLoggerPlugin implements ProxyPlugin {
     public void debugLogCommand(CommandContext context) {
         context.reply("DebugLoggerPlugin is active! Use this command to verify that the plugin is working.");
     }
+
     @ChatCommand("kill") // checked
     public void killCommand(CommandContext context) {
         Player player = tempPlayersMap.get(context.session().sessionId());
