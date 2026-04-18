@@ -92,4 +92,211 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
             write(writer, entry.getValue());
         }
     }
+
+    /**
+     * Converts a VariantValue to a JSON-like string representation.
+     */
+    public String toString(VariantValue value) {
+        return switch (value) {
+            case NullVariantValue _ -> "null";
+            case DoubleVariantValue(double v) -> String.valueOf(v);
+            case BooleanVariantValue(boolean v) -> String.valueOf(v);
+            case IntVariantValue(int v) -> String.valueOf(v);
+            case StringVariantValue(String v) -> "\"" + escapeString(v) + "\"";
+            case ListVariantValue(List<VariantValue> values) -> {
+                StringBuilder sb = new StringBuilder("[");
+                for (int i = 0; i < values.size(); i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append(toString(values.get(i)));
+                }
+                sb.append("]");
+                yield sb.toString();
+            }
+            case MapVariantValue(Map<String, VariantValue> map) -> {
+                StringBuilder sb = new StringBuilder("{");
+                int i = 0;
+                for (Map.Entry<String, VariantValue> entry : map.entrySet()) {
+                    if (i > 0) sb.append(", ");
+                    sb.append("\"").append(escapeString(entry.getKey())).append("\": ");
+                    sb.append(toString(entry.getValue()));
+                    i++;
+                }
+                sb.append("}");
+                yield sb.toString();
+            }
+            case null -> throw new IllegalStateException("Unsupported variant value: " + value);
+        };
+    }
+
+    /**
+     * Parses a JSON-like string into a VariantValue.
+     */
+    public VariantValue fromString(String str) {
+        return parseValue(new StringParser(str.trim()));
+    }
+
+    private VariantValue parseValue(StringParser parser) {
+        parser.skipWhitespace();
+        char c = parser.peek();
+
+        return switch (c) {
+            case 'n' -> {
+                parser.expect("null");
+                yield NullVariantValue.INSTANCE;
+            }
+            case 't' -> {
+                parser.expect("true");
+                yield new BooleanVariantValue(true);
+            }
+            case 'f' -> {
+                parser.expect("false");
+                yield new BooleanVariantValue(false);
+            }
+            case '"' -> new StringVariantValue(parseString(parser));
+            case '[' -> new ListVariantValue(parseList(parser));
+            case '{' -> new MapVariantValue(parseMap(parser));
+            default -> {
+                if (c == '-' || Character.isDigit(c)) {
+                    yield parseNumber(parser);
+                }
+                throw new IllegalStateException("Unexpected character: " + c);
+            }
+        };
+    }
+
+    private String parseString(StringParser parser) {
+        parser.expect('"');
+        StringBuilder sb = new StringBuilder();
+        while (parser.hasMore() && parser.peek() != '"') {
+            char c = parser.next();
+            if (c == '\\') {
+                char escaped = parser.next();
+                sb.append(switch (escaped) {
+                    case 'n' -> '\n';
+                    case 't' -> '\t';
+                    case 'r' -> '\r';
+                    case '\\' -> '\\';
+                    case '"' -> '"';
+                    default -> escaped;
+                });
+            } else {
+                sb.append(c);
+            }
+        }
+        parser.expect('"');
+        return sb.toString();
+    }
+
+    private List<VariantValue> parseList(StringParser parser) {
+        parser.expect('[');
+        List<VariantValue> list = new ArrayList<>();
+        parser.skipWhitespace();
+        if (parser.peek() == ']') {
+            parser.next();
+            return list;
+        }
+        while (true) {
+            list.add(parseValue(parser));
+            parser.skipWhitespace();
+            char c = parser.next();
+            if (c == ']') break;
+            if (c != ',') throw new IllegalStateException("Expected ',' or ']', got: " + c);
+        }
+        return list;
+    }
+
+    private Map<String, VariantValue> parseMap(StringParser parser) {
+        parser.expect('{');
+        Map<String, VariantValue> map = new LinkedHashMap<>();
+        parser.skipWhitespace();
+        if (parser.peek() == '}') {
+            parser.next();
+            return map;
+        }
+        while (true) {
+            parser.skipWhitespace();
+            String key = parseString(parser);
+            parser.skipWhitespace();
+            parser.expect(':');
+            VariantValue value = parseValue(parser);
+            map.put(key, value);
+            parser.skipWhitespace();
+            char c = parser.next();
+            if (c == '}') break;
+            if (c != ',') throw new IllegalStateException("Expected ',' or '}', got: " + c);
+        }
+        return map;
+    }
+
+    private VariantValue parseNumber(StringParser parser) {
+        StringBuilder sb = new StringBuilder();
+        boolean isDouble = false;
+        while (parser.hasMore()) {
+            char c = parser.peek();
+            if (c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E' || Character.isDigit(c)) {
+                if (c == '.' || c == 'e' || c == 'E') isDouble = true;
+                sb.append(parser.next());
+            } else {
+                break;
+            }
+        }
+        String numStr = sb.toString();
+        if (isDouble) {
+            return new DoubleVariantValue(Double.parseDouble(numStr));
+        } else {
+            return new IntVariantValue(Integer.parseInt(numStr));
+        }
+    }
+
+    private String escapeString(String str) {
+        return str.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replace("\r", "\\r");
+    }
+
+    private static class StringParser {
+        private final String str;
+        private int pos = 0;
+
+        StringParser(String str) {
+            this.str = str;
+        }
+
+        boolean hasMore() {
+            return pos < str.length();
+        }
+
+        char peek() {
+            if (!hasMore()) throw new IllegalStateException("Unexpected end of input");
+            return str.charAt(pos);
+        }
+
+        char next() {
+            char c = peek();
+            pos++;
+            return c;
+        }
+
+        void expect(char expected) {
+            char c = next();
+            if (c != expected) {
+                throw new IllegalStateException("Expected '" + expected + "', got: " + c);
+            }
+        }
+
+        void expect(String expected) {
+            for (char c : expected.toCharArray()) {
+                expect(c);
+            }
+        }
+
+        void skipWhitespace() {
+            while (hasMore() && Character.isWhitespace(peek())) {
+                pos++;
+            }
+        }
+    }
+
 }

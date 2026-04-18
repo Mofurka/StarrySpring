@@ -1,6 +1,8 @@
 package irden.space.proxy.protocol.payload.packet.entity.update;
 
 import irden.space.proxy.protocol.codec.*;
+import irden.space.proxy.protocol.codec.variant.StringVariantValue;
+import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.payload.common.damage.consts.TeamType;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptorCodec;
@@ -15,6 +17,7 @@ import irden.space.proxy.protocol.payload.packet.entity.player.PlayerInventory;
 import irden.space.proxy.protocol.payload.packet.entity.player.custom_bar_link.CustomBarLink;
 import irden.space.proxy.protocol.payload.packet.entity.player.custom_bar_link.CustomBarkLinkCodec;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState> {
@@ -23,19 +26,23 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
             VlqUCodec.INSTANCE,
             VlqUCodec.INSTANCE
     );
-    private final StarNetMapCodec<String, String> starNetMapCodec = new StarNetMapCodec<>(
+    private final StarNetMapCodec<String, byte[]> starNetMapCodec = new StarNetMapCodec<>(
             StarStringCodec.INSTANCE,
-            StarStringCodec.INSTANCE
+            StarByteArrayCodec.INSTANCE
     );
+    private final String magicProperty = "\0JsonProperty\0";
 
     @Override
     public PlayerUpdateNetState read(BinaryReader reader) {
+        throw new UnsupportedOperationException("Use read method with BinaryReader parameter to read player entity update, because it has a complex structure and requires special handling");
+    }
+
+    public PlayerUpdateNetState read(BinaryReader reader, PlayerUpdateNetState.PlayerUpdateNetStateBuilder player) {
         // Это мапа дельта-обновлений, которая может содержать любые поля из PlayerEntityCreateCodec, но не все сразу (по сути, это патч для сущности)
         var fullUpdate = reader.readBoolean();
         if (fullUpdate) {
             throw new UnsupportedOperationException("Full player entity update is not supported in entity update packet, only in entity create packet");
         }
-        var player = PlayerUpdateNetState.builder();
         updateLoop:
         while (reader.hasRemaining()) {
             var magicNumber = VlqUCodec.INSTANCE.read(reader);
@@ -54,12 +61,13 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
                 case 9 -> player.newChatMessage(reader.readBoolean());
                 case 10 -> player.emote(StarStringCodec.INSTANCE.read(reader));
                 case 11 -> player.inventory(this.readInventory(reader));
-                case 12 -> reader.readRemainingBytes(); // ХУЙНЯ с очень большим хвостом после. Слишком много параметров, что даже смысла нет парсить.
+                case 12 ->
+                        reader.readRemainingBytes(); // ХУЙНЯ с очень большим хвостом после. Слишком много параметров, что даже смысла нет парсить.
                 case 13 -> reader.readRemainingBytes(); // Armor, not implemented yet
                 case 14 -> reader.readRemainingBytes(); // Songbook, not implemented yet
                 case 15 -> player.movementController(this.readMcontroller(reader));
-                case 16 -> readEffectEmitter(reader); // Effect emitter, not implemented yet
-                case 17 -> readEffectsAnimator(reader); // m_effectsAnimator - not implemented yet
+                case 16 -> player.effectEmitters(readEffectEmitter(reader)); // Effect emitter, not implemented yet
+                case 17 -> player.effectsAnimator(readEffectsAnimator(reader));
 //                case 18 -> reader.readRemainingBytes(); // techController - not implemented yet
                 default -> {
                     reader.readRemainingBytes();
@@ -73,7 +81,67 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
 
     @Override
     public void write(BinaryWriter writer, PlayerUpdateNetState value) {
-
+        BinaryWriter newWriter = new BinaryWriter(writer.openProtocolVersion());
+        newWriter.writeBoolean(false); // full update
+        if (value.state() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 1);
+            VlqUCodec.INSTANCE.write(newWriter, value.state());
+        }
+        if (Boolean.TRUE.equals(value.shifting())) {
+            VlqUCodec.INSTANCE.write(newWriter, 2);
+            newWriter.writeBoolean(true);
+        }
+        if (value.xMousePos() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 3);
+            VlqCodec.INSTANCE.write(newWriter, (int) (value.xMousePos() / 0.003125f));
+        }
+        if (value.yMousePos() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 4);
+            VlqCodec.INSTANCE.write(newWriter, (int) (value.yMousePos() / 0.003125f));
+        }
+        if (value.humanoidIdentity() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 5);
+            HumanoidIdentityCodec.INSTANCE.write(newWriter, value.humanoidIdentity());
+        }
+        if (value.teamType() != null && value.teamNumber() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 6);
+            newWriter.writeByte(value.teamType().id());
+            newWriter.writeInt16BE(value.teamNumber());
+        }
+        if (value.landed() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 7);
+            newWriter.writeBoolean(value.landed());
+        }
+        if (value.chatMessage() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 8);
+            StarStringCodec.INSTANCE.write(newWriter, value.chatMessage());
+        }
+        if (value.newChatMessage() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 9);
+            newWriter.writeBoolean(value.newChatMessage());
+        }
+        if (value.emote() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 10);
+            StarStringCodec.INSTANCE.write(newWriter, value.emote());
+        }
+        if (value.inventory() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 11);
+            throw new UnsupportedOperationException("Writing player inventory is not supported yet, too many parameters and complexity");
+        }
+        if (value.movementController() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 15);
+            throw new UnsupportedOperationException("Writing movement controller is not supported yet, too many parameters and complexity");
+        }
+        if (value.effectEmitters() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 16);
+            throw new UnsupportedOperationException("Writing effect emitters is not supported yet, too many parameters and complexity");
+        }
+        if (value.effectsAnimator() != null) {
+            VlqUCodec.INSTANCE.write(newWriter, 17);
+            this.writeEffectsAnimator(newWriter, value.effectsAnimator());
+        }
+        VlqUCodec.INSTANCE.write(newWriter, 0);
+        StarByteArrayCodec.INSTANCE.write(writer, newWriter.toByteArray());
     }
 
     // todo раскидать всё по кодекам, а не держать в одном.
@@ -102,7 +170,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
                 case 13 -> mc.zeroG(reader.readBoolean());
                 case 14 -> mc.surfaceMovingCollision(
                         this.readSurfaceMovingCollision(reader
-                ));
+                        ));
                 case 15 -> mc.xRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
                 case 16 -> mc.yRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
                 default -> throw new IllegalStateException("Unexpected value: " + magicNumber);
@@ -110,6 +178,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
         }
         return mc.build();
     }
+
     private Optional<StarPair<Integer, Integer>> readSurfaceMovingCollision(BinaryReader reader) {
         if (reader.readBoolean()) {
             var entityId = reader.readInt32BE();
@@ -203,17 +272,13 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
             // Essential items (238-241)
             else if (magicNumber == beamAxeIndex) {
                 pi.beamAxe(StarItemDescriptorCodec.INSTANCE.read(reader));
-            }
-            else if (magicNumber == wireToolIndex) {
+            } else if (magicNumber == wireToolIndex) {
                 pi.wireTool(StarItemDescriptorCodec.INSTANCE.read(reader));
-            }
-            else if (magicNumber == paintToolIndex) {
+            } else if (magicNumber == paintToolIndex) {
                 pi.paintTool(StarItemDescriptorCodec.INSTANCE.read(reader));
-            }
-            else if (magicNumber == inspectionToolIndex) {
+            } else if (magicNumber == inspectionToolIndex) {
                 pi.inspectionTool(StarItemDescriptorCodec.INSTANCE.read(reader));
-            }
-            else {
+            } else {
                 throw new IllegalStateException("Unknown inventory magic number: " + magicNumber);
             }
         }
@@ -232,36 +297,76 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
         return starPairList;
     }
 
-    public void readEffectsAnimator(BinaryReader reader) {
-//        var processingDirectives = StarStringCodec.INSTANCE.read(reader);
+    public EffectsAnimator readEffectsAnimator(BinaryReader reader) {
+        var ea = EffectsAnimator.builder();
         while (reader.hasRemaining()) {
             int magicNumber = VlqUCodec.INSTANCE.read(reader);
             if (magicNumber == 0) {
                 break;
             }
             switch (magicNumber) {
-                case 1 -> {
-                    var processingDirectives = StarStringCodec.INSTANCE.read(reader);
-                }
-                case 2 -> {
-                    var zoom = reader.readFloat32BE();
-                }
-                case 3 -> {
-                    var flipped = reader.readBoolean();
-                }
-                case 4 -> {
-                    var flippedRelativeCenterLine = reader.readFloat32BE();
-                }
-                case 5 -> {
-                    var animationRate = reader.readFloat32BE();
-                }
+                case 1 -> ea.processingDirectives(StarStringCodec.INSTANCE.read(reader));
+                case 2 -> ea.zoom(reader.readFloat32BE());
+                case 3 -> ea.flipped(reader.readBoolean());
+                case 4 -> ea.flippedRelativeCenterLine(reader.readFloat32BE());
+                case 5 -> ea.animationRate(reader.readFloat32BE());
                 case 6 -> {
                     var globalTags = starNetMapCodec.readDelta(reader);
-                    int l = 1;
+                    globalTags.forEach((k, v) -> {
+                        if (k.startsWith(magicProperty)) {
+                            String key = k.substring(magicProperty.length());
+                            VariantValue value = VariantCodec.INSTANCE.read(new BinaryReader(v));
+                            ea.globalTags(Map.of(key, value));
+                        } else {
+                            String value = new String(v, StandardCharsets.UTF_8);
+                            ea.globalTags(Map.of(k, value));
+                        }
+                    });
                 }
                 default -> reader.readRemainingBytes();
             }
         }
-        reader.readRemainingBytes();
+        return ea.build();
+    }
+
+    public void writeEffectsAnimator(BinaryWriter writer, EffectsAnimator value) {
+        if (value.processingDirectives() != null) {
+            VlqUCodec.INSTANCE.write(writer, 1);
+            StarStringCodec.INSTANCE.write(writer, value.processingDirectives());
+        }
+        if (value.zoom() != null) {
+            VlqUCodec.INSTANCE.write(writer, 2);
+            writer.writeFloat32BE(value.zoom());
+        }
+        if (value.flipped() != null) {
+            VlqUCodec.INSTANCE.write(writer, 3);
+            writer.writeBoolean(value.flipped());
+        }
+        if (value.flippedRelativeCenterLine() != null) {
+            VlqUCodec.INSTANCE.write(writer, 4);
+            writer.writeFloat32BE(value.flippedRelativeCenterLine());
+        }
+        if (value.animationRate() != null) {
+            VlqUCodec.INSTANCE.write(writer, 5);
+            writer.writeFloat32BE(value.animationRate());
+        }
+        if (value.globalTags() != null) {
+            VlqUCodec.INSTANCE.write(writer, 6);
+            Map<String, byte[]> globalTags = new LinkedHashMap<>();
+            value.globalTags().forEach((k, v) -> {
+                switch (v) {
+                    case String s -> globalTags.put(k, s.getBytes(StandardCharsets.UTF_8));
+                    case VariantValue vv -> {
+                        BinaryWriter baw = new BinaryWriter();
+                        VariantCodec.INSTANCE.write(baw, vv);
+                        globalTags.put(magicProperty + k, baw.toByteArray());
+                    }
+                    default -> throw new IllegalStateException("Unsupported global tag value type: " + v.getClass());
+
+                }
+            });
+            starNetMapCodec.writeFullReloadDelta(writer, globalTags);
+        }
+        VlqUCodec.INSTANCE.write(writer, 0);
     }
 }

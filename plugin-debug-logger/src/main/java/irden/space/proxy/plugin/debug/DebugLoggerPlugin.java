@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.debug.model.Player;
+import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.damage.DamageRequest;
@@ -15,6 +16,7 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
+import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
 import irden.space.proxy.protocol.payload.packet.entity.update.PlayerUpdateNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +84,8 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         Player player = new Player(clientConnect.playerName(),
                 clientConnect.playerUuid(),
                 context.session().clientIp(),
-                context.session().sessionId()
+                context.session().sessionId(),
+                context.session()
         );
         tempPlayersMap.put(s, player);
         return PacketDecision.forward();
@@ -133,30 +136,27 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return logPacket("onEntityInteractResult", context);
     }
 
-    @PacketHandler(value = PacketType.ENTITY_UPDATE, direction = PacketDirection.TO_SERVER)
-    public PacketDecision onEntityUpdate(PacketInterceptionContext context) {
-        if (context.parsedPayload() != null) {
-            PlayerUpdateNetState playerUpdateNetState = (PlayerUpdateNetState) context.parsedPayload();
-            if (playerUpdateNetState.movementController() != null) {
-                var mc = playerUpdateNetState.movementController();
-                if (mc.xPosition() != null || mc.yPosition() != null) {
-                    log.info(
-                            "Player movement update: sessionId={}, x={}, y={}",
-                            context.session().sessionId(),
-                            mc.xPosition(),
-                            mc.yPosition()
-                    );
-                }
+    @ChatCommand("incognito")
+    public void setupIncognito(CommandContext context) {
+        // Для начала просто отправка пакета персонажу
+        var player = PlayerUpdateNetState.builder();
+        var effectsAnimator = EffectsAnimator.builder();
+        effectsAnimator.globalTags(Map.of("nametag", new StringVariantValue("Incognito")));
+        player.effectsAnimator(effectsAnimator.build());
+        //test
+        playersByUuid.forEach((s, p) -> {
+            if (p.name().equals("Misty")) {
+                player.entityId(p.entityId());
+                player.connectionId(p.clientId());
             }
-            if (playerUpdateNetState.inventory() != null) {
-                log.info(
-                        "Player inventory update: sessionId={}, inventory={}",
-                        context.session().sessionId(),
-                        playerUpdateNetState.inventory()
-                );
+        });
+        playersByUuid.forEach((s, p) -> {
+            if (p.name().equals("D.")) {
+                p.sessionContext().sendToClient(PacketType.ENTITY_UPDATE,  player.build());
             }
-        }
-        return null;
+        });
+        // УРА РАБОТАЕТ!
+        context.reply("Incognito setup sent to D. for Misty. Check if the nametag changed to 'Incognito'.");
     }
 
     private PacketDecision logPacket(String handlerName, PacketInterceptionContext context) {

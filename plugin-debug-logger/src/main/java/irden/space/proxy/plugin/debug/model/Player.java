@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.debug.model;
 
+import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 
 import java.time.LocalDateTime;
@@ -12,12 +13,14 @@ public class Player {
     private final String ipAddress;
     private final String sessionId;
     private final LocalDateTime lastSeen;
+    private final PluginSessionContext sessionContext;
 
-    public Player(String name, StarUuid uuid, String ipAddress, String sessionId) {
+    public Player(String name, StarUuid uuid, String ipAddress, String sessionId, PluginSessionContext sessionContext) {
         this.name = name;
         this.uuid = uuid;
         this.ipAddress = ipAddress;
         this.sessionId = sessionId;
+        this.sessionContext = sessionContext;
         this.lastSeen = LocalDateTime.now();
     }
 
@@ -41,6 +44,9 @@ public class Player {
     }
     public int entityId() {
         return entityId;
+    }
+    public PluginSessionContext sessionContext() {
+        return sessionContext;
     }
     public LocalDateTime lastSeen() {
         return lastSeen;
