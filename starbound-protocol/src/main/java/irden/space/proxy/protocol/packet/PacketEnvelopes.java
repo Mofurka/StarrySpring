@@ -1,7 +1,7 @@
 package irden.space.proxy.protocol.packet;
 
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.SignedVlqCodec;
+import irden.space.proxy.protocol.codec.VlqCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 import irden.space.proxy.protocol.payload.registry.PacketParserRegistry;
 
@@ -148,7 +148,7 @@ public final class PacketEnvelopes {
     private static byte[] buildOriginalData(int rawPacketTypeId, byte[] wirePayload, boolean compressed) {
         BinaryWriter writer = new BinaryWriter();
         writer.writeByte(rawPacketTypeId);
-        SignedVlqCodec.INSTANCE.write(writer, compressed ? -wirePayload.length : wirePayload.length);
+        VlqCodec.INSTANCE.write(writer, compressed ? -wirePayload.length : wirePayload.length);
         writer.writeBytes(wirePayload);
         return writer.toByteArray();
     }

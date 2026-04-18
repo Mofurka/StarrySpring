@@ -3,7 +3,7 @@ package irden.space.proxy.protocol.payload.packet.modify_tile_list;
 import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.VlqCodec;
+import irden.space.proxy.protocol.codec.VlqUCodec;
 import irden.space.proxy.protocol.payload.common.star_pair.StarPair;
 import irden.space.proxy.protocol.payload.common.star_pair.StarPairCodec;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2I;
@@ -20,7 +20,7 @@ public enum TileModificationListCodec implements BinaryCodec<TileModificationLis
 
     @Override
     public TileModificationList read(BinaryReader reader) {
-        int size = VlqCodec.INSTANCE.read(reader);// list size
+        int size = VlqUCodec.INSTANCE.read(reader);// list size
         List<StarPair<StarVec2I, TileModification>> modifications = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             modifications.add(starPairCodec.read(reader));
@@ -30,7 +30,7 @@ public enum TileModificationListCodec implements BinaryCodec<TileModificationLis
 
     @Override
     public void write(BinaryWriter writer, TileModificationList value) {
-        VlqCodec.INSTANCE.write(writer, value.modifications().size());
+        VlqUCodec.INSTANCE.write(writer, value.modifications().size());
         for (StarPair<StarVec2I, TileModification> pair : value.modifications()) {
             starPairCodec.write(writer, pair);
         }

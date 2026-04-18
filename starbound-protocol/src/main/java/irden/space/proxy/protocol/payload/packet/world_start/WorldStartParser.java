@@ -25,7 +25,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         VariantValue worldProperties = VariantCodec.INSTANCE.read(reader);
 
         Map<Short, Float> dungeonIdGravity = new HashMap<>();
-        int size = VlqCodec.INSTANCE.read(reader);
+        int size = VlqUCodec.INSTANCE.read(reader);
         for (int i = 0; i < size; i++) {
             short dungeonId = reader.readInt16BE(); // DungeonId
             float gravity = reader.readFloat32BE();
@@ -33,7 +33,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         }
         
         Map<Short, Boolean> dungeonIdBreathable = new HashMap<>();
-        size = VlqCodec.INSTANCE.read(reader);
+        size = VlqUCodec.INSTANCE.read(reader);
         for (int i = 0; i < size; i++) {
             short dungeonId = reader.readInt16BE(); // DungeonId
             boolean breathable = reader.readBoolean();
@@ -41,7 +41,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         }
         
         List<Short> protectedDungeonIds = new ArrayList<>();
-        size = VlqCodec.INSTANCE.read(reader);
+        size = VlqUCodec.INSTANCE.read(reader);
         for (int i = 0; i < size; i++) {
             protectedDungeonIds.add(reader.readInt16BE());
         }
@@ -75,19 +75,19 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         writer.writeBoolean(payload.respawnInWorld());
         VariantCodec.INSTANCE.write(writer, payload.worldProperties());
 
-        VlqCodec.INSTANCE.write(writer, payload.dungeonIdGravity().size());
+        VlqUCodec.INSTANCE.write(writer, payload.dungeonIdGravity().size());
         for (Map.Entry<Short, Float> entry : payload.dungeonIdGravity().entrySet()) {
             writer.writeInt16BE(entry.getKey());
             writer.writeFloat32BE(entry.getValue());
         }
 
-        VlqCodec.INSTANCE.write(writer, payload.dungeonIdBreathable().size());
+        VlqUCodec.INSTANCE.write(writer, payload.dungeonIdBreathable().size());
         for (Map.Entry<Short, Boolean> entry : payload.dungeonIdBreathable().entrySet()) {
             writer.writeInt16BE(entry.getKey());
             writer.writeBoolean(entry.getValue());
         }
 
-        VlqCodec.INSTANCE.write(writer, payload.protectedDungeonIds().size());
+        VlqUCodec.INSTANCE.write(writer, payload.protectedDungeonIds().size());
         for (Short dungeonId : payload.protectedDungeonIds()) {
             writer.writeInt16BE(dungeonId);
         }

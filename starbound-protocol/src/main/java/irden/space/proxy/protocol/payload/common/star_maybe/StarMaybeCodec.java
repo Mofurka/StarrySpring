@@ -5,6 +5,8 @@ import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public class StarMaybeCodec<T> implements BinaryCodec<Optional<T>> {
 
@@ -32,5 +34,25 @@ public class StarMaybeCodec<T> implements BinaryCodec<Optional<T>> {
         } else {
             writer.writeBoolean(false);
         }
+    }
+
+
+    public static <T> StarMaybeCodec<T> of(BinaryCodec<T> codec) {
+        return new StarMaybeCodec<>(codec);
+    }
+
+    public static <T> StarMaybeCodec<T> of(Function<BinaryReader, T> reader,
+                                           BiConsumer<BinaryWriter, T> writer) {
+        return new StarMaybeCodec<>(new BinaryCodec<T>() {
+            @Override
+            public T read(BinaryReader binaryReader) {
+                return reader.apply(binaryReader);
+            }
+
+            @Override
+            public void write(BinaryWriter binaryWriter, T value) {
+                writer.accept(binaryWriter, value);
+            }
+        });
     }
 }

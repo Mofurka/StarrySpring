@@ -1,7 +1,6 @@
 package irden.space.proxy.protocol.payload.registry;
 
 import irden.space.proxy.protocol.packet.PacketType;
-import irden.space.proxy.protocol.payload.packet.celestial_reqeust.CelestialRequestParser;
 import irden.space.proxy.protocol.payload.packet.chat.ChatRecieveParser;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSentParser;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnectParser;
@@ -10,7 +9,8 @@ import irden.space.proxy.protocol.payload.packet.connect.ConnectFailureParser;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccessParser;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageNotificationParser;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequestParser;
-import irden.space.proxy.protocol.payload.packet.entity_create.EntityCreateParser;
+import irden.space.proxy.protocol.payload.packet.entity.create.EntityCreateParser;
+import irden.space.proxy.protocol.payload.packet.entity.update.EntityUpdateParser;
 import irden.space.proxy.protocol.payload.packet.entity_interact.EntityInteractParser;
 import irden.space.proxy.protocol.payload.packet.entity_interact.EntityInteractResultParser;
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessageParser;
@@ -63,7 +63,7 @@ public class PacketParserRegistry {
         register(PacketType.PLAYER_WARP, new PlayerWarpParser());
         register(PacketType.FLY_SHIP, new FlyShipParser());
         register(PacketType.CHAT_SENT, new ChatSentParser());
-        register(PacketType.CELESTIAL_REQUEST, new CelestialRequestParser());
+        register(PacketType.CELESTIAL_REQUEST, null);
 
         // universe client <-> universe server
         register(PacketType.CLIENT_CONTEXT_UPDATE, null);
@@ -103,7 +103,7 @@ public class PacketParserRegistry {
 
         // system server <-> client
         register(PacketType.ENTITY_CREATE, new EntityCreateParser());
-        register(PacketType.ENTITY_UPDATE, null);
+        register(PacketType.ENTITY_UPDATE, new EntityUpdateParser());
         register(PacketType.ENTITY_DESTROY, null);
         register(PacketType.ENTITY_INTERACT, new EntityInteractParser());
         register(PacketType.ENTITY_INTERACT_RESULT, new EntityInteractResultParser());

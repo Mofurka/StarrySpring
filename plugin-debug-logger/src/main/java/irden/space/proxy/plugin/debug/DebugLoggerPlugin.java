@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.debug.model.Player;
+import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.damage.DamageRequest;
@@ -15,9 +16,8 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
-import irden.space.proxy.protocol.payload.packet.entity_create.EntityCreate;
-import irden.space.proxy.protocol.payload.packet.entity_create.PlayerEntity;
-import irden.space.proxy.protocol.payload.packet.entity_create.player.HumanoidIdentity;
+import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
+import irden.space.proxy.protocol.payload.packet.entity.update.PlayerUpdateNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +84,8 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         Player player = new Player(clientConnect.playerName(),
                 clientConnect.playerUuid(),
                 context.session().clientIp(),
-                context.session().sessionId()
+                context.session().sessionId(),
+                context.session()
         );
         tempPlayersMap.put(s, player);
         return PacketDecision.forward();
@@ -120,60 +121,6 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return logPacket("onProtocolResponse", context);
     }
 
-    @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
-    //test
-    public PacketDecision onEntityCreate(PacketInterceptionContext context) {
-        EntityCreate entityCreate = (EntityCreate) context.parsedPayload();
-        if (entityCreate instanceof PlayerEntity player) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Session ID: ").append(context.session().sessionId()).append(System.lineSeparator());
-            sb.append("Direction: ").append(context.direction()).append(System.lineSeparator());
-            sb.append(player.uuid()).append(System.lineSeparator());
-            sb.append(player.description()).append(System.lineSeparator());
-            sb.append(player.modeType()).append(System.lineSeparator());
-            HumanoidIdentity hi = player.humanoidIdentity();
-            sb.append(hi.name()).append(System.lineSeparator());
-            sb.append(hi.species()).append(System.lineSeparator());
-            log.info("PlayerEntity created with the following details:\n{}", sb);
-
-
-            new PlayerEntity(
-                    player.uuid(),
-                    player.description(),
-                    player.modeType(),
-                    new HumanoidIdentity(
-                            "Неизвестный",
-                            hi.species(),
-                            hi.gender(),
-                            hi.hairGroup(),
-                            hi.hairType(),
-                            hi.hairDirectives(),
-                            hi.bodyDirectives(),
-                            hi.emoteDirectives(),
-                            hi.facialHairGroup(),
-                            hi.facialHairType(),
-                            hi.facialHairDirectives(),
-                            hi.facialMaskGroup(),
-                            hi.facialMaskType(),
-                            hi.facialMaskDirectives(),
-                            hi.personality(),
-                            hi.color(),
-                            hi.imagePath()
-                    ),
-                    player.firstNetState(),
-                    player.entityId()
-            );
-            context.session().sendToClient(PacketType.ENTITY_CREATE, player);
-            return PacketDecision.cancel(); // Cancel the original packet since we've sent a modified one.
-
-
-        }
-
-
-
-        return PacketDecision.forward();
-    }
-
     @PacketHandler(value = PacketType.MODIFY_TILE_LIST)
     public PacketDecision onModifyTileList(PacketInterceptionContext context) {
         return logPacket("onModifyTileList", context);
@@ -187,6 +134,29 @@ public class DebugLoggerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.ENTITY_INTERACT_RESULT)
     public PacketDecision onEntityInteractResult(PacketInterceptionContext context) {
         return logPacket("onEntityInteractResult", context);
+    }
+
+    @ChatCommand("incognito")
+    public void setupIncognito(CommandContext context) {
+        // Для начала просто отправка пакета персонажу
+        var player = PlayerUpdateNetState.builder();
+        var effectsAnimator = EffectsAnimator.builder();
+        effectsAnimator.globalTags(Map.of("nametag", new StringVariantValue("Incognito")));
+        player.effectsAnimator(effectsAnimator.build());
+        //test
+        playersByUuid.forEach((s, p) -> {
+            if (p.name().equals("Misty")) {
+                player.entityId(p.entityId());
+                player.connectionId(p.clientId());
+            }
+        });
+        playersByUuid.forEach((s, p) -> {
+            if (p.name().equals("D.")) {
+                p.sessionContext().sendToClient(PacketType.ENTITY_UPDATE,  player.build());
+            }
+        });
+        // УРА РАБОТАЕТ!
+        context.reply("Incognito setup sent to D. for Misty. Check if the nametag changed to 'Incognito'.");
     }
 
     private PacketDecision logPacket(String handlerName, PacketInterceptionContext context) {
@@ -204,6 +174,7 @@ public class DebugLoggerPlugin implements ProxyPlugin {
     public void debugLogCommand(CommandContext context) {
         context.reply("DebugLoggerPlugin is active! Use this command to verify that the plugin is working.");
     }
+
     @ChatCommand("kill") // checked
     public void killCommand(CommandContext context) {
         Player player = tempPlayersMap.get(context.session().sessionId());

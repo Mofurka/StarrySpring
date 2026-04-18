@@ -41,7 +41,7 @@ public class RuntimePacketInspector {
                 long duration = System.currentTimeMillis() - startTime;
                 if (duration > 100) {
                     log.warn(
-                            "[{}] parsing took {} ms for rawType={} type={}",
+                            "[{}] parsing took {} ms for rawType={} type={}. Is server overloaded or is this a very large packet?",
                             direction,
                             duration,
                             envelope.rawPacketTypeId(),

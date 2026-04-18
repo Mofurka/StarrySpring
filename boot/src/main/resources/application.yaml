@@ -8,6 +8,15 @@ proxy:
   upstream-host: irden.space
   upstream-port: 21024
 
+assets:
+  store:
+    enabled: false
+    archives: []
+    excluded-extensions:
+      - .ogg
+      - .png
+      - .wav
+
 logging:
   level:
     root: INFO
