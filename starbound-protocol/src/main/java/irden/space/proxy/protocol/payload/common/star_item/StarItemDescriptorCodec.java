@@ -8,7 +8,7 @@ public enum StarItemDescriptorCodec implements BinaryCodec<StarItemDescriptor> {
     @Override
     public StarItemDescriptor read(BinaryReader reader) {
         String name = StarStringCodec.INSTANCE.read(reader);
-        int count = VlqUCodec.INSTANCE.read(reader);
+        int count = VlqUnsignedCodec.INSTANCE.read(reader);
         VariantValue parameters = VariantCodec.INSTANCE.read(reader);
         return new StarItemDescriptor(name, count, parameters);
     }
@@ -16,7 +16,7 @@ public enum StarItemDescriptorCodec implements BinaryCodec<StarItemDescriptor> {
     @Override
     public void write(BinaryWriter writer, StarItemDescriptor value) {
         StarStringCodec.INSTANCE.write(writer, value.name());
-        VlqUCodec.INSTANCE.write(writer, value.count());
+        VlqUnsignedCodec.INSTANCE.write(writer, value.count());
         VariantCodec.INSTANCE.write(writer, value.parameters());
     }
 }

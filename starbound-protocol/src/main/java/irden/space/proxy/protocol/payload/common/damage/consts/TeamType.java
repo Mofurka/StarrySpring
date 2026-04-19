@@ -1,6 +1,6 @@
 package irden.space.proxy.protocol.payload.common.damage.consts;
 
-public enum TeamType {
+public enum     TeamType {
     NULL(1),
     FRIENDLY(2),
     ENEMY(3),

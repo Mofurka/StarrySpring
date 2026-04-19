@@ -2,7 +2,7 @@ package irden.space.proxy.protocol.payload.packet.celestial_reqeust;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.VlqUCodec;
+import irden.space.proxy.protocol.codec.VlqUnsignedCodec;
 import irden.space.proxy.protocol.payload.common.star_either.StarEither;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2I;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2ICodec;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class CelestialRequestParser implements PacketParser<CelestialRequest> {
     @Override
     public CelestialRequest parse(BinaryReader reader) {
-        int size = VlqUCodec.INSTANCE.read(reader); // list size
+        int size = VlqUnsignedCodec.INSTANCE.read(reader); // list size
         var request = new ArrayList<StarEither<StarVec2I, StarVec3I>>();
         for (int i = 0; i < size; i++) {
             if (reader.readBoolean()) {
@@ -31,7 +31,7 @@ public class CelestialRequestParser implements PacketParser<CelestialRequest> {
 
     @Override
     public byte[] write(BinaryWriter writer, CelestialRequest payload) {
-        VlqUCodec.INSTANCE.write(writer, payload.celestialRequests().size());
+        VlqUnsignedCodec.INSTANCE.write(writer, payload.celestialRequests().size());
         for (StarEither<StarVec2I, StarVec3I> request : payload.celestialRequests()) {
             if (request.isLeft()) {
                 writer.writeBoolean(false);

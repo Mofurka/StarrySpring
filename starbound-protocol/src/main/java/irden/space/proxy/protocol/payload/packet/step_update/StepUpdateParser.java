@@ -2,14 +2,14 @@ package irden.space.proxy.protocol.payload.packet.step_update;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.VlqUCodec;
+import irden.space.proxy.protocol.codec.VlqUnsignedCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
 public class StepUpdateParser implements PacketParser<StepUpdate> {
     @Override
     public StepUpdate parse(BinaryReader reader) {
          if (reader.openProtocolVersion() == -1) {
-             int steps = VlqUCodec.INSTANCE.read(reader);
+             int steps = VlqUnsignedCodec.INSTANCE.read(reader);
              return new StepUpdate(
                         steps / 60.0
              );
@@ -22,7 +22,7 @@ public class StepUpdateParser implements PacketParser<StepUpdate> {
     @Override
     public byte[] write(BinaryWriter writer, StepUpdate payload) {
         if (writer.openProtocolVersion() == -1) {
-            VlqUCodec.INSTANCE.write(writer, (int) (payload.remoteTime() * 60));
+            VlqUnsignedCodec.INSTANCE.write(writer, (int) (payload.remoteTime() * 60));
         } else {
             writer.writeDouble64BE(payload.remoteTime());
         }

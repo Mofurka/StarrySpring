@@ -16,14 +16,17 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
+import irden.space.proxy.protocol.payload.packet.entity.type.Entity;
+import irden.space.proxy.protocol.payload.packet.entity.type.PlayerEntity;
 import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
-import irden.space.proxy.protocol.payload.packet.entity.update.PlayerUpdateNetState;
+import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @PluginDefinition(
         id = "debug-logger",
@@ -136,10 +139,66 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return logPacket("onEntityInteractResult", context);
     }
 
+    @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
+    public PacketDecision onEntityCreate(PacketInterceptionContext context) {
+        Entity entity = (Entity) context.parsedPayload();
+
+        if (entity instanceof PlayerEntity playerEntity) {
+            Player player = tempPlayersMap.get(context.session().sessionId());
+            if (playerEntity.entityId() != player.entityId() && player.entityId() != 0) {
+                CompletableFuture.runAsync(() -> sendEntityNames(context.session(), playerEntity.entityId()));
+                return PacketDecision.forward();
+            }
+        }
+        return PacketDecision.forward();
+    }
+
+    private void sendEntityNames(PluginSessionContext session, int entityId) {
+        var player = PlayerNetState.builder();
+        var effectsAnimator = EffectsAnimator.builder();
+        int connectionId = entityId / -65536;
+        player.connectionId(connectionId);
+        player.entityId(entityId);
+        effectsAnimator.globalTags(Map.of("nametag", new StringVariantValue("Неизвестный ^cyan;[%s]^reset;".formatted(connectionId))));
+        player.effectsAnimator(effectsAnimator.build());
+        PlayerNetState build = player.build();
+        for (int i = 0; i < 3; i++) {
+            session.sendToClient(PacketType.ENTITY_UPDATE, build);
+        }
+    }
+
+    @ChatCommand(value = "setnametag",
+    usage = "<connectionId> <nametag>")
+    public void setNametagCommand(CommandContext context) {
+        if (context.arguments().size() < 2) {
+            context.reply("Usage: /setnametag <connectionId> <nametag>");
+            return;
+        }
+        String connectionIdStr = context.arguments().getFirst();
+        String nametag = context.arguments().get(1);
+        int entityId = Integer.parseInt(connectionIdStr) * -65536;
+        log.info("Setting nametag for connectionId={} (entityId={}) to '{}'", connectionIdStr, entityId, nametag);
+        var player = PlayerNetState.builder();
+        var effectsAnimator = EffectsAnimator.builder();
+        effectsAnimator.globalTags(Map.of("nametag", new StringVariantValue(nametag + " ^cyan;[%s]^reset;".formatted(connectionIdStr))));
+        player.effectsAnimator(effectsAnimator.build());
+        player.entityId(entityId);
+        player.connectionId(Integer.parseInt(connectionIdStr));
+        context.session().sendToClient(PacketType.ENTITY_UPDATE, player.build());
+        context.reply("Nametag update sent to connectionId=" + connectionIdStr);
+    }
+
+
+
+    @PacketHandler(value = PacketType.SPAWN_ENTITY)
+    public PacketDecision onSpawnEntity(PacketInterceptionContext context) {
+        return logPacket("onSpawnEntity", context);
+    }
+
     @ChatCommand("incognito")
     public void setupIncognito(CommandContext context) {
         // Для начала просто отправка пакета персонажу
-        var player = PlayerUpdateNetState.builder();
+        var player = PlayerNetState.builder();
         var effectsAnimator = EffectsAnimator.builder();
         effectsAnimator.globalTags(Map.of("nametag", new StringVariantValue("Incognito")));
         player.effectsAnimator(effectsAnimator.build());
@@ -152,7 +211,7 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         });
         playersByUuid.forEach((s, p) -> {
             if (p.name().equals("D.")) {
-                p.sessionContext().sendToClient(PacketType.ENTITY_UPDATE,  player.build());
+                p.sessionContext().sendToClient(PacketType.ENTITY_UPDATE, player.build());
             }
         });
         // УРА РАБОТАЕТ!

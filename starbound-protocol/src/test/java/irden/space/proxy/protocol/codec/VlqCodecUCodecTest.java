@@ -14,7 +14,7 @@ class VlqCodecUCodecTest {
     void readsMultiByteVlq() {
         BinaryReader reader = new BinaryReader(new byte[]{(byte) 0x81, 0x17});
 
-        assertEquals(151, VlqUCodec.INSTANCE.read(reader));
+        assertEquals(151, VlqUnsignedCodec.INSTANCE.read(reader));
     }
 
     @Test

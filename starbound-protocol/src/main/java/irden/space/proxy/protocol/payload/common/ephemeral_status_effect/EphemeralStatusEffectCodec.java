@@ -39,7 +39,7 @@ public enum EphemeralStatusEffectCodec implements BinaryCodec<EphemeralStatusEff
     }
 
     public List<EphemeralStatusEffect> readList(BinaryReader reader) {
-        int size = VlqUCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.read(reader);
         List<EphemeralStatusEffect> effects = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             effects.add(read(reader));
@@ -48,7 +48,7 @@ public enum EphemeralStatusEffectCodec implements BinaryCodec<EphemeralStatusEff
     }
 
     public void writeList(BinaryWriter writer, List<EphemeralStatusEffect> effects) {
-        VlqUCodec.INSTANCE.write(writer, effects.size());
+        VlqUnsignedCodec.INSTANCE.write(writer, effects.size());
         for (EphemeralStatusEffect effect : effects) {
             write(writer, effect);
         }

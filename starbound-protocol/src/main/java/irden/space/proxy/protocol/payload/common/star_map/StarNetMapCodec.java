@@ -3,7 +3,7 @@ package irden.space.proxy.protocol.payload.common.star_map;
 import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.VlqUCodec;
+import irden.space.proxy.protocol.codec.VlqUnsignedCodec;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      */
     @Override
     public Map<A, B> read(BinaryReader reader) {
-        int size = VlqUCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.read(reader);
         Map<A, B> map = LinkedHashMap.newLinkedHashMap(Math.max(size, 0));
 
         for (int i = 0; i < size; i++) {
@@ -77,7 +77,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
         Map<A, B> map = new LinkedHashMap<>(baseMap);
 
         while (true) {
-            int code = VlqUCodec.INSTANCE.read(reader);
+            int code = VlqUnsignedCodec.INSTANCE.read(reader);
 
             if (code == DELTA_END) {
                 break;
@@ -99,7 +99,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      */
     public void readDeltaInto(BinaryReader reader, Map<A, B> target) {
         while (true) {
-            int code = VlqUCodec.INSTANCE.read(reader);
+            int code = VlqUnsignedCodec.INSTANCE.read(reader);
 
             if (code == DELTA_END) {
                 return;
@@ -128,7 +128,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      */
     @Override
     public void write(BinaryWriter writer, Map<A, B> value) {
-        VlqUCodec.INSTANCE.write(writer, value.size());
+        VlqUnsignedCodec.INSTANCE.write(writer, value.size());
 
         for (Map.Entry<A, B> entry : value.entrySet()) {
             writer.writeByte(CHANGE_SET);
@@ -148,7 +148,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      * a syntactically valid empty body.
      */
     public void writeEmptyDelta(BinaryWriter writer) {
-        VlqUCodec.INSTANCE.write(writer, DELTA_END);
+        VlqUnsignedCodec.INSTANCE.write(writer, DELTA_END);
     }
 
     /**
@@ -161,9 +161,9 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      * </pre>
      */
     public void writeFullReloadDelta(BinaryWriter writer, Map<A, B> value) {
-        VlqUCodec.INSTANCE.write(writer, DELTA_FULL_RELOAD);
+        VlqUnsignedCodec.INSTANCE.write(writer, DELTA_FULL_RELOAD);
         write(writer, value);
-        VlqUCodec.INSTANCE.write(writer, DELTA_END);
+        VlqUnsignedCodec.INSTANCE.write(writer, DELTA_END);
     }
 
     /**
@@ -188,10 +188,10 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
 
         // Small optimization: if map became empty, encode as a single ClearChange.
         if (!oldMap.isEmpty() && newMap.isEmpty()) {
-            VlqUCodec.INSTANCE.write(writer, DELTA_SINGLE_CHANGE);
+            VlqUnsignedCodec.INSTANCE.write(writer, DELTA_SINGLE_CHANGE);
             writer.writeByte(CHANGE_CLEAR);
 
-            VlqUCodec.INSTANCE.write(writer, DELTA_END);
+            VlqUnsignedCodec.INSTANCE.write(writer, DELTA_END);
             return true;
         }
 
@@ -204,7 +204,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
             B oldValue = oldMap.get(key);
 
             if (!hadOld || !Objects.equals(oldValue, newValue)) {
-                VlqUCodec.INSTANCE.write(writer, DELTA_SINGLE_CHANGE);
+                VlqUnsignedCodec.INSTANCE.write(writer, DELTA_SINGLE_CHANGE);
                 writer.writeByte(CHANGE_SET);
                 keyCodec.write(writer, key);
                 valueCodec.write(writer, newValue);
@@ -215,7 +215,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
         // Remove missing keys.
         for (A key : oldMap.keySet()) {
             if (!newMap.containsKey(key)) {
-                VlqUCodec.INSTANCE.write(writer, DELTA_SINGLE_CHANGE);
+                VlqUnsignedCodec.INSTANCE.write(writer, DELTA_SINGLE_CHANGE);
                 writer.writeByte(CHANGE_REMOVE);
                 keyCodec.write(writer, key);
                 deltaWritten = true;
@@ -223,7 +223,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
         }
 
         if (deltaWritten) {
-            VlqUCodec.INSTANCE.write(writer, DELTA_END);
+            VlqUnsignedCodec.INSTANCE.write(writer, DELTA_END);
         }
 
         return deltaWritten;

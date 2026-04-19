@@ -56,6 +56,7 @@ public final class ProxyPluginSupport {
         invokeLifecycle(plugin, OnStop.class);
     }
 
+
     private static boolean hasPacketHandlers(Class<?> pluginType) {
         return Arrays.stream(pluginType.getDeclaredMethods())
                 .anyMatch(method -> method.isAnnotationPresent(PacketHandler.class));

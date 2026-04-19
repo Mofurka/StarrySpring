@@ -3,7 +3,7 @@ package irden.space.proxy.protocol.payload.common.star_map;
 import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.VlqUCodec;
+import irden.space.proxy.protocol.codec.VlqUnsignedCodec;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,7 +19,7 @@ public class StarMapCodec implements BinaryCodec<Map<?, ?>> {
 
     @Override
     public Map<?,?> read(BinaryReader reader) {
-        int mapSize = VlqUCodec.INSTANCE.read(reader);
+        int mapSize = VlqUnsignedCodec.INSTANCE.read(reader);
         LinkedHashMap<Object, Object> objectObjectLinkedHashMap = LinkedHashMap.newLinkedHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             Object key = keyCodec.read(reader);

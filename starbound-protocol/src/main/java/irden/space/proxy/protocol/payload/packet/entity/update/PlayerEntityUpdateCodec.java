@@ -1,30 +1,26 @@
 package irden.space.proxy.protocol.payload.packet.entity.update;
 
 import irden.space.proxy.protocol.codec.*;
-import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
-import irden.space.proxy.protocol.payload.common.damage.consts.TeamType;
+import irden.space.proxy.protocol.payload.common.damage.DamageTeamCodec;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptorCodec;
 import irden.space.proxy.protocol.payload.common.star_m_variant.StarMVariantCodec;
 import irden.space.proxy.protocol.payload.common.star_map.StarNetMapCodec;
 import irden.space.proxy.protocol.payload.common.star_pair.StarPair;
 import irden.space.proxy.protocol.payload.common.star_poly.StarPolyFCodec;
-import irden.space.proxy.protocol.payload.packet.entity.player.EquipmentSlot;
-import irden.space.proxy.protocol.payload.packet.entity.player.HumanoidIdentityCodec;
-import irden.space.proxy.protocol.payload.packet.entity.player.MovementController;
-import irden.space.proxy.protocol.payload.packet.entity.player.PlayerInventory;
-import irden.space.proxy.protocol.payload.packet.entity.player.custom_bar_link.CustomBarLink;
-import irden.space.proxy.protocol.payload.packet.entity.player.custom_bar_link.CustomBarkLinkCodec;
+import irden.space.proxy.protocol.payload.packet.entity.type.player.*;
+import irden.space.proxy.protocol.payload.packet.entity.type.player.custom_bar_link.CustomBarLink;
+import irden.space.proxy.protocol.payload.packet.entity.type.player.custom_bar_link.CustomBarkLinkCodec;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState> {
+public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
     INSTANCE;
     private final StarMVariantCodec starMVariantCodec = new StarMVariantCodec(
-            VlqUCodec.INSTANCE,
-            VlqUCodec.INSTANCE
+            VlqUnsignedCodec.INSTANCE,
+            VlqUnsignedCodec.INSTANCE
     );
     private final StarNetMapCodec<String, byte[]> starNetMapCodec = new StarNetMapCodec<>(
             StarStringCodec.INSTANCE,
@@ -33,11 +29,11 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
     private final String magicProperty = "\0JsonProperty\0";
 
     @Override
-    public PlayerUpdateNetState read(BinaryReader reader) {
+    public PlayerNetState read(BinaryReader reader) {
         throw new UnsupportedOperationException("Use read method with BinaryReader parameter to read player entity update, because it has a complex structure and requires special handling");
     }
 
-    public PlayerUpdateNetState read(BinaryReader reader, PlayerUpdateNetState.PlayerUpdateNetStateBuilder player) {
+    public PlayerNetState read(BinaryReader reader, PlayerNetState.PlayerNetStateBuilder player) {
         // Это мапа дельта-обновлений, которая может содержать любые поля из PlayerEntityCreateCodec, но не все сразу (по сути, это патч для сущности)
         var fullUpdate = reader.readBoolean();
         if (fullUpdate) {
@@ -45,18 +41,18 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
         }
         updateLoop:
         while (reader.hasRemaining()) {
-            var magicNumber = VlqUCodec.INSTANCE.read(reader);
+            var magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
             if (magicNumber == 0) {
                 break;
             }
             switch (magicNumber) {
-                case 1 -> player.state(VlqUCodec.INSTANCE.read(reader));
+                case 1 -> player.state(VlqUnsignedCodec.INSTANCE.read(reader));
                 case 2 -> player.shifting(reader.readBoolean());
                 case 3 -> player.xMousePos(VlqCodec.INSTANCE.read(reader) * 0.003125f);
                 case 4 -> player.yMousePos(VlqCodec.INSTANCE.read(reader) * 0.003125f);
                 case 5 -> player.humanoidIdentity(HumanoidIdentityCodec.INSTANCE.read(reader));
-                case 6 -> player.teamType(TeamType.fromId(reader.readUnsignedByte())).teamNumber(reader.readInt16BE());
-                case 7 -> player.landed(reader.readBoolean());
+                case 6 -> player.damageTeam(DamageTeamCodec.INSTANCE.read(reader));
+                case 7 -> player.landed(VlqUnsignedCodec.INSTANCE.read(reader));
                 case 8 -> player.chatMessage(StarStringCodec.INSTANCE.read(reader));
                 case 9 -> player.newChatMessage(reader.readBoolean());
                 case 10 -> player.emote(StarStringCodec.INSTANCE.read(reader));
@@ -80,67 +76,66 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
     }
 
     @Override
-    public void write(BinaryWriter writer, PlayerUpdateNetState value) {
+    public void write(BinaryWriter writer, PlayerNetState value) {
         BinaryWriter newWriter = new BinaryWriter(writer.openProtocolVersion());
         newWriter.writeBoolean(false); // full update
         if (value.state() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 1);
-            VlqUCodec.INSTANCE.write(newWriter, value.state());
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 1);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, value.state());
         }
         if (Boolean.TRUE.equals(value.shifting())) {
-            VlqUCodec.INSTANCE.write(newWriter, 2);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 2);
             newWriter.writeBoolean(true);
         }
         if (value.xMousePos() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 3);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 3);
             VlqCodec.INSTANCE.write(newWriter, (int) (value.xMousePos() / 0.003125f));
         }
         if (value.yMousePos() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 4);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 4);
             VlqCodec.INSTANCE.write(newWriter, (int) (value.yMousePos() / 0.003125f));
         }
         if (value.humanoidIdentity() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 5);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 5);
             HumanoidIdentityCodec.INSTANCE.write(newWriter, value.humanoidIdentity());
         }
-        if (value.teamType() != null && value.teamNumber() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 6);
-            newWriter.writeByte(value.teamType().id());
-            newWriter.writeInt16BE(value.teamNumber());
+        if (value.damageTeam() != null) {
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 6);
+            DamageTeamCodec.INSTANCE.write(newWriter, value.damageTeam());
         }
         if (value.landed() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 7);
-            newWriter.writeBoolean(value.landed());
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 7);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, value.landed());
         }
         if (value.chatMessage() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 8);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 8);
             StarStringCodec.INSTANCE.write(newWriter, value.chatMessage());
         }
         if (value.newChatMessage() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 9);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 9);
             newWriter.writeBoolean(value.newChatMessage());
         }
         if (value.emote() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 10);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 10);
             StarStringCodec.INSTANCE.write(newWriter, value.emote());
         }
         if (value.inventory() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 11);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 11);
             throw new UnsupportedOperationException("Writing player inventory is not supported yet, too many parameters and complexity");
         }
         if (value.movementController() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 15);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 15);
             throw new UnsupportedOperationException("Writing movement controller is not supported yet, too many parameters and complexity");
         }
         if (value.effectEmitters() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 16);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 16);
             throw new UnsupportedOperationException("Writing effect emitters is not supported yet, too many parameters and complexity");
         }
         if (value.effectsAnimator() != null) {
-            VlqUCodec.INSTANCE.write(newWriter, 17);
+            VlqUnsignedCodec.INSTANCE.write(newWriter, 17);
             this.writeEffectsAnimator(newWriter, value.effectsAnimator());
         }
-        VlqUCodec.INSTANCE.write(newWriter, 0);
+        VlqUnsignedCodec.INSTANCE.write(newWriter, 0);
         StarByteArrayCodec.INSTANCE.write(writer, newWriter.toByteArray());
     }
 
@@ -148,7 +143,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
     public MovementController readMcontroller(BinaryReader reader) {
         var mc = MovementController.builder();
         while (true) {
-            int magicNumber = VlqUCodec.INSTANCE.read(reader);
+            int magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
             if (magicNumber == 0 || magicNumber > 16) {
                 break;
             }
@@ -182,7 +177,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
     private Optional<StarPair<Integer, Integer>> readSurfaceMovingCollision(BinaryReader reader) {
         if (reader.readBoolean()) {
             var entityId = reader.readInt32BE();
-            var collisionIndex = VlqUCodec.INSTANCE.read(reader);
+            var collisionIndex = VlqUnsignedCodec.INSTANCE.read(reader);
             return Optional.of(new StarPair<>(entityId, collisionIndex));
         } else {
             return Optional.empty();
@@ -214,7 +209,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
         int inspectionToolIndex = paintToolIndex + 1;               // 241
 
         while (true) {
-            int magicNumber = VlqUCodec.INSTANCE.read(reader);
+            int magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
             if (magicNumber == 0) {
                 break;
             }
@@ -244,7 +239,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
             }
             // Currencies (223)
             else if (magicNumber == currenciesIndex) {
-                int currenciesMapSize = VlqUCodec.INSTANCE.read(reader);
+                int currenciesMapSize = VlqUnsignedCodec.INSTANCE.read(reader);
                 Map<String, Long> currencies = LinkedHashMap.newLinkedHashMap(currenciesMapSize);
                 for (int i = 0; i < currenciesMapSize; i++) {
                     String key = StarStringCodec.INSTANCE.read(reader);
@@ -255,7 +250,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
             }
             // Custom bar group (224)
             else if (magicNumber == customBarGroupIndex) {
-                pi.customBarState(VlqUCodec.INSTANCE.read(reader));
+                pi.customBarState(VlqUnsignedCodec.INSTANCE.read(reader));
             }
             // Custom bar slots (225-236)
             else if (magicNumber > customBarGroupIndex && magicNumber <= customBarEnd) {
@@ -287,7 +282,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
     }
 
     public List<StarPair<String, String>> readEffectEmitter(BinaryReader reader) {
-        int listSize = VlqUCodec.INSTANCE.read(reader);
+        int listSize = VlqUnsignedCodec.INSTANCE.read(reader);
         List<StarPair<String, String>> starPairList = new ArrayList<>(listSize);
         for (int i = 0; i < listSize; i++) {
             String key = StarStringCodec.INSTANCE.read(reader);
@@ -300,7 +295,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
     public EffectsAnimator readEffectsAnimator(BinaryReader reader) {
         var ea = EffectsAnimator.builder();
         while (reader.hasRemaining()) {
-            int magicNumber = VlqUCodec.INSTANCE.read(reader);
+            int magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
             if (magicNumber == 0) {
                 break;
             }
@@ -331,27 +326,27 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
 
     public void writeEffectsAnimator(BinaryWriter writer, EffectsAnimator value) {
         if (value.processingDirectives() != null) {
-            VlqUCodec.INSTANCE.write(writer, 1);
+            VlqUnsignedCodec.INSTANCE.write(writer, 1);
             StarStringCodec.INSTANCE.write(writer, value.processingDirectives());
         }
         if (value.zoom() != null) {
-            VlqUCodec.INSTANCE.write(writer, 2);
+            VlqUnsignedCodec.INSTANCE.write(writer, 2);
             writer.writeFloat32BE(value.zoom());
         }
         if (value.flipped() != null) {
-            VlqUCodec.INSTANCE.write(writer, 3);
+            VlqUnsignedCodec.INSTANCE.write(writer, 3);
             writer.writeBoolean(value.flipped());
         }
         if (value.flippedRelativeCenterLine() != null) {
-            VlqUCodec.INSTANCE.write(writer, 4);
+            VlqUnsignedCodec.INSTANCE.write(writer, 4);
             writer.writeFloat32BE(value.flippedRelativeCenterLine());
         }
         if (value.animationRate() != null) {
-            VlqUCodec.INSTANCE.write(writer, 5);
+            VlqUnsignedCodec.INSTANCE.write(writer, 5);
             writer.writeFloat32BE(value.animationRate());
         }
         if (value.globalTags() != null) {
-            VlqUCodec.INSTANCE.write(writer, 6);
+            VlqUnsignedCodec.INSTANCE.write(writer, 6);
             Map<String, byte[]> globalTags = new LinkedHashMap<>();
             value.globalTags().forEach((k, v) -> {
                 switch (v) {
@@ -367,6 +362,6 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerUpdateNetState>
             });
             starNetMapCodec.writeFullReloadDelta(writer, globalTags);
         }
-        VlqUCodec.INSTANCE.write(writer, 0);
+        VlqUnsignedCodec.INSTANCE.write(writer, 0);
     }
 }

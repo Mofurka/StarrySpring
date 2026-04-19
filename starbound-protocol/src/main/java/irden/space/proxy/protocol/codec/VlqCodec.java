@@ -5,7 +5,7 @@ public enum VlqCodec implements BinaryCodec<Integer> {
 
     @Override
     public Integer read(BinaryReader reader) {
-        int value = VlqUCodec.INSTANCE.read(reader);
+        int value = VlqUnsignedCodec.INSTANCE.read(reader);
         // ZigZag decoding
         if ((value & 1) == 0) {
             return value >>> 1; // Positive number
@@ -18,6 +18,6 @@ public enum VlqCodec implements BinaryCodec<Integer> {
     public void write(BinaryWriter writer, Integer value) {
         // ZigZag encoding
         int encoded = (value << 1) ^ (value >> 31);
-        VlqUCodec.INSTANCE.write(writer, encoded);
+        VlqUnsignedCodec.INSTANCE.write(writer, encoded);
     }
 }

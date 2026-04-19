@@ -10,6 +10,8 @@ import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccessParser;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageNotificationParser;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequestParser;
 import irden.space.proxy.protocol.payload.packet.entity.create.EntityCreateParser;
+import irden.space.proxy.protocol.payload.packet.entity.destroy.EntityDestroyParser;
+import irden.space.proxy.protocol.payload.packet.entity.spawn.EntitySpawnParser;
 import irden.space.proxy.protocol.payload.packet.entity.update.EntityUpdateParser;
 import irden.space.proxy.protocol.payload.packet.entity_interact.EntityInteractParser;
 import irden.space.proxy.protocol.payload.packet.entity_interact.EntityInteractResultParser;
@@ -93,7 +95,7 @@ public class PacketParserRegistry {
         register(PacketType.DAMAGE_TILE_GROUP, null);
         register(PacketType.COLLECT_LIQUID, null);
         register(PacketType.REQUEST_DROP, null);
-        register(PacketType.SPAWN_ENTITY, null);
+        register(PacketType.SPAWN_ENTITY, new EntitySpawnParser());
         register(PacketType.CONNECT_WIRE, null);
         register(PacketType.DISCONNECT_ALL_WIRES, null);
         register(PacketType.WORLD_CLIENT_STATE_UPDATE, null);
@@ -104,7 +106,7 @@ public class PacketParserRegistry {
         // system server <-> client
         register(PacketType.ENTITY_CREATE, new EntityCreateParser());
         register(PacketType.ENTITY_UPDATE, new EntityUpdateParser());
-        register(PacketType.ENTITY_DESTROY, null);
+        register(PacketType.ENTITY_DESTROY, new EntityDestroyParser());
         register(PacketType.ENTITY_INTERACT, new EntityInteractParser());
         register(PacketType.ENTITY_INTERACT_RESULT, new EntityInteractResultParser());
         register(PacketType.HIT_REQUEST, null);

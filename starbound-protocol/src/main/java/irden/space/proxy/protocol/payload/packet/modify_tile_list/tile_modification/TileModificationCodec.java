@@ -3,7 +3,7 @@ package irden.space.proxy.protocol.payload.packet.modify_tile_list.tile_modifica
 import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
-import irden.space.proxy.protocol.codec.VlqUCodec;
+import irden.space.proxy.protocol.codec.VlqUnsignedCodec;
 import irden.space.proxy.protocol.payload.packet.modify_tile_list.tile_modification.tile_layer.TileLayer;
 
 import java.util.Optional;
@@ -13,7 +13,7 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
 
     @Override
     public TileModification read(BinaryReader reader) {
-        int type = VlqUCodec.INSTANCE.read(reader); // type
+        int type = VlqUnsignedCodec.INSTANCE.read(reader); // type
         return switch (type) {
             case 1 -> readPlaceMaterial(reader);
             case 2 -> readPlaceMod(reader);
@@ -27,19 +27,19 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
     public void write(BinaryWriter writer, TileModification value) {
         switch (value) {
             case PlaceMaterial placeMaterial -> {
-                VlqUCodec.INSTANCE.write(writer, 1);
+                VlqUnsignedCodec.INSTANCE.write(writer, 1);
                 writePlaceMaterial(writer, placeMaterial);
             }
             case PlaceMod placeMod -> {
-                VlqUCodec.INSTANCE.write(writer, 2);
+                VlqUnsignedCodec.INSTANCE.write(writer, 2);
                 writePlaceMod(writer, placeMod);
             }
             case PlaceMaterialColor placeMaterialColor -> {
-                VlqUCodec.INSTANCE.write(writer, 3);
+                VlqUnsignedCodec.INSTANCE.write(writer, 3);
                 writePlaceMaterialColor(writer, placeMaterialColor);
             }
             case PlaceLiquid placeLiquid -> {
-                VlqUCodec.INSTANCE.write(writer, 4);
+                VlqUnsignedCodec.INSTANCE.write(writer, 4);
                 writePlaceLiquid(writer, placeLiquid);
             }
         }

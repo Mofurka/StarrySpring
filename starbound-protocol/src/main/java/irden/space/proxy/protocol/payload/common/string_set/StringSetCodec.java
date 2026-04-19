@@ -7,7 +7,7 @@ public enum StringSetCodec implements BinaryCodec<StringSet> {
 
     @Override
     public StringSet read(BinaryReader reader) {
-        int size = VlqUCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.read(reader);
         String[] strings = new String[size];
         for (int i = 0; i < size; i++) {
             strings[i] = StarStringCodec.INSTANCE.read(reader);
@@ -17,7 +17,7 @@ public enum StringSetCodec implements BinaryCodec<StringSet> {
 
     @Override
     public void write(BinaryWriter writer, StringSet value) {
-        VlqUCodec.INSTANCE.write(writer, value.strings().length);
+        VlqUnsignedCodec.INSTANCE.write(writer, value.strings().length);
         for (String string : value.strings()) {
             StarStringCodec.INSTANCE.write(writer, string);
         }

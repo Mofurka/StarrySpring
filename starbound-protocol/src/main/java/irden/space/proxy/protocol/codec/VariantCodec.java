@@ -59,7 +59,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
     }
 
     public List<VariantValue> readList(BinaryReader reader) {
-        int size = VlqUCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.read(reader);
         List<VariantValue> result = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             result.add(read(reader));
@@ -68,14 +68,14 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
     }
 
     public void writeList(BinaryWriter writer, List<VariantValue> values) {
-        VlqUCodec.INSTANCE.write(writer, values.size());
+        VlqUnsignedCodec.INSTANCE.write(writer, values.size());
         for (VariantValue value : values) {
             write(writer, value);
         }
     }
 
     public Map<String, VariantValue> readMap(BinaryReader reader) {
-        int size = VlqUCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.read(reader);
         Map<String, VariantValue> result = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
             String key = StarStringCodec.INSTANCE.read(reader);
@@ -86,7 +86,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
     }
 
     public void writeMap(BinaryWriter writer, Map<String, VariantValue> values) {
-        VlqUCodec.INSTANCE.write(writer, values.size());
+        VlqUnsignedCodec.INSTANCE.write(writer, values.size());
         for (Map.Entry<String, VariantValue> entry : values.entrySet()) {
             StarStringCodec.INSTANCE.write(writer, entry.getKey());
             write(writer, entry.getValue());
