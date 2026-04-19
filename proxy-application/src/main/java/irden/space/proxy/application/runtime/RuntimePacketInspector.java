@@ -19,7 +19,9 @@ import java.util.Map;
 public class RuntimePacketInspector {
 
     private static final Logger log = LoggerFactory.getLogger(RuntimePacketInspector.class);
-
+    private static final long SLOW_PARSE_THRESHOLD_NANOS = 100_000_000L;
+    private static final String COMPRESSION_KEY = "compression";
+    private static final String OPEN_PROTOCOL_VERSION_KEY = "openProtocolVersion";
 
     private final PacketDispatcher packetDispatcher;
 
@@ -36,14 +38,15 @@ public class RuntimePacketInspector {
 
         if (packetDispatcher != null) {
             try {
-                long startTime = System.currentTimeMillis();
+                long startTime = System.nanoTime();
                 parsed = packetDispatcher.parse(envelope, openProtocolVersion);
-                long duration = System.currentTimeMillis() - startTime;
-                if (duration > 100) {
+                long durationNanos = System.nanoTime() - startTime;
+                if (durationNanos > SLOW_PARSE_THRESHOLD_NANOS) {
+                    long durationMillis = durationNanos / 1_000_000L;
                     log.warn(
                             "[{}] parsing took {} ms for rawType={} type={}. Is server overloaded or is this a very large packet?",
                             direction,
-                            duration,
+                            durationMillis,
                             envelope.rawPacketTypeId(),
                             envelope.packetType()
                     );
@@ -60,28 +63,22 @@ public class RuntimePacketInspector {
             }
         }
 
-        SessionTransportMode negotiatedTransportMode = extractNegotiatedTransportMode(envelope, direction, parsed);
-        Integer negotiatedOpenProtocolVersion = extractOpenProtocolVersion(envelope, direction, parsed);
+        SessionTransportMode negotiatedTransportMode = null;
+        Integer negotiatedOpenProtocolVersion = null;
+        if (isProtocolNegotiationResponse(envelope, direction, parsed)) {
+            ProtocolResponse protocolResponse = (ProtocolResponse) parsed;
+            Map<String, VariantValue> values = extractInfoMap(protocolResponse);
+            if (values != null) {
+                negotiatedTransportMode = extractNegotiatedTransportMode(values);
+                negotiatedOpenProtocolVersion = extractOpenProtocolVersion(values);
+            }
+        }
 
         return new PacketInspectionResult(parsed, negotiatedTransportMode, negotiatedOpenProtocolVersion);
     }
 
-    private SessionTransportMode extractNegotiatedTransportMode(
-            PacketEnvelope envelope,
-            PacketDirection direction,
-            Object parsed
-    ) {
-        if (isNegotiatedProtocolResponse(envelope, direction, parsed)) {
-            return null;
-        }
-
-        ProtocolResponse protocolResponse = (ProtocolResponse) parsed;
-        Map<String, VariantValue> values = extractInfoMap(protocolResponse);
-        if (values == null) {
-            return null;
-        }
-
-        VariantValue compression = values.get("compression");
+    private SessionTransportMode extractNegotiatedTransportMode(Map<String, VariantValue> values) {
+        VariantValue compression = values.get(COMPRESSION_KEY);
         if (!(compression instanceof StringVariantValue(String value))) {
             return null;
         }
@@ -94,21 +91,8 @@ public class RuntimePacketInspector {
         return null;
     }
 
-    private Integer extractOpenProtocolVersion(
-            PacketEnvelope envelope,
-            PacketDirection direction,
-            Object parsed
-    ) {
-        if (isNegotiatedProtocolResponse(envelope, direction, parsed)) {
-            return null;
-        }
-
-        Map<String, VariantValue> values = extractInfoMap((ProtocolResponse) parsed);
-        if (values == null) {
-            return null;
-        }
-
-        VariantValue openProtocolVersion = values.get("openProtocolVersion");
+    private Integer extractOpenProtocolVersion(Map<String, VariantValue> values) {
+        VariantValue openProtocolVersion = values.get(OPEN_PROTOCOL_VERSION_KEY);
         if (openProtocolVersion instanceof IntVariantValue(int value)) {
             return value;
         }
@@ -116,10 +100,10 @@ public class RuntimePacketInspector {
         return null;
     }
 
-    private boolean isNegotiatedProtocolResponse(PacketEnvelope envelope, PacketDirection direction, Object parsed) {
-        return direction != PacketDirection.TO_CLIENT
-                || envelope.packetType() != PacketType.PROTOCOL_RESPONSE
-                || !(parsed instanceof ProtocolResponse);
+    private boolean isProtocolNegotiationResponse(PacketEnvelope envelope, PacketDirection direction, Object parsed) {
+        return direction == PacketDirection.TO_CLIENT
+                && envelope.packetType() == PacketType.PROTOCOL_RESPONSE
+                && parsed instanceof ProtocolResponse;
     }
 
     private Map<String, VariantValue> extractInfoMap(ProtocolResponse response) {

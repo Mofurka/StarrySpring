@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,7 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     private final PacketDispatcher packetDispatcher = new PacketDispatcher(packetParserRegistry);
     private final RuntimePacketInspector packetInspector = new RuntimePacketInspector(packetDispatcher);
     private final PacketInterceptionService packetInterceptionService;
+    private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
 
     @Override
     public void start() {
@@ -52,8 +54,9 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     }
 
     private void handleNewClient(Socket clientSocket) {
+        Socket upstreamSocket = null;
         try {
-            clientSocket.setSoTimeout(200);
+            configureSocket(clientSocket);
 
             ProxySession session = new ProxySession(
                     ProxySessionId.generate(),
@@ -63,11 +66,11 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
             sessionRegistry.add(session);
             log.info("Accepted client {} for session {}", session.getClientIp(), session.getId());
 
-            Socket upstreamSocket = new Socket(
+            upstreamSocket = new Socket(
                     properties.getUpstreamHost(),
                     properties.getUpstreamPort()
             );
-            upstreamSocket.setSoTimeout(200);
+            configureSocket(upstreamSocket);
 
             session.makeUpstreamConnecting();
             log.info(
@@ -104,9 +107,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             context.clientSideTransport(),
                             packetInspector,
                             packetInterceptionService
-
                     ),
-                     session.getId().uuid() + "-proxy-c2s"
+                    session.getId().uuid() + "-proxy-c2s"
             );
 
             Thread serverToClient = new Thread(
@@ -128,10 +130,24 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
         } catch (Exception e) {
             log.warn("Failed to initialize client connection: {}", e.getMessage(), e);
-            try {
-                clientSocket.close();
-            } catch (Exception ignored) {
-            }
+            closeQuietly(upstreamSocket, "upstream", clientSocket);
+            closeQuietly(clientSocket, "client", clientSocket);
+        }
+    }
+
+    private void configureSocket(Socket socket) throws SocketException {
+        socket.setSoTimeout(SESSION_SOCKET_TIMEOUT_MILLIS);
+    }
+
+    private void closeQuietly(Socket socket, String side, Socket clientSocket) {
+        if (socket == null) {
+            return;
+        }
+
+        try {
+            socket.close();
+        } catch (Exception e) {
+            log.debug("Failed to close {} socket after initialization error for client {}", side, clientSocket, e);
         }
     }
 }

@@ -12,6 +12,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
 
     @Override
     public VariantValue read(BinaryReader reader) {
+        if (!reader.hasRemaining()) return NullVariantValue.INSTANCE; // default to null if no data is available
         int type = reader.readUnsignedByte();
 
         return switch (type) {

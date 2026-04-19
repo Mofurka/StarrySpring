@@ -1,7 +1,6 @@
 package irden.space.proxy.application.runtime;
 
 import irden.space.proxy.protocol.codec.BinaryReader;
-import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.VlqCodec;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
@@ -9,6 +8,7 @@ import irden.space.proxy.protocol.packet.PacketType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class RuntimePacketReader {
@@ -59,30 +59,35 @@ public class RuntimePacketReader {
     }
 
     private byte[] buildOriginal(int rawTypeId, byte[] rawSizeBytes, byte[] payload) {
-        BinaryWriter writer = new BinaryWriter();
-        writer.writeByte(rawTypeId);
-        writer.writeBytes(rawSizeBytes);
-        writer.writeBytes(payload);
-        return writer.toByteArray();
+        byte[] original = new byte[1 + rawSizeBytes.length + payload.length];
+        original[0] = (byte) rawTypeId;
+        System.arraycopy(rawSizeBytes, 0, original, 1, rawSizeBytes.length);
+        System.arraycopy(payload, 0, original, 1 + rawSizeBytes.length, payload.length);
+        return original;
     }
 
     private SignedVlqReadResult readSignedVlqWithRawBytes(InputStream inputStream) throws IOException {
-        BinaryWriter rawWriter = new BinaryWriter();
+        byte[] rawBytesBuffer = new byte[5];
+        int length = 0;
 
         while (true) {
+            if (length >= rawBytesBuffer.length) {
+                throw new IOException("Signed VLQ exceeds expected int size");
+            }
+
             int b = inputStream.read();
             if (b < 0) {
                 throw new IOException("Stream closed while reading signed VLQ");
             }
 
-            rawWriter.writeByte(b);
+            rawBytesBuffer[length++] = (byte) b;
 
             if ((b & 0x80) == 0) {
                 break;
             }
         }
 
-        byte[] rawBytes = rawWriter.toByteArray();
+        byte[] rawBytes = Arrays.copyOf(rawBytesBuffer, length);
         BinaryReader reader = new BinaryReader(rawBytes);
         int value = VlqCodec.INSTANCE.read(reader);
 

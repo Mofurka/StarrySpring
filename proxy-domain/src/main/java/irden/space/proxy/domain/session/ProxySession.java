@@ -8,12 +8,14 @@ import java.util.Objects;
 @Getter
 @ToString
 public final class ProxySession {
+    private static final int UNSET_OPEN_PROTOCOL_VERSION = -1;
+
     private final ProxySessionId id;
     private final String clientIp;
     private volatile SessionState state;
     private volatile SessionTransportMode clientCompression;
     private volatile SessionTransportMode upstreamCompression;
-    private volatile Integer openProtocolVersion;
+    private volatile int openProtocolVersion;
 
 
     public ProxySession(ProxySessionId id, String clientIp) {
@@ -22,7 +24,7 @@ public final class ProxySession {
         this.state = SessionState.NEW;
         this.clientCompression = SessionTransportMode.PLAIN;
         this.upstreamCompression = SessionTransportMode.PLAIN;
-        this.openProtocolVersion = null;
+        this.openProtocolVersion = UNSET_OPEN_PROTOCOL_VERSION;
     }
 
     public void makeUpstreamConnecting() {
@@ -66,9 +68,7 @@ public final class ProxySession {
     }
 
     public int resolveOpenProtocolVersion() {
-        return openProtocolVersion != null
-                ? openProtocolVersion
-                : -1;
+        return openProtocolVersion;
     }
 
     private void ensureNotDisconnected() {

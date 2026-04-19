@@ -59,7 +59,6 @@ public class SwitchableSessionTransport implements SessionTransport {
         }
 
         resolvedTarget.write(resolveCodec(writeMode).encode(envelope));
-        resolvedTarget.flush();
     }
 
     @Override

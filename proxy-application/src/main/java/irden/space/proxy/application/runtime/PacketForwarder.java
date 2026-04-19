@@ -20,6 +20,7 @@ import java.net.SocketTimeoutException;
 public class PacketForwarder implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(PacketForwarder.class);
+    private static final PacketInspectionResult EMPTY_INSPECTION = PacketInspectionResult.empty();
 
     private final ProxySession session;
     private final InputStream source;
@@ -65,17 +66,12 @@ public class PacketForwarder implements Runnable {
                     continue;
                 }
 
-                PacketInspectionResult inspection = packetInspector == null
-                        ? PacketInspectionResult.empty()
-                        : packetInspector.inspect(
-                                envelope,
-                                packetDirection,
-                                session.resolveOpenProtocolVersion()
-                        );
+                int openProtocolVersion = session.resolveOpenProtocolVersion();
+                PacketInspectionResult inspection = inspectPacket(envelope, packetDirection, openProtocolVersion);
 
                 int resolvedOpenProtocolVersion = inspection.negotiatedOpenProtocolVersion() != null
                         ? inspection.negotiatedOpenProtocolVersion()
-                        : session.resolveOpenProtocolVersion();
+                        : openProtocolVersion;
 
 /*                log.debug(
                         "[{}] session={} rawType={} type={} size={} compressed={} parsed={}",
@@ -154,15 +150,25 @@ public class PacketForwarder implements Runnable {
         synchronized (resolveWriteLock(direction)) {
             PacketInspectionResult resolvedInspection = inspection;
             if (resolvedInspection == null) {
-                resolvedInspection = packetInspector == null
-                        ? PacketInspectionResult.empty()
-                        : packetInspector.inspect(envelope, direction, session.resolveOpenProtocolVersion());
+                resolvedInspection = inspectPacket(envelope, direction, session.resolveOpenProtocolVersion());
             }
 
             applyNegotiatedSessionState(resolvedInspection);
 
             resolvedTransport.write(resolvedTarget, envelope);
         }
+    }
+
+    private PacketInspectionResult inspectPacket(
+            PacketEnvelope envelope,
+            PacketDirection direction,
+            int openProtocolVersion
+    ) {
+        if (packetInspector == null) {
+            return EMPTY_INSPECTION;
+        }
+
+        return packetInspector.inspect(envelope, direction, openProtocolVersion);
     }
 
     private Object resolveWriteLock(PacketDirection direction) {

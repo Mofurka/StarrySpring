@@ -13,18 +13,17 @@ import org.springframework.stereotype.Component;
 @Order(1)
 @RequiredArgsConstructor
 public class GameAssetStoreStartupRunner implements CommandLineRunner {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(GameAssetStoreStartupRunner.class);
     private final GameAssetStore gameAssetStore;
 
     @Override
     public void run(String... args) {
-        var startTime = System.currentTimeMillis();
+        long startTimeNanos = System.nanoTime();
         log.info("Initializing GameAssetStore...");
         gameAssetStore.initialize();
         GameAssetStores.setDefault(gameAssetStore);
-        var endTime = System.currentTimeMillis();
-        var duration = endTime - startTime;
+        long durationMillis = (System.nanoTime() - startTimeNanos) / 1_000_000L;
         log.info("GameAssetStore initialized with {} assets ({} items) in {} ms",
-                gameAssetStore.size(), gameAssetStore.itemCount(), duration);
+                gameAssetStore.size(), gameAssetStore.itemCount(), durationMillis);
     }
 }
