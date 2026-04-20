@@ -8,8 +8,11 @@ import irden.space.proxy.application.runtime.SwitchableSessionTransport;
 import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
 import irden.space.proxy.domain.session.SessionTransportMode;
+import irden.space.proxy.plugin.api.DefaultPluginSessionContext;
 import irden.space.proxy.plugin.api.PacketInterceptionService;
+import irden.space.proxy.plugin.api.PluginSessionLifecycleService;
 import irden.space.proxy.protocol.packet.PacketDirection;
+import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
 import irden.space.proxy.protocol.payload.registry.PacketParserRegistry;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     private final PacketDispatcher packetDispatcher = new PacketDispatcher(packetParserRegistry);
     private final RuntimePacketInspector packetInspector = new RuntimePacketInspector(packetDispatcher);
     private final PacketInterceptionService packetInterceptionService;
+    private final PluginSessionLifecycleService pluginSessionLifecycleService;
     private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
 
     @Override
@@ -97,6 +101,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     new SwitchableSessionTransport(SessionTransportMode.PLAIN)
             );
 
+            pluginSessionLifecycleService.onConnectionSuccess(createPluginSessionContext(context));
+
             Thread clientToServer = new Thread(
                     new PacketForwarder(
                             clientIn,
@@ -106,7 +112,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             context,
                             context.clientSideTransport(),
                             packetInspector,
-                            packetInterceptionService
+                            packetInterceptionService,
+                            pluginSessionLifecycleService
                     ),
                     session.getId().uuid() + "-proxy-c2s"
             );
@@ -120,7 +127,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             context,
                             context.upstreamSideTransport(),
                             packetInspector,
-                            packetInterceptionService
+                            packetInterceptionService,
+                            pluginSessionLifecycleService
                     ),
                     session.getId().uuid() + "-proxy-s2c"
             );
@@ -148,6 +156,34 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
             socket.close();
         } catch (Exception e) {
             log.debug("Failed to close {} socket after initialization error for client {}", side, clientSocket, e);
+        }
+    }
+
+    private DefaultPluginSessionContext createPluginSessionContext(ProxySessionRuntimeContext context) {
+        ProxySession session = context.session();
+        return new DefaultPluginSessionContext(
+                session.getId().uuid().toString(),
+                session.getClientIp(),
+                session.getClientCompression() == SessionTransportMode.ZSTD,
+                session.getUpstreamCompression() == SessionTransportMode.ZSTD,
+                session.resolveOpenProtocolVersion(),
+                (direction, envelope) -> sendPacket(context, direction, envelope)
+        );
+    }
+
+    private void sendPacket(ProxySessionRuntimeContext context, PacketDirection direction, PacketEnvelope envelope) {
+        try {
+            synchronized (direction == PacketDirection.TO_CLIENT ? context.clientSocket() : context.upstreamSocket()) {
+                SwitchableSessionTransport transport = direction == PacketDirection.TO_CLIENT
+                        ? context.upstreamSideTransport()
+                        : context.clientSideTransport();
+                OutputStream outputStream = direction == PacketDirection.TO_CLIENT
+                        ? context.clientSocket().getOutputStream()
+                        : context.upstreamSocket().getOutputStream();
+                transport.write(outputStream, envelope);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to send lifecycle packet for session " + context.session().getId(), e);
         }
     }
 }

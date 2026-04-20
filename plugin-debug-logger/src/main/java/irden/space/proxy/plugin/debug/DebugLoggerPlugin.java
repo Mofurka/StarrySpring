@@ -1,8 +1,13 @@
 package irden.space.proxy.plugin.debug;
 
 import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.annotations.OnLoad;
+import irden.space.proxy.plugin.api.annotations.OnStart;
+import irden.space.proxy.plugin.api.annotations.OnStop;
+import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
+import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.debug.model.Player;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
@@ -18,8 +23,8 @@ import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequest;
 import irden.space.proxy.protocol.payload.packet.entity.type.Entity;
 import irden.space.proxy.protocol.payload.packet.entity.type.PlayerEntity;
-import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
 import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetState;
+import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,20 +39,25 @@ import java.util.concurrent.CompletableFuture;
         version = "1.0.0",
         dependsOn = {"command-handler"},
         author = "https://github.com/Mofurka",
-        description = "A plugin that logs all packets and lifecycle events for debugging purposes."
+        description = "A plugin that logs all packets and lifecycle events for debugging purposes. And also my test area."
 )
-public class DebugLoggerPlugin implements ProxyPlugin {
+public final class DebugLoggerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(DebugLoggerPlugin.class);
     private final Map<String, Player> tempPlayersMap = new LinkedHashMap<>();
     private final Map<StarUuid, Player> playersByUuid = new LinkedHashMap<>();
+    private CommandHandlerPlugin commandHandlerPlugin;
+
 
     @OnLoad
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
+        this.commandHandlerPlugin = context.requireService(CommandHandlerPlugin.class);
+
     }
 
     @OnStart
     public void handleStart() {
+        commandHandlerPlugin.publishTest("Hello from DebugLoggerPlugin!");
         log.info("Started plugin '{}'", descriptor().id());
         new Thread(() -> {
             while (true) {
@@ -90,6 +100,7 @@ public class DebugLoggerPlugin implements ProxyPlugin {
                 context.session().sessionId(),
                 context.session()
         );
+
         tempPlayersMap.put(s, player);
         return PacketDecision.forward();
     }
@@ -117,6 +128,25 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         );
         context.session().sendToClient(PacketType.CONNECT_FAILURE, connectFailure);
         return PacketDecision.cancel();
+    }
+
+    @Override
+    public void onConnectionSuccess (PluginSessionContext context) {
+        if (log.isInfoEnabled()) log.info("Session {} connected successfully.", context.sessionId());
+    }
+
+    @Override
+    public void onDisconnecting (PluginSessionContext context) {
+        if (log.isInfoEnabled()) log.info("Session {} is disconnecting.", context.sessionId());
+    }
+    @Override
+    public void onDisconnected (PluginSessionContext context) {
+        if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
+        Player player = tempPlayersMap.remove(context.sessionId());
+        if (player != null) {
+            playersByUuid.remove(player.uuid());
+            log.info("Player disconnected: name='{}', uuid={}", player.name(), player.uuid());
+        }
     }
 
     @PacketHandler(value = PacketType.PROTOCOL_RESPONSE, direction = PacketDirection.TO_CLIENT)
@@ -186,13 +216,6 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         player.connectionId(Integer.parseInt(connectionIdStr));
         context.session().sendToClient(PacketType.ENTITY_UPDATE, player.build());
         context.reply("Nametag update sent to connectionId=" + connectionIdStr);
-    }
-
-
-
-    @PacketHandler(value = PacketType.SPAWN_ENTITY)
-    public PacketDecision onSpawnEntity(PacketInterceptionContext context) {
-        return logPacket("onSpawnEntity", context);
     }
 
     private PacketDecision logPacket(String handlerName, PacketInterceptionContext context) {

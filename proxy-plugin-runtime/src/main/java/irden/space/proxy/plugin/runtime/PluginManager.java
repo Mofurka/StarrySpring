@@ -1,17 +1,14 @@
 package irden.space.proxy.plugin.runtime;
 
 
-import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
-import irden.space.proxy.plugin.api.PluginContext;
-import irden.space.proxy.plugin.api.PluginDescriptor;
-import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PluginManager {
+public class PluginManager implements PluginSessionLifecycleService {
 
     private static final Logger log = LoggerFactory.getLogger(PluginManager.class);
 
@@ -81,6 +78,29 @@ public class PluginManager {
         }
     }
 
+    @Override
+    public void onConnectionSuccess(PluginSessionContext context) {
+        for (ProxyPlugin plugin : loadedPlugins) {
+            invokeSessionLifecycle(plugin, "OnConnectionSuccess", () -> plugin.onConnectionSuccess(context), context);
+        }
+    }
+
+    @Override
+    public void onDisconnecting(PluginSessionContext context) {
+        for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
+            ProxyPlugin plugin = loadedPlugins.get(i);
+            invokeSessionLifecycle(plugin, "OnDisconnecting", () -> plugin.onDisconnecting(context), context);
+        }
+    }
+
+    @Override
+    public void onDisconnected(PluginSessionContext context) {
+        for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
+            ProxyPlugin plugin = loadedPlugins.get(i);
+            invokeSessionLifecycle(plugin, "OnDisconnected", () -> plugin.onDisconnected(context), context);
+        }
+    }
+
     public List<ProxyPlugin> getLoadedPlugins() {
         return List.copyOf(loadedPlugins);
     }
@@ -93,6 +113,26 @@ public class PluginManager {
         PluginDescriptor descriptor = plugin.descriptor();
         return "id='" + descriptor.id() + "', name='" + descriptor.name() + "', version='" + descriptor.version()
                 + "', dependsOn=" + formatDependencies(descriptor.dependsOn());
+    }
+
+    private void invokeSessionLifecycle(
+            ProxyPlugin plugin,
+            String lifecycleName,
+            Runnable invocation,
+            PluginSessionContext context
+    ) {
+        try {
+            invocation.run();
+        } catch (RuntimeException e) {
+            log.warn(
+                    "Plugin '{}' failed during {} for session {}: {}",
+                    plugin.descriptor().id(),
+                    lifecycleName,
+                    context.sessionId(),
+                    e.getMessage(),
+                    e
+            );
+        }
     }
 
     private String formatDependencies(List<String> dependencies) {

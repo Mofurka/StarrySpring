@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.api;
+package irden.space.proxy.plugin.api.annotations;
 
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @SuppressWarnings("unused")
+
 public @interface PacketHandler {
 
     PacketType[] value();

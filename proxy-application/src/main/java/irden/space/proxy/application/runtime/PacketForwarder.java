@@ -33,6 +33,7 @@ public class PacketForwarder implements Runnable {
     private final SwitchableSessionTransport transport;
     private final RuntimePacketInspector packetInspector;
     private final PacketInterceptionService packetInterceptionService;
+    private final PluginSessionLifecycleService pluginSessionLifecycleService;
 
     public PacketForwarder(
             InputStream source,
@@ -42,7 +43,8 @@ public class PacketForwarder implements Runnable {
             ProxySessionRuntimeContext context,
             SwitchableSessionTransport transport,
             RuntimePacketInspector packetInspector,
-            PacketInterceptionService packetInterceptionService
+            PacketInterceptionService packetInterceptionService,
+            PluginSessionLifecycleService pluginSessionLifecycleService
     ) {
         this.context = context;
         this.session = context.session();
@@ -55,6 +57,7 @@ public class PacketForwarder implements Runnable {
         this.packetDirection = packetDirection;
         this.packetInspector = packetInspector;
         this.packetInterceptionService = packetInterceptionService;
+        this.pluginSessionLifecycleService = pluginSessionLifecycleService;
     }
 
     @Override
@@ -84,14 +87,7 @@ public class PacketForwarder implements Runnable {
                         inspection.parsed()
                 );*/
 
-                PluginSessionContext pluginSessionContext = new DefaultPluginSessionContext(
-                        session.getId().uuid().toString(),
-                        session.getClientIp(),
-                        session.getClientCompression() == SessionTransportMode.ZSTD,
-                        session.getUpstreamCompression() == SessionTransportMode.ZSTD,
-                        resolvedOpenProtocolVersion,
-                        this::sendPacket
-                );
+                PluginSessionContext pluginSessionContext = createPluginSessionContext(resolvedOpenProtocolVersion);
 
                 PacketInterceptionContext interceptionContext =
                         new PacketInterceptionContext(
@@ -281,10 +277,18 @@ public class PacketForwarder implements Runnable {
                 return;
             }
 
+            PluginSessionContext pluginSessionContext = createPluginSessionContext(session.resolveOpenProtocolVersion());
+
             try {
                 session.markDisconnecting();
             } catch (Exception e) {
                 log.warn("Failed to mark session {} as DISCONNECTING", session.getId());
+            }
+
+            try {
+                pluginSessionLifecycleService.onDisconnecting(pluginSessionContext);
+            } catch (Exception e) {
+                log.warn("Failed to dispatch OnDisconnecting for session {}", session.getId(), e);
             }
 
             try {
@@ -307,7 +311,24 @@ public class PacketForwarder implements Runnable {
 
             sessionRegistry.remove(session.getId());
 
+            try {
+                pluginSessionLifecycleService.onDisconnected(pluginSessionContext);
+            } catch (Exception e) {
+                log.warn("Failed to dispatch OnDisconnected for session {}", session.getId(), e);
+            }
+
             log.info("Session {} closed and removed", session.getId());
         }
+    }
+
+    private PluginSessionContext createPluginSessionContext(int openProtocolVersion) {
+        return new DefaultPluginSessionContext(
+                session.getId().uuid().toString(),
+                session.getClientIp(),
+                session.getClientCompression() == SessionTransportMode.ZSTD,
+                session.getUpstreamCompression() == SessionTransportMode.ZSTD,
+                openProtocolVersion,
+                this::sendPacket
+        );
     }
 }

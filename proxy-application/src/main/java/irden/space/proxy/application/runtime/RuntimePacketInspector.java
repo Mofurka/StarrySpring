@@ -41,20 +41,31 @@ public class RuntimePacketInspector {
                 long startTime = System.nanoTime();
                 parsed = packetDispatcher.parse(envelope, openProtocolVersion);
                 long durationNanos = System.nanoTime() - startTime;
+                if (log.isDebugEnabled()) {
+                    log.debug(
+                            "[{}] parsed packet type={} in {} ms. Payload size={} MB, parsed={}",
+                            direction,
+                            envelope.packetType(),
+                            durationNanos / 1_000_000L,
+                            String.format("%.2f", envelope.payload().length / (1024.0 * 1024.0)),
+                            parsed
+                    );
+                }
                 if (durationNanos > SLOW_PARSE_THRESHOLD_NANOS) {
                     long durationMillis = durationNanos / 1_000_000L;
                     log.warn(
-                            "[{}] parsing took {} ms for rawType={} type={}. Is server overloaded or is this a very large packet?",
+                            "[{}] parsing took {} ms for rawType={} type={}, size={} MB. Is server overloaded or is this a very large packet?",
                             direction,
                             durationMillis,
                             envelope.rawPacketTypeId(),
-                            envelope.packetType()
+                            envelope.packetType(),
+                            String.format("%.2f", envelope.payload().length / (1024.0 * 1024.0))
                     );
                 }
 
             } catch (Exception e) {
                 log.info(
-                        "[{}] parse failed for rawType={} type={}: {}",
+                        "[{}] parse failed for rawType={} type={}:",
                         direction,
                         envelope.rawPacketTypeId(),
                         envelope.packetType(),

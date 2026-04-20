@@ -1,6 +1,8 @@
 package irden.space.proxy.plugin.command_handler;
 
 import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.annotations.OnLoad;
+import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
@@ -20,6 +22,15 @@ import java.util.Locale;
 public class CommandHandlerPlugin implements ProxyPlugin {
     private static final String COMMAND_PREFIX = "/";
     private static final Logger log = LoggerFactory.getLogger(CommandHandlerPlugin.class);
+
+    @OnLoad
+    public void handleLoad(PluginContext context) {
+        context.publishService(CommandHandlerPlugin.class, this);
+    }
+
+    public void publishTest(String message) {
+        log.info("Received test message: {}", message);
+    }
 
     @PacketHandler(value = PacketType.CHAT_SENT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onChatSent(PacketInterceptionContext context) {
@@ -60,48 +71,6 @@ public class CommandHandlerPlugin implements ProxyPlugin {
             );
             return PacketDecision.cancel();
         }
-    }
-
-    @ChatCommand(
-            value = "proxy",
-            usage = "[help | send <text> | rewrite <text>]",
-            description = "Built-in command handler utilities and registered command help."
-    )
-    public void proxyCommand(CommandContext context) {
-        List<String> arguments = context.arguments();
-        if (arguments.isEmpty() || arguments.getFirst().equalsIgnoreCase("help")) {
-            context.reply(CommandRegistry.global().formatHelp());
-            return;
-        }
-
-        String action = arguments.getFirst().toLowerCase(Locale.ROOT);
-        if (action.equals("send")) {
-            String message = stripLeadingToken(context.argumentsLine());
-            if (message.isBlank()) {
-                context.reply("Usage: /proxy send <text>");
-                return;
-            }
-
-            context.reply(message);
-            return;
-        }
-
-        if (action.equals("rewrite")) {
-            String newMessage = stripLeadingToken(context.argumentsLine());
-            if (newMessage.isBlank()) {
-                context.reply("Usage: /proxy rewrite <text>");
-                return;
-            }
-
-            ChatSent originalMessage = (ChatSent) context.packetContext().parsedPayload();
-            context.session().sendToServer(
-                    PacketType.CHAT_SENT,
-                    new ChatSent(newMessage, originalMessage.mode(), originalMessage.arguments())
-            );
-            return;
-        }
-
-        context.reply("Unknown /proxy command. Use /proxy help");
     }
 
     private ParsedCommand parse(String commandLine) {

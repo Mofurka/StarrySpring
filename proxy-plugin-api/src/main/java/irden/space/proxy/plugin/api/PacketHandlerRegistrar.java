@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.api;
 
+import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 
