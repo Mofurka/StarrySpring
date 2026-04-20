@@ -195,29 +195,6 @@ public class DebugLoggerPlugin implements ProxyPlugin {
         return logPacket("onSpawnEntity", context);
     }
 
-    @ChatCommand("incognito")
-    public void setupIncognito(CommandContext context) {
-        // Для начала просто отправка пакета персонажу
-        var player = PlayerNetState.builder();
-        var effectsAnimator = EffectsAnimator.builder();
-        effectsAnimator.globalTags(Map.of("nametag", new StringVariantValue("Incognito")));
-        player.effectsAnimator(effectsAnimator.build());
-        //test
-        playersByUuid.forEach((s, p) -> {
-            if (p.name().equals("Misty")) {
-                player.entityId(p.entityId());
-                player.connectionId(p.clientId());
-            }
-        });
-        playersByUuid.forEach((s, p) -> {
-            if (p.name().equals("D.")) {
-                p.sessionContext().sendToClient(PacketType.ENTITY_UPDATE, player.build());
-            }
-        });
-        // УРА РАБОТАЕТ!
-        context.reply("Incognito setup sent to D. for Misty. Check if the nametag changed to 'Incognito'.");
-    }
-
     private PacketDecision logPacket(String handlerName, PacketInterceptionContext context) {
         log.info(
                 "[PLUGIN][{}][{}] packetType={} parsed={}",

@@ -5,19 +5,19 @@ import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.VariantCodec;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
-import irden.space.proxy.protocol.payload.packet.entity.type.StageHandEntity;
+import irden.space.proxy.protocol.payload.packet.entity.type.MonsterEntity;
 
-public enum StagehandEntitySpawnCodec implements BinaryCodec<StageHandEntity> {
+public enum MonsterEntitySpawnCodec implements BinaryCodec<MonsterEntity> {
     INSTANCE;
 
     @Override
-    public StageHandEntity read(BinaryReader reader) {
+    public MonsterEntity read(BinaryReader reader) {
         VariantValue payload = VariantCodec.INSTANCE.read(reader);
-        return new StageHandEntity(payload);
+        return new MonsterEntity(payload);
     }
 
     @Override
-    public void write(BinaryWriter writer, StageHandEntity value) {
-        throw new UnsupportedOperationException("StagehandEntitySpawn packet is not supported to write. Its useless");
+    public void write(BinaryWriter writer, MonsterEntity value) {
+        VariantCodec.INSTANCE.write(writer, value.payload());
     }
 }

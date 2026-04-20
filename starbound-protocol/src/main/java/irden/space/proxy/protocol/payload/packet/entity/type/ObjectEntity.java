@@ -2,7 +2,8 @@ package irden.space.proxy.protocol.payload.packet.entity.type;
 
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 
-public record StageHandEntity(
-        VariantValue payload
+public record ObjectEntity(
+        String name,
+        VariantValue parameters
 ) implements Entity {
 }

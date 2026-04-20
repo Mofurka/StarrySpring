@@ -17,13 +17,13 @@ public class EntitySpawnParser implements PacketParser<Entity> {
         VlqUnsignedCodec.INSTANCE.read(reader); // payload size
         return switch (entityType) {
             case PLANT -> null;
-            case OBJECT -> null;
+            case OBJECT -> ObjectEntitySpawnCodec.INSTANCE.read(reader);
             case VEHICLE -> null;
             case ITEM_DROP -> ItemDropEntitySpawnCodec.INSTANCE.read(reader);
             case PLANT_DROP -> null;
-            case PROJECTILE -> null;
+            case PROJECTILE -> ProjectileSpawnEntityCodec.INSTANCE.read(reader);
             case STAGEHAND -> StagehandEntitySpawnCodec.INSTANCE.read(reader);
-            case MONSTER -> null;
+            case MONSTER -> MonsterEntitySpawnCodec.INSTANCE.read(reader);
             case NPC -> null;
             case PLAYER -> null;
         };
