@@ -3,12 +3,7 @@ package irden.space.proxy.protocol.assets.pak;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public final class StarboundAssetRepository implements Closeable {
     private final List<SbAsset6Archive> archives;

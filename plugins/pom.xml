@@ -12,6 +12,7 @@
     <modules>
         <module>plugin-debug-logger</module>
         <module>plugin-command-handler</module>
+        <module>plugin-player-manager</module>
     </modules>
 
 </project>

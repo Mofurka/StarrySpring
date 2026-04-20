@@ -129,11 +129,24 @@ public class PacketForwarder implements Runnable {
 
     private void sendPacket(PacketDirection direction, PacketEnvelope envelope) {
         try {
-            writePacket(direction, envelope, null);
+            writePacket(direction, envelope);
         } catch (IOException e) {
             throw new IllegalStateException("Failed to send packet for session " + session.getId(), e);
         }
     }
+
+    private void writePacket(
+            PacketDirection direction,
+            PacketEnvelope envelope
+    ) throws IOException {
+        SwitchableSessionTransport resolvedTransport = resolveTransport(direction);
+        OutputStream resolvedTarget = resolveTarget(direction);
+
+        synchronized (resolveWriteLock(direction)) {
+            resolvedTransport.write(resolvedTarget, envelope);
+        }
+    }
+
 
     private void writePacket(
             PacketDirection direction,

@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.debug.model;
+package irden.space.proxy.plugin.player_manager.model;
 
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
