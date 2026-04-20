@@ -28,10 +28,6 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         context.publishService(CommandHandlerPlugin.class, this);
     }
 
-    public void publishTest(String message) {
-        log.info("Received test message: {}", message);
-    }
-
     @PacketHandler(value = PacketType.CHAT_SENT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onChatSent(PacketInterceptionContext context) {
         ChatSent chatSent = (ChatSent) context.parsedPayload();

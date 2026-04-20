@@ -7,7 +7,6 @@ import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
-import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.debug.model.Player;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
@@ -37,7 +36,6 @@ import java.util.concurrent.CompletableFuture;
         id = "debug-logger",
         name = "Debug Logger",
         version = "1.0.0",
-        dependsOn = {"command-handler"},
         author = "https://github.com/Mofurka",
         description = "A plugin that logs all packets and lifecycle events for debugging purposes. And also my test area."
 )
@@ -45,19 +43,16 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(DebugLoggerPlugin.class);
     private final Map<String, Player> tempPlayersMap = new LinkedHashMap<>();
     private final Map<StarUuid, Player> playersByUuid = new LinkedHashMap<>();
-    private CommandHandlerPlugin commandHandlerPlugin;
 
 
     @OnLoad
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
-        this.commandHandlerPlugin = context.requireService(CommandHandlerPlugin.class);
 
     }
 
     @OnStart
     public void handleStart() {
-        commandHandlerPlugin.publishTest("Hello from DebugLoggerPlugin!");
         log.info("Started plugin '{}'", descriptor().id());
         new Thread(() -> {
             while (true) {
@@ -131,16 +126,17 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
     }
 
     @Override
-    public void onConnectionSuccess (PluginSessionContext context) {
+    public void onConnectionSuccess(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} connected successfully.", context.sessionId());
     }
 
     @Override
-    public void onDisconnecting (PluginSessionContext context) {
+    public void onDisconnecting(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} is disconnecting.", context.sessionId());
     }
+
     @Override
-    public void onDisconnected (PluginSessionContext context) {
+    public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
         Player player = tempPlayersMap.remove(context.sessionId());
         if (player != null) {
@@ -198,7 +194,8 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
     }
 
     @ChatCommand(value = "setnametag",
-    usage = "<connectionId> <nametag>")
+            aliases = {""},
+            usage = "<connectionId> <nametag>")
     public void setNametagCommand(CommandContext context) {
         if (context.arguments().size() < 2) {
             context.reply("Usage: /setnametag <connectionId> <nametag>");

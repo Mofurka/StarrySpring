@@ -5,19 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>irden.space</groupId>
-    <artifactId>main</artifactId>
+    <artifactId>plugins</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <modules>
-        <module>proxy-domain</module>
-        <module>proxy-application</module>
-        <module>starbound-protocol</module>
-        <module>proxy-adapters</module>
-        <module>proxy-plugin-api</module>
-        <module>proxy-plugin-runtime</module>
-        <module>plugins</module>
-        <module>boot</module>
+        <module>plugin-debug-logger</module>
+        <module>plugin-command-handler</module>
     </modules>
 
 </project>
