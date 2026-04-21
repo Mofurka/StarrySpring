@@ -1,6 +1,20 @@
 spring:
   application:
     name: irden-proxy
+  datasource:
+    url: jdbc:postgresql://localhost:5432/starryspring
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+
 
 proxy:
   listen-host: 0.0.0.0

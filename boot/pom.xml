@@ -20,6 +20,7 @@
     <version>1.0.0</version>
 
     <dependencies>
+        <!--Main modules-->
         <dependency>
             <groupId>irden.space</groupId>
             <artifactId>proxy-domain</artifactId>
@@ -51,6 +52,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>irden.space</groupId>
+            <artifactId>proxy-persistence-jpa</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!--Helpers-->
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
@@ -59,6 +67,13 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+
+        <!--Plugins-->
         <dependency>
             <groupId>irden.space.plugin</groupId>
             <artifactId>plugin-debug-logger</artifactId>
