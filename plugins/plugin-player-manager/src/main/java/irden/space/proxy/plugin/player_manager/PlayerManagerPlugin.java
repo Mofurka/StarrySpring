@@ -9,6 +9,7 @@ import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -22,7 +23,6 @@ import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -36,8 +36,8 @@ import java.util.concurrent.CompletableFuture;
 )
 public final class PlayerManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(PlayerManagerPlugin.class);
-    private final Map<String, Player> players = new LinkedHashMap<>();
-
+    private final PlayerRegistry<Player> players = new InMemoryPlayerRegistry();
+    private final PlayerRegistry<TempPlayer> connectingPlayers = new InMemoryConnectingPlayers();
 
     @OnLoad
     public void handleLoad(PluginContext context) {
@@ -59,15 +59,12 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
         ClientConnect clientConnect = (ClientConnect) context.parsedPayload();
-        String s = context.session().sessionId();
-        Player player = new Player(clientConnect.playerName(),
-                clientConnect.playerUuid(),
-                context.session().clientIp(),
-                context.session().sessionId(),
-                context.session()
-        );
+        TempPlayer player = TempPlayer.builder()
+                .name(clientConnect.playerName())
+                .uuid(clientConnect.playerUuid())
+                .sessionId(context.session().sessionId()).build();
 
-        players.put(s, player);
+        connectingPlayers.add(context.session().sessionId(), player);
         return PacketDecision.forward();
     }
 
@@ -75,10 +72,16 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.CONNECT_SUCCESS, direction = PacketDirection.TO_CLIENT)
     public PacketDecision onConnectSuccess(PacketInterceptionContext context) {
         ConnectSuccess connectSuccess = (ConnectSuccess) context.parsedPayload();
-        Player player = players.get(context.session().sessionId());
-        if (player != null) {
-            player.clientId(connectSuccess.clientId());
-            player.entityId(connectSuccess.clientId() * -65536); // This how clientId transforms to entityId.
+        TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.session().sessionId());
+        if (tempPlayer != null) {
+            Player player = Player.builder()
+                    .name(tempPlayer.name())
+                    .uuid(tempPlayer.uuid())
+                    .sessionContext(context.session())
+                    .ipAddress(context.session().clientIp())
+                    .clientId(connectSuccess.clientId())
+                    .entityId(connectSuccess.clientId() * -65536) // This how clientId transforms to entityId.
+                    .build();
             log.info(
                     "Player connected: name='{}', uuid={}, clientId={}, entityId={}",
                     player.name(),
@@ -86,13 +89,16 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                     player.clientId(),
                     player.entityId()
             );
+            players.add(context.session().sessionId(), player);
             return PacketDecision.forward();
         }
-        ConnectFailure connectFailure = new ConnectFailure(
-                "Connection failed: Player not found in tracking map. This is likely a bug in the DebugLoggerPlugin."
-        );
-        context.session().sendToClient(PacketType.CONNECT_FAILURE, connectFailure);
+        declineConnection(context.session(), "Player connection state not found. Please try again.");
         return PacketDecision.cancel();
+    }
+
+    private void declineConnection(PluginSessionContext context, String reason) {
+        ConnectFailure connectFailure = new ConnectFailure(reason);
+        context.sendToClient(PacketType.CONNECT_FAILURE, connectFailure);
     }
 
     @Override
@@ -108,7 +114,12 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @Override
     public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
-        Player player = players.remove(context.sessionId());
+        TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.sessionId());
+        if (tempPlayer != null) {
+            log.info("Player connection attempt failed or was cancelled: name='{}', uuid={}", tempPlayer.name(), tempPlayer.uuid());
+            return;
+        }
+        Player player = players.removeBySessionId(context.sessionId());
         if (player != null) {
             log.info("Player disconnected: name='{}', uuid={}", player.name(), player.uuid());
         }
@@ -117,9 +128,8 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
     public PacketDecision onEntityCreate(PacketInterceptionContext context) {
         Entity entity = (Entity) context.parsedPayload();
-
         if (entity instanceof PlayerEntity playerEntity) {
-            Player player = players.get(context.session().sessionId());
+            Player player = players.getBySessionId(context.session().sessionId());
             if (playerEntity.entityId() != player.entityId() && player.entityId() != 0) {
                 try {
                     return PacketDecision.forward();
@@ -137,8 +147,9 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         Thread.yield(); // Ensure this runs after the original ENTITY_CREATE packet is processed
         try {
             Thread.sleep(10); // Small delay to ensure the client has processed the ENTITY_CREATE packet
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
+            log.warn("Interrupted while waiting to send nametag update for entityId={}", entityId);
         }
         var player = PlayerNetState.builder();
         var effectsAnimator = EffectsAnimator.builder();
@@ -165,7 +176,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         }
         String connectionIdStr = context.arguments().getFirst();
         String nametag = context.arguments().get(1);
-        int entityId = Integer.parseInt(connectionIdStr) * - 65536;
+        int entityId = Integer.parseInt(connectionIdStr) * -65536;
         log.info("Setting nametag for connectionId={} (entityId={}) to '{}'", connectionIdStr, entityId, nametag);
         var player = PlayerNetState.builder();
         var effectsAnimator = EffectsAnimator.builder();

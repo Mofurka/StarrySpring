@@ -8,7 +8,6 @@ import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
-import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,23 +42,6 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.PROTOCOL_RESPONSE, direction = PacketDirection.TO_CLIENT)
     public PacketDecision onProtocolResponse(PacketInterceptionContext context) {
         return logPacket("onProtocolResponse", context);
-    }
-
-    @PacketHandler(value = PacketType.ENTITY_UPDATE)
-    public PacketDecision onEntityUpdate(PacketInterceptionContext context) {
-        PlayerNetState playerNetState = (PlayerNetState) context.parsedPayload();
-        if (playerNetState != null) {
-            if (playerNetState.effectsAnimator() != null && playerNetState.effectsAnimator().globalTags() != null) {
-                log.info(
-                        "[PLUGIN][onEntityUpdate][{}] packetType={} playerNetState.effectsAnimator.globalTags={}",
-                        context.direction(),
-                        context.envelope().packetType(),
-                        playerNetState.effectsAnimator().globalTags()
-                );
-
-            }
-        }
-        return PacketDecision.forward();
     }
 
     @PacketHandler(value = PacketType.MODIFY_TILE_LIST)

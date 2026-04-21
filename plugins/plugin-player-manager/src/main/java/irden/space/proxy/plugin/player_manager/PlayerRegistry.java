@@ -1,7 +1,13 @@
 package irden.space.proxy.plugin.player_manager;
 
-import irden.space.proxy.plugin.player_manager.model.Player;
+public interface PlayerRegistry<T> {
 
-public interface PlayerRegistry {
-    boolean add(Player player);
+    boolean add(String id, T player);
+
+    T getBySessionId(String sessionId);
+
+    T removeBySessionId(String sessionId);
+
+    int size();
+
 }
