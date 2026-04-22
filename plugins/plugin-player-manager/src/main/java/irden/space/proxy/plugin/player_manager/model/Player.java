@@ -32,6 +32,12 @@ public class Player {
     public int entityId() {
         return entityId;
     }
+    public String ipAddress() {
+        return ipAddress;
+    }
+    public String sessionId() {
+        return sessionId;
+    }
     public PluginSessionContext sessionContext() {
         return sessionContext;
     }

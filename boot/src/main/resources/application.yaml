@@ -5,16 +5,8 @@ spring:
     url: jdbc:postgresql://localhost:15432/starryspring
     username: postgres
     password: postgres
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
-    open-in-view: false
   liquibase:
-    change-log: classpath:db/db.changelog-master.yaml
-    enabled: true
+    enabled: false
 
 
 
