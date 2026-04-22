@@ -1,22 +1,18 @@
 package irden.space.proxy.plugin.player_manager.persistence;
 
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
+import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 public class PlayerRowMapper implements RowMapper<PlayerRecord> {
 
+    private static final RowMapper<PlayerRecord> DELEGATE = DataClassRowMapper.newInstance(PlayerRecord.class);
+
     @Override
     public PlayerRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
-        return new PlayerRecord(
-                rs.getObject("id", UUID.class),
-                rs.getString("player_uuid"),
-                rs.getString("name"),
-                rs.getString("ip_address"),
-                rs.getObject("created_at", LocalDateTime.class)
-        );
+        return DELEGATE.mapRow(rs, rowNum);
     }
 }

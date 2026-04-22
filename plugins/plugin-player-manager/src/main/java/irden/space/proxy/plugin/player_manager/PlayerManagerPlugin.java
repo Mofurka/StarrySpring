@@ -10,8 +10,9 @@ import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
+import irden.space.proxy.plugin.player_manager.persistence.LiquibaseRunner;
 import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
-import irden.space.proxy.plugin.player_manager.persistence.PlayerRecord;
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -50,14 +51,10 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @OnLoad
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
-
         DataSource dataSource = context.requireService(DataSource.class);
-
-        PluginLiquibaseRunner.run(dataSource, "db/changelog/player-manager.xml");
-
+        LiquibaseRunner.runLiquibaseMigrations(dataSource);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         this.playerRepository = new PlayerJdbcRepository(jdbcTemplate);
-
     }
 
     @OnStart
@@ -74,11 +71,24 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
         ClientConnect clientConnect = (ClientConnect) context.parsedPayload();
+        if (playerRepository.findByUuid(clientConnect.playerUuid().toString()).isEmpty()) {
+            log.info("New player detected: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
+            playerRepository.save(PlayerRecord.builder()
+                    .id(UUID.randomUUID())
+                    .playerUuid(clientConnect.playerUuid().toString())
+                    .name(clientConnect.playerName())
+                    .ipAddress(context.session().clientIp())
+                    .createdAt(LocalDateTime.now())
+                    .build());
+        } else {
+            log.info("Existing player connecting: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
+            playerRepository.updatePlayerIpAddress(clientConnect.playerUuid().toString(), context.session().clientIp());
+        }
+
         TempPlayer player = TempPlayer.builder()
                 .name(clientConnect.playerName())
                 .uuid(clientConnect.playerUuid())
                 .sessionId(context.session().sessionId()).build();
-
         connectingPlayers.add(context.session().sessionId(), player);
         return PacketDecision.forward();
     }
@@ -105,13 +115,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                     player.entityId()
             );
             players.add(context.session().sessionId(), player);
-            playerRepository.save(PlayerRecord.builder()
-                    .id(UUID.randomUUID())
-                    .playerUuid(player.uuid().toString())
-                    .name(player.name())
-                    .ipAddress(player.ipAddress())
-                    .createdAt(LocalDateTime.now())
-                    .build());
+
             return PacketDecision.forward();
         }
         declineConnection(context.session(), "Player connection state not found. Please try again.");

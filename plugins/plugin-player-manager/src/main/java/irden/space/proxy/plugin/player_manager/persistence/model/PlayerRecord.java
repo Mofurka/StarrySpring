@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.player_manager.persistence;
+package irden.space.proxy.plugin.player_manager.persistence.model;
 
 import lombok.Builder;
 
