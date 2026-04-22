@@ -1,6 +1,14 @@
 spring:
   application:
     name: irden-proxy
+  datasource:
+    url: jdbc:postgresql://localhost:15432/starryspring
+    username: postgres
+    password: postgres
+  liquibase:
+    enabled: false
+
+
 
 proxy:
   listen-host: 0.0.0.0

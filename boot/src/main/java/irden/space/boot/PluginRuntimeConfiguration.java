@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportRuntimeHints;
 
+import javax.sql.DataSource;
+
 @Configuration
 @ImportRuntimeHints(PluginNativeRuntimeHints.class)
 public class PluginRuntimeConfiguration {
@@ -18,8 +20,13 @@ public class PluginRuntimeConfiguration {
     }
 
     @Bean
-    public PluginContext pluginContext(PacketInterceptorRegistry packetInterceptorRegistry) {
-        return new DefaultPluginContext(packetInterceptorRegistry);
+    public PluginContext pluginContext(
+            PacketInterceptorRegistry packetInterceptorRegistry,
+            DataSource dataSource
+    ) {
+        DefaultPluginContext context = new DefaultPluginContext(packetInterceptorRegistry);
+        context.publishService(DataSource.class, dataSource);
+        return context;
     }
 
     @Bean

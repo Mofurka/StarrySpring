@@ -10,6 +10,8 @@ import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
+import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
+import irden.space.proxy.plugin.player_manager.persistence.PlayerRecord;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -22,8 +24,12 @@ import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetSta
 import irden.space.proxy.protocol.payload.packet.entity.update.EffectsAnimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.sql.DataSource;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @PluginDefinition(
@@ -38,11 +44,20 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(PlayerManagerPlugin.class);
     private final PlayerRegistry<Player> players = new InMemoryPlayerRegistry();
     private final PlayerRegistry<TempPlayer> connectingPlayers = new InMemoryConnectingPlayers();
+    private PlayerJdbcRepository playerRepository;
+
 
     @OnLoad
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
-        context.publishService(PlayerManagerPlugin.class, this);
+
+        DataSource dataSource = context.requireService(DataSource.class);
+
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/player-manager.xml");
+
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        this.playerRepository = new PlayerJdbcRepository(jdbcTemplate);
+
     }
 
     @OnStart
@@ -90,6 +105,13 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                     player.entityId()
             );
             players.add(context.session().sessionId(), player);
+            playerRepository.save(PlayerRecord.builder()
+                    .id(UUID.randomUUID())
+                    .playerUuid(player.uuid().toString())
+                    .name(player.name())
+                    .ipAddress(player.ipAddress())
+                    .createdAt(LocalDateTime.now())
+                    .build());
             return PacketDecision.forward();
         }
         declineConnection(context.session(), "Player connection state not found. Please try again.");
