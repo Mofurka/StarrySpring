@@ -16,7 +16,6 @@
         <module>proxy-adapters</module>
         <module>proxy-plugin-api</module>
         <module>proxy-plugin-runtime</module>
-        <module>proxy-persistence-jpa</module>
         <module>plugins</module>
         <module>boot</module>
     </modules>

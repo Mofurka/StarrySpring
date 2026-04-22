@@ -51,11 +51,6 @@
             <artifactId>proxy-plugin-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>irden.space</groupId>
-            <artifactId>proxy-persistence-jpa</artifactId>
-            <version>${project.version}</version>
-        </dependency>
 
         <!--Helpers-->
         <dependency>

@@ -7,11 +7,6 @@
           <package value="irden.space.boot" />
         </packages>
       </persistence-unit>
-      <persistence-unit moduleName="proxy-persistence-jpa" name="Default">
-        <packages>
-          <package value="irden.space.proxy.persistence.jpa.entity" />
-        </packages>
-      </persistence-unit>
     </persistence-units>
   </component>
 </project>
