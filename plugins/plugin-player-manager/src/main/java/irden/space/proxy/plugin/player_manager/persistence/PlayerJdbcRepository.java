@@ -42,10 +42,35 @@ public class PlayerJdbcRepository {
         );
     }
 
+    public Optional<PlayerRecord> findByUuidOrName(String uuid, String name) {
+        List<PlayerRecord> results = jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE player_uuid = ? OR name = ?
+                """,
+                rowMapper,
+                uuid,
+                name
+        );
+        return results.stream().findFirst();
+    }
+
+    public Optional<PlayerRecord> findByName(String name) {
+        List<PlayerRecord> results = jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE name = ?
+                """,
+                rowMapper,
+                name
+        );
+        return results.stream().findFirst();
+    }
+
 
     public Optional<PlayerRecord> findByUuid(String uuid) {
         List<PlayerRecord> results = jdbcTemplate.query("""
-                SELECT id, player_uuid, name, ip_address, created_at
+                SELECT *
                 FROM player_manager_players
                 WHERE player_uuid = ?
                 """,
@@ -55,9 +80,20 @@ public class PlayerJdbcRepository {
         return results.stream().findFirst();
     }
 
+    public List<PlayerRecord> findByIpAddress(String ipAddress) {
+        return jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE ip_address = ?
+                """,
+                rowMapper,
+                ipAddress
+        );
+    }
+
     public Optional<PlayerRecord> findById(String id) {
         List<PlayerRecord> results = jdbcTemplate.query("""
-                SELECT id, player_uuid, name, ip_address, created_at
+                SELECT *
                 FROM player_manager_players
                 WHERE id = ?
                 """,
@@ -69,7 +105,7 @@ public class PlayerJdbcRepository {
 
     public List<PlayerRecord> findAll() {
         return jdbcTemplate.query("""
-                SELECT id, player_uuid, name, ip_address, created_at
+                SELECT *
                 FROM player_manager_players
                 """,
                 rowMapper

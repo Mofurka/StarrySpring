@@ -1,10 +1,16 @@
 package irden.space.proxy.plugin.player_manager.model;
 
 import irden.space.proxy.plugin.api.PluginSessionContext;
+import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
+import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
+import irden.space.proxy.protocol.payload.packet.server_disconnect.ServerDisconnect;
+import irden.space.proxy.protocol.payload.packet.world_stop.WorldStop;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Builder
 public class Player {
@@ -16,6 +22,7 @@ public class Player {
     private final String sessionId;
     private final LocalDateTime lastSeen;
     private final PluginSessionContext sessionContext;
+    private final Map<Object, Object> metadata = new ConcurrentHashMap<>();
 
     public String name() {
         return name;
@@ -43,5 +50,28 @@ public class Player {
     }
     public LocalDateTime lastSeen() {
         return lastSeen;
+    }
+    public boolean online() {
+        return sessionContext != null;
+    }
+    public Map<Object, Object> metadata() {
+        return metadata;
+    }
+
+    public void kick(String reason) {
+        if (!online()) {
+            return;
+        }
+        WorldStop worldStop = new WorldStop(reason);
+        ServerDisconnect serverDisconnect = new ServerDisconnect(reason);
+        sessionContext.sendToClient(PacketType.WORLD_STOP, worldStop);
+        sessionContext.sendToClient(PacketType.SERVER_DISCONNECT, serverDisconnect);
+    }
+
+    public void sendMessage(ChatReceive message) {
+        if (!online()) {
+            return;
+        }
+        sessionContext.sendToClient(PacketType.CHAT_RECEIVE, message);
     }
 }

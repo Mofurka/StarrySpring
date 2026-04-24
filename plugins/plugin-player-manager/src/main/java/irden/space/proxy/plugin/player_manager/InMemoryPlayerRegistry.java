@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.player_manager.model.Player;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +32,11 @@ public final class InMemoryPlayerRegistry implements PlayerRegistry<Player> {
     @Override
     public int size() {
         return playersBySessionId.size();
+    }
+
+    @Override
+    public List<Player> getAll() {
+        return List.copyOf(playersBySessionId.values());
     }
 
     public boolean updatePlayer(Player player) {

@@ -20,8 +20,11 @@ import java.util.Locale;
         description = "A plugin that allows you to handle commands sent by clients."
 )
 public class CommandHandlerPlugin implements ProxyPlugin {
+
     private static final String COMMAND_PREFIX = "/";
     private static final Logger log = LoggerFactory.getLogger(CommandHandlerPlugin.class);
+
+    private final CommandParser commandParser = new CommandParser();
 
     @OnLoad
     public void handleLoad(PluginContext context) {
@@ -38,33 +41,59 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         }
 
         String commandLine = content.substring(COMMAND_PREFIX.length()).trim();
+
         if (commandLine.isBlank()) {
             return PacketDecision.forward();
         }
 
         ParsedCommand parsedCommand = parse(commandLine);
         RegisteredCommand registeredCommand = CommandRegistry.global().find(parsedCommand.commandName());
+
         if (registeredCommand == null) {
             return PacketDecision.forward();
         }
 
-        log.info("Executing command '/{}' from plugin '{}'", registeredCommand.name(), registeredCommand.ownerPluginId());
+        log.info(
+                "Executing command '/{}' from plugin '{}'",
+                registeredCommand.name(),
+                registeredCommand.ownerPluginId()
+        );
+
+        CommandParseResult parseResult = commandParser.parse(
+                registeredCommand.root(),
+                parsedCommand.arguments()
+        );
+
+        if (parseResult instanceof CommandParseResult.Error error) {
+            context.session().sendToClient(
+                    PacketType.CHAT_RECEIVE,
+                    CommandMessages.systemMessage(error.message())
+            );
+            return PacketDecision.cancel();
+        }
+
+        CommandParseResult.Success success = (CommandParseResult.Success) parseResult;
+
+        CommandContext commandContext = new CommandContext(
+                context,
+                registeredCommand.name(),
+                commandLine,
+                parsedCommand.argumentsLine(),
+                parsedCommand.arguments(),
+                success.arguments()
+        );
 
         try {
-            registeredCommand.invoke(new CommandContext(
-                    context,
-                    registeredCommand.name(),
-                    commandLine,
-                    parsedCommand.argumentsLine(),
-                    parsedCommand.arguments()
-            ));
+            success.executor().execute(commandContext);
             return PacketDecision.cancel();
         } catch (RuntimeException e) {
             log.error("Failed to execute command '/{}'", registeredCommand.name(), e);
+
             context.session().sendToClient(
                     PacketType.CHAT_RECEIVE,
                     CommandMessages.systemMessage("Command '/" + registeredCommand.name() + "' failed: " + e.getMessage())
             );
+
             return PacketDecision.cancel();
         }
     }
@@ -73,16 +102,18 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         String[] parts = commandLine.split("\\s+", 2);
         String commandName = parts[0].trim().toLowerCase(Locale.ROOT);
         String argumentsLine = parts.length > 1 ? parts[1].trim() : "";
-        List<String> arguments = argumentsLine.isBlank() ? List.of() : List.of(argumentsLine.split("\\s+"));
+
+        List<String> arguments = argumentsLine.isBlank()
+                ? List.of()
+                : List.of(argumentsLine.split("\\s+"));
+
         return new ParsedCommand(commandName, argumentsLine, arguments);
     }
 
-    private String stripLeadingToken(String value) {
-        String trimmed = value == null ? "" : value.trim();
-        int delimiterIndex = trimmed.indexOf(' ');
-        return delimiterIndex < 0 ? "" : trimmed.substring(delimiterIndex + 1).trim();
-    }
-
-    private record ParsedCommand(String commandName, String argumentsLine, List<String> arguments) {
+    private record ParsedCommand(
+            String commandName,
+            String argumentsLine,
+            List<String> arguments
+    ) {
     }
 }
