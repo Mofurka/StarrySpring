@@ -19,7 +19,7 @@ public record PlayerNetState(
         DamageTeam damageTeam,
         Integer landed,
         String chatMessage,
-        Boolean newChatMessage,
+        Integer newChatMessage,
         String emote,
         PlayerInventory inventory,
         Object tools,
