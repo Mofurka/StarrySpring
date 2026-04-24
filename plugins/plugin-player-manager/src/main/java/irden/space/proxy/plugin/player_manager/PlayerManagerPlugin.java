@@ -74,7 +74,6 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         if (playerRepository.findByUuid(clientConnect.playerUuid().toString()).isEmpty()) {
             log.info("New player detected: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
             playerRepository.save(PlayerRecord.builder()
-                    .id(UUID.randomUUID())
                     .playerUuid(clientConnect.playerUuid().toString())
                     .name(clientConnect.playerName())
                     .ipAddress(context.session().clientIp())
