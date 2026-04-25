@@ -11,6 +11,6 @@ public record ChatReceive(
     ChatHeader header,
     String name,
     String message,
-    List<VariantValue> data
+    VariantValue[] data
 ) {
 }

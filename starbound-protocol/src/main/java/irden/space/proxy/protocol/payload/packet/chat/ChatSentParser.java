@@ -15,7 +15,7 @@ public class ChatSentParser implements PacketParser<ChatSent> {
     public ChatSent parse(BinaryReader reader) {
         String read = StarStringCodec.INSTANCE.read(reader);
         ChatSentMode chatSentMode = ChatSentMode.fromId(reader.readUnsignedByte());
-        List<VariantValue> variantValues = null;
+        VariantValue[] variantValues = null;
         if (reader.openProtocolVersion() >= 5) {
             variantValues = VariantCodec.INSTANCE.readList(reader);
         }
@@ -31,9 +31,9 @@ public class ChatSentParser implements PacketParser<ChatSent> {
         StarStringCodec.INSTANCE.write(writer, payload.content());
         writer.writeByte(payload.mode().id());
         if (writer.openProtocolVersion() >= 5) {
-            List<VariantValue> arguments = payload.arguments();
+            VariantValue[] arguments = payload.arguments();
             if (arguments == null) {
-                arguments = List.of();
+                arguments = new VariantValue[0];
             }
             VariantCodec.INSTANCE.writeList(writer, arguments);
         }

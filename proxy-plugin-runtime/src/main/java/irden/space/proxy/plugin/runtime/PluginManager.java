@@ -99,6 +99,9 @@ public class PluginManager implements PluginSessionLifecycleService {
             ProxyPlugin plugin = loadedPlugins.get(i);
             invokeSessionLifecycle(plugin, "OnDisconnected", () -> plugin.onDisconnected(context), context);
         }
+
+        pluginContext.findService(SessionPermissionService.class)
+                .ifPresent(service -> service.clearPermissions(context.sessionId()));
     }
 
     public List<ProxyPlugin> getLoadedPlugins() {

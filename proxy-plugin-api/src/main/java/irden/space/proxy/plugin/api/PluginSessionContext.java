@@ -17,6 +17,10 @@ public interface PluginSessionContext {
 
     boolean upstreamZstdEnabled();
 
+    default PermissionView permissions() {
+        return PermissionView.EMPTY;
+    }
+
     default int openProtocolVersion() {
         return PacketParser.LEGACY_PROTOCOL_VERSION;
     }

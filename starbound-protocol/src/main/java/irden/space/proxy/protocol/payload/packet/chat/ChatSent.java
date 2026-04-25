@@ -8,6 +8,6 @@ import java.util.List;
 public record ChatSent(
         String content,
         ChatSentMode mode,
-        List<VariantValue> arguments
+        VariantValue[] arguments
 ) {
 }

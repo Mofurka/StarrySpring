@@ -9,8 +9,10 @@ import irden.space.proxy.domain.session.ProxySession;
 import irden.space.proxy.domain.session.ProxySessionId;
 import irden.space.proxy.domain.session.SessionTransportMode;
 import irden.space.proxy.plugin.api.DefaultPluginSessionContext;
+import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PacketInterceptionService;
 import irden.space.proxy.plugin.api.PluginSessionLifecycleService;
+import irden.space.proxy.plugin.api.SessionPermissionService;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.payload.registry.PacketDispatcher;
@@ -39,6 +41,7 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     private final RuntimePacketInspector packetInspector = new RuntimePacketInspector(packetDispatcher);
     private final PacketInterceptionService packetInterceptionService;
     private final PluginSessionLifecycleService pluginSessionLifecycleService;
+    private final SessionPermissionService sessionPermissionService;
     private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
 
     @Override
@@ -98,7 +101,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     clientSocket,
                     upstreamSocket,
                     new SwitchableSessionTransport(SessionTransportMode.PLAIN),
-                    new SwitchableSessionTransport(SessionTransportMode.PLAIN)
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
+                    sessionPermissionService
             );
 
             pluginSessionLifecycleService.onConnectionSuccess(createPluginSessionContext(context));
@@ -161,13 +165,17 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
     private DefaultPluginSessionContext createPluginSessionContext(ProxySessionRuntimeContext context) {
         ProxySession session = context.session();
+        PermissionView permissionView = permissionId -> context.sessionPermissionService()
+                .permissions(session.getId().uuid().toString())
+                .has(permissionId);
         return new DefaultPluginSessionContext(
                 session.getId().uuid().toString(),
                 session.getClientIp(),
                 session.getClientCompression() == SessionTransportMode.ZSTD,
                 session.getUpstreamCompression() == SessionTransportMode.ZSTD,
                 session.resolveOpenProtocolVersion(),
-                (direction, envelope) -> sendPacket(context, direction, envelope)
+                (direction, envelope) -> sendPacket(context, direction, envelope),
+                permissionView
         );
     }
 

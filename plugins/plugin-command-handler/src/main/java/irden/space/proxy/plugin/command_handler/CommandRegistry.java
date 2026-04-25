@@ -11,7 +11,7 @@ public class CommandRegistry {
 
     private static final CommandRegistry GLOBAL = new CommandRegistry();
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final Logger log = LoggerFactory.getLogger(CommandRegistry.class);
     private final Map<String, RegisteredCommand> commandsByName = new LinkedHashMap<>();
     private final Map<String, RegisteredCommand> uniqueCommands = new LinkedHashMap<>();
 

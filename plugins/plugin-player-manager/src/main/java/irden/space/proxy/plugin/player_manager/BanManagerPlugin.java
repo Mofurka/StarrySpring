@@ -34,7 +34,7 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
         dependsOn = {"player-manager"}
 )
 public class BanManagerPlugin implements ProxyPlugin {
-    private final Logger log = LoggerFactory.getLogger(BanManagerPlugin.class);
+    private static final Logger log = LoggerFactory.getLogger(BanManagerPlugin.class);
     private BanRecordJdbcRepository banRecordRepository;
     private PlayerManagerPlugin playerManagerPlugin;
 
@@ -128,7 +128,6 @@ public class BanManagerPlugin implements ProxyPlugin {
                                 .executes(context -> {
                                     String target = context.get("target", String.class);
                                     String reason = context.getOrDefault("reason", String.class, "No reason");
-
                                     context.reply("Kicked " + target + ". Reason: " + reason);
                                 })))
                 .build();
@@ -141,18 +140,6 @@ public class BanManagerPlugin implements ProxyPlugin {
             usage = "/unban <player>"
     )
     public CommandSpec handleUnbanCommand() {
-//        if (context.arguments().isEmpty()) {
-//            context.reply("Usage: /unban <IP, ID, UUID, NAME>");
-//            return;
-//        }
-//
-//        String targetPlayer = context.arguments().getFirst();
-//        boolean success = unban(targetPlayer);
-//        if (success) {
-//            context.reply("Successfully unbanned " + targetPlayer);
-//        } else {
-//            context.reply("No active ban found for " + targetPlayer);
-//        }
         return literal("unban")
                 .then(argument("target", StringArgumentType.word())
                         .executes(context -> {

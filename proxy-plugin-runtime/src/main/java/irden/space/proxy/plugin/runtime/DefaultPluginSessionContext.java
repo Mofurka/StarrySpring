@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.runtime;
 
+import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
@@ -15,6 +16,7 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     private final boolean upstreamZstdEnabled;
     private final int openProtocolVersion;
     private final BiConsumer<PacketDirection, PacketEnvelope> packetSender;
+    private final PermissionView permissions;
 
     public DefaultPluginSessionContext(
             String sessionId,
@@ -28,7 +30,8 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
                 clientZstdEnabled,
                 upstreamZstdEnabled,
                 PacketParser.LEGACY_PROTOCOL_VERSION,
-                null
+                null,
+                PermissionView.EMPTY
         );
     }
 
@@ -39,7 +42,7 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
             boolean upstreamZstdEnabled,
             int openProtocolVersion
     ) {
-        this(sessionId, clientIp, clientZstdEnabled, upstreamZstdEnabled, openProtocolVersion, null);
+        this(sessionId, clientIp, clientZstdEnabled, upstreamZstdEnabled, openProtocolVersion, null, PermissionView.EMPTY);
     }
 
     public DefaultPluginSessionContext(
@@ -55,7 +58,8 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
                 clientZstdEnabled,
                 upstreamZstdEnabled,
                 PacketParser.LEGACY_PROTOCOL_VERSION,
-                packetSender
+                packetSender,
+                PermissionView.EMPTY
         );
     }
 
@@ -67,12 +71,25 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
             int openProtocolVersion,
             BiConsumer<PacketDirection, PacketEnvelope> packetSender
     ) {
+        this(sessionId, clientIp, clientZstdEnabled, upstreamZstdEnabled, openProtocolVersion, packetSender, PermissionView.EMPTY);
+    }
+
+    public DefaultPluginSessionContext(
+            String sessionId,
+            String clientIp,
+            boolean clientZstdEnabled,
+            boolean upstreamZstdEnabled,
+            int openProtocolVersion,
+            BiConsumer<PacketDirection, PacketEnvelope> packetSender,
+            PermissionView permissions
+    ) {
         this.sessionId = sessionId;
         this.clientIp = clientIp;
         this.clientZstdEnabled = clientZstdEnabled;
         this.upstreamZstdEnabled = upstreamZstdEnabled;
         this.openProtocolVersion = openProtocolVersion;
         this.packetSender = packetSender;
+        this.permissions = permissions == null ? PermissionView.EMPTY : permissions;
     }
 
     @Override
@@ -93,6 +110,11 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     @Override
     public boolean upstreamZstdEnabled() {
         return upstreamZstdEnabled;
+    }
+
+    @Override
+    public PermissionView permissions() {
+        return permissions;
     }
 
     @Override

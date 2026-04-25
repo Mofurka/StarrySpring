@@ -3,6 +3,7 @@ package irden.space.boot;
 import irden.space.proxy.plugin.api.PacketInterceptionService;
 import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
 import irden.space.proxy.plugin.api.PluginContext;
+import irden.space.proxy.plugin.api.SessionPermissionService;
 import irden.space.proxy.plugin.runtime.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,10 +23,12 @@ public class PluginRuntimeConfiguration {
     @Bean
     public PluginContext pluginContext(
             PacketInterceptorRegistry packetInterceptorRegistry,
-            DataSource dataSource
+            DataSource dataSource,
+            SessionPermissionService sessionPermissionService
     ) {
         DefaultPluginContext context = new DefaultPluginContext(packetInterceptorRegistry);
         context.publishService(DataSource.class, dataSource);
+        context.publishService(SessionPermissionService.class, sessionPermissionService);
         return context;
     }
 

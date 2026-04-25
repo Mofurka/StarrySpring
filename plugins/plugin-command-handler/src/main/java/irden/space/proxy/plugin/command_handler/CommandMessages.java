@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.command_handler;
 
+import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.payload.common.chat_header.ChatHeader;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import irden.space.proxy.protocol.payload.packet.chat.consts.ChatReceiveMode;
@@ -15,7 +16,7 @@ final class CommandMessages {
                 new ChatHeader(ChatReceiveMode.COMMAND_RESULT, null, 0),
                 "server",
                 message,
-                List.of()
+                new VariantValue[0]
         );
     }
 }

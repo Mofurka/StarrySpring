@@ -4,11 +4,16 @@ import java.util.*;
 
 public final class CommandParser {
 
-    public CommandParseResult parse(CommandNode root, List<String> tokens) {
+    public CommandParseResult parse(
+            CommandNode root,
+            String argumentsLine,
+            List<CommandToken> tokens
+    ) {
         Objects.requireNonNull(root, "root");
+        Objects.requireNonNull(argumentsLine, "argumentsLine");
         Objects.requireNonNull(tokens, "tokens");
 
-        MatchResult result = match(root, tokens, 0, new LinkedHashMap<>());
+        MatchResult result = match(root, argumentsLine, tokens, 0, new LinkedHashMap<>());
 
         if (result.success != null) {
             return new CommandParseResult.Success(
@@ -17,12 +22,13 @@ public final class CommandParser {
             );
         }
 
-        return new CommandParseResult.Error(result.errorMessage(tokens));
+        return new CommandParseResult.Error(result.errorMessage());
     }
 
     private MatchResult match(
             CommandNode current,
-            List<String> tokens,
+            String argumentsLine,
+            List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments
     ) {
@@ -31,7 +37,7 @@ public final class CommandParser {
                 return MatchResult.success(index, current.executor(), arguments);
             }
 
-            MatchResult optionalResult = trySkipOptionalChildren(current, tokens, index, arguments);
+            MatchResult optionalResult = trySkipOptionalChildren(current, argumentsLine, tokens, index, arguments);
             if (optionalResult.success != null) {
                 return optionalResult;
             }
@@ -42,40 +48,40 @@ public final class CommandParser {
             );
         }
 
-        String token = tokens.get(index);
+        CommandToken token = tokens.get(index);
 
         MatchResult bestFailure = MatchResult.failure(
                 index,
-                "Unexpected argument '" + token + "'. Expected: " + expectedChildren(current)
+                "Unexpected argument '" + token.value() + "'. Expected: " + expectedChildren(current)
         );
 
-        MatchResult literalResult = tryLiteralChildren(current, tokens, index, arguments);
+        MatchResult literalResult = tryLiteralChildren(current, argumentsLine, tokens, index, arguments);
         if (literalResult.success != null) {
             return literalResult;
         }
         bestFailure = best(bestFailure, literalResult);
 
-        MatchResult argumentResult = tryArgumentChildren(current, tokens, index, arguments);
+        MatchResult argumentResult = tryArgumentChildren(current, argumentsLine, tokens, index, arguments);
         if (argumentResult.success != null) {
             return argumentResult;
         }
         bestFailure = best(bestFailure, argumentResult);
 
-        MatchResult optionalSkipResult = trySkipOptionalChildren(current, tokens, index, arguments);
+        MatchResult optionalSkipResult = trySkipOptionalChildren(current, argumentsLine, tokens, index, arguments);
         if (optionalSkipResult.success != null) {
             return optionalSkipResult;
         }
 
         return best(bestFailure, optionalSkipResult);
     }
-
     private MatchResult tryLiteralChildren(
             CommandNode current,
-            List<String> tokens,
+            String argumentsLine,
+            List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments
     ) {
-        String token = tokens.get(index);
+        String token = tokens.get(index).value();
 
         MatchResult bestFailure = MatchResult.failure(index, "No literal matched");
 
@@ -90,6 +96,7 @@ public final class CommandParser {
 
             MatchResult result = match(
                     literal,
+                    argumentsLine,
                     tokens,
                     index + 1,
                     copy(arguments)
@@ -107,7 +114,8 @@ public final class CommandParser {
 
     private MatchResult tryArgumentChildren(
             CommandNode current,
-            List<String> tokens,
+            String argumentsLine,
+            List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments
     ) {
@@ -118,7 +126,7 @@ public final class CommandParser {
                 continue;
             }
 
-            MatchResult result = tryArgument(argumentNode, tokens, index, arguments);
+            MatchResult result = tryArgument(argumentNode, argumentsLine, tokens, index, arguments);
 
             if (result.success != null) {
                 return result;
@@ -132,7 +140,8 @@ public final class CommandParser {
 
     private MatchResult tryArgument(
             ArgumentNode<?> argumentNode,
-            List<String> tokens,
+            String argumentsLine,
+            List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments
     ) {
@@ -144,17 +153,19 @@ public final class CommandParser {
                 );
             }
 
-            return match(argumentNode, tokens, index, copy(arguments));
+            return match(argumentNode, argumentsLine, tokens, index, copy(arguments));
         }
 
         String rawValue;
         int nextIndex;
 
         if (argumentNode.type().greedy()) {
-            rawValue = String.join(" ", tokens.subList(index, tokens.size()));
+            CommandToken firstToken = tokens.get(index);
+
+            rawValue = argumentsLine.substring(firstToken.start()).trim();
             nextIndex = tokens.size();
         } else {
-            rawValue = tokens.get(index);
+            rawValue = tokens.get(index).value();
             nextIndex = index + 1;
         }
 
@@ -177,12 +188,13 @@ public final class CommandParser {
         LinkedHashMap<String, Object> nextArguments = copy(arguments);
         nextArguments.put(argumentNode.name(), parsedValue);
 
-        return match(argumentNode, tokens, nextIndex, nextArguments);
+        return match(argumentNode, argumentsLine, tokens, nextIndex, nextArguments);
     }
 
     private MatchResult trySkipOptionalChildren(
             CommandNode current,
-            List<String> tokens,
+            String argumentsLine,
+            List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments
     ) {
@@ -197,7 +209,7 @@ public final class CommandParser {
                 continue;
             }
 
-            MatchResult result = match(argumentNode, tokens, index, copy(arguments));
+            MatchResult result = match(argumentNode, argumentsLine, tokens, index, copy(arguments));
 
             if (result.success != null) {
                 return result;
@@ -261,40 +273,26 @@ public final class CommandParser {
     ) {
     }
 
-    private static final class MatchResult {
-
-        private final int failureIndex;
-        private final String failureMessage;
-        private final Success success;
-
-        private MatchResult(int failureIndex, String failureMessage, Success success) {
-            this.failureIndex = failureIndex;
-            this.failureMessage = failureMessage;
-            this.success = success;
-        }
+    private record MatchResult(int failureIndex, String failureMessage, Success success) {
 
         static MatchResult success(
-                int index,
-                CommandExecutor executor,
-                Map<String, Object> arguments
-        ) {
-            return new MatchResult(
-                    index,
-                    "",
-                    new Success(executor, arguments)
-            );
-        }
-
-        static MatchResult failure(int index, String message) {
-            return new MatchResult(index, message, null);
-        }
-
-        String errorMessage(List<String> tokens) {
-            if (failureIndex >= tokens.size()) {
-                return failureMessage;
+                    int index,
+                    CommandExecutor executor,
+                    Map<String, Object> arguments
+            ) {
+                return new MatchResult(
+                        index,
+                        "",
+                        new Success(executor, arguments)
+                );
             }
 
-            return failureMessage;
+            static MatchResult failure(int index, String message) {
+                return new MatchResult(index, message, null);
+            }
+
+            String errorMessage() {
+                return failureMessage;
+            }
         }
-    }
 }

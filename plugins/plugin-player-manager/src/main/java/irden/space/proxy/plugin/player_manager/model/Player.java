@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.player_manager.model;
 
+import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
@@ -47,6 +48,13 @@ public class Player {
     }
     public PluginSessionContext sessionContext() {
         return sessionContext;
+    }
+    public PermissionView permissions() {
+        if (!online()) {
+            return PermissionView.EMPTY;
+        }
+
+        return sessionContext.permissions();
     }
     public LocalDateTime lastSeen() {
         return lastSeen;
