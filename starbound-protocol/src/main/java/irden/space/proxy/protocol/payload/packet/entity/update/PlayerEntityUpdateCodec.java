@@ -39,12 +39,13 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
         if (fullUpdate) {
             throw new UnsupportedOperationException("Full player entity update is not supported in entity update packet, only in entity create packet");
         }
-        updateLoop:
+
         while (reader.hasRemaining()) {
             var magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
-            if (magicNumber == 0) {
+            if (magicNumber <= 0) {
                 break;
             }
+
             switch (magicNumber) {
                 case 1 -> player.state(VlqUnsignedCodec.INSTANCE.read(reader));
                 case 2 -> player.shifting(reader.readBoolean());
@@ -54,23 +55,17 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
                 case 6 -> player.damageTeam(DamageTeamCodec.INSTANCE.read(reader));
                 case 7 -> player.landed(VlqUnsignedCodec.INSTANCE.read(reader));
                 case 8 -> player.chatMessage(StarStringCodec.INSTANCE.read(reader));
-                case 9 -> player.newChatMessage(reader.readBoolean());
+                case 9 -> player.newChatMessage(VlqUnsignedCodec.INSTANCE.read(reader));
                 case 10 -> player.emote(StarStringCodec.INSTANCE.read(reader));
-                case 11 -> player.inventory(this.readInventory(reader));
-                case 12 ->
-                        reader.readRemainingBytes(); // ХУЙНЯ с очень большим хвостом после. Слишком много параметров, что даже смысла нет парсить.
-                case 13 -> reader.readRemainingBytes(); // Armor, not implemented yet
-                case 14 -> reader.readRemainingBytes(); // Songbook, not implemented yet
-                case 15 -> player.movementController(this.readMcontroller(reader));
-                case 16 -> player.effectEmitters(readEffectEmitter(reader)); // Effect emitter, not implemented yet
+                case 11 -> player.inventory(readInventory(reader));
+                case 15 -> player.movementController(readMcontroller(reader));
+                case 16 -> player.effectEmitters(readEffectEmitter(reader));
                 case 17 -> player.effectsAnimator(readEffectsAnimator(reader));
-//                case 18 -> reader.readRemainingBytes(); // techController - not implemented yet
+//      case 18 -> reader.readRemainingBytes(); // techController - not implemented yet
                 default -> {
-                    reader.readRemainingBytes();
-                    break updateLoop;
+                    return player.build();
                 }
             }
-
         }
         return player.build();
     }
@@ -113,7 +108,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
         }
         if (value.newChatMessage() != null) {
             VlqUnsignedCodec.INSTANCE.write(newWriter, 9);
-            newWriter.writeBoolean(value.newChatMessage());
+            VlqUnsignedCodec.INSTANCE.write(newWriter, value.newChatMessage());
         }
         if (value.emote() != null) {
             VlqUnsignedCodec.INSTANCE.write(newWriter, 10);
@@ -168,7 +163,9 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
                         ));
                 case 15 -> mc.xRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
                 case 16 -> mc.yRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
-                default -> throw new IllegalStateException("Unexpected value: " + magicNumber);
+                default -> {
+                    return mc.build();
+                }
             }
         }
         return mc.build();

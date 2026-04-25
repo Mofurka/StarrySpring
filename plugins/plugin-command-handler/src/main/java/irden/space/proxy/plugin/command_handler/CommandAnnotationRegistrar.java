@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.PluginAnnotationRegistrar;
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.ProxyPlugin;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -25,12 +26,41 @@ public class CommandAnnotationRegistrar implements PluginAnnotationRegistrar {
 
     private void register(ProxyPlugin plugin, Method method) {
         validateMethod(method);
+
         if (!method.trySetAccessible()) {
             throw new IllegalStateException("Cannot access @ChatCommand method " + method);
         }
 
         ChatCommand annotation = method.getAnnotation(ChatCommand.class);
-        CommandRegistry.global().register(plugin, method, annotation);
+        CommandSpec spec = invokeSpecFactory(plugin, method);
+
+        CommandRegistry.global().register(plugin, method, annotation, spec);
+    }
+
+    private CommandSpec invokeSpecFactory(ProxyPlugin plugin, Method method) {
+        try {
+            Object result = method.invoke(plugin);
+
+            if (!(result instanceof CommandSpec spec)) {
+                throw new IllegalStateException("@ChatCommand method must return CommandSpec: " + method);
+            }
+
+            return spec;
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+
+            if (cause instanceof Error error) {
+                throw error;
+            }
+
+            throw new IllegalStateException("Failed to create CommandSpec from @ChatCommand method " + method, cause);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to create CommandSpec from @ChatCommand method " + method, e);
+        }
     }
 
     private void validateMethod(Method method) {
@@ -38,20 +68,12 @@ public class CommandAnnotationRegistrar implements PluginAnnotationRegistrar {
             throw new IllegalArgumentException("@ChatCommand method must not be static: " + method);
         }
 
-        if (!void.class.equals(method.getReturnType())) {
-            throw new IllegalArgumentException("@ChatCommand method must return void: " + method);
+        if (!CommandSpec.class.equals(method.getReturnType())) {
+            throw new IllegalArgumentException("@ChatCommand method must return CommandSpec: " + method);
         }
 
-        if (method.getParameterCount() == 0) {
-            return;
+        if (method.getParameterCount() != 0) {
+            throw new IllegalArgumentException("@ChatCommand method must declare no parameters: " + method);
         }
-
-        if (method.getParameterCount() == 1 && CommandContext.class.equals(method.getParameterTypes()[0])) {
-            return;
-        }
-
-        throw new IllegalArgumentException(
-                "@ChatCommand method must declare no parameters or a single CommandContext parameter: " + method
-        );
     }
 }

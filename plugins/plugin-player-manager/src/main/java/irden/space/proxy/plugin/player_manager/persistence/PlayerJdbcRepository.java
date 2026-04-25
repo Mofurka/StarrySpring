@@ -1,10 +1,10 @@
 package irden.space.proxy.plugin.player_manager.persistence;
 
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public class PlayerJdbcRepository {
 
@@ -17,19 +17,13 @@ public class PlayerJdbcRepository {
 
     public void save(PlayerRecord player) {
         jdbcTemplate.update("""
-                insert into player_manager_players (
-                    id,
+                INSERT INTO player_manager_players (
                     player_uuid,
                     name,
                     ip_address,
                     created_at
-                ) values (?, ?, ?, ?, ?)
-                on conflict (id) do update set
-                    player_uuid = excluded.player_uuid,
-                    name = excluded.name,
-                    ip_address = excluded.ip_address
+                ) VALUES (?, ?, ?, ?)
                 """,
-                player.id(),
                 player.playerUuid(),
                 player.name(),
                 player.ipAddress(),
@@ -37,15 +31,104 @@ public class PlayerJdbcRepository {
         );
     }
 
-    public Optional<PlayerRecord> findByUuid(UUID uuid) {
+    public void updatePlayerIpAddress(String uuid, String newIpAddress) {
+        jdbcTemplate.update("""
+                UPDATE player_manager_players
+                SET ip_address = ?
+                WHERE player_uuid = ?
+                """,
+                newIpAddress,
+                uuid
+        );
+    }
+
+    public Optional<PlayerRecord> findByUuidOrName(String uuid, String name) {
         List<PlayerRecord> results = jdbcTemplate.query("""
-                select id, player_uuid, name, ip_address, created_at
-                from player_manager_players
-                where player_uuid = ?
+                SELECT *
+                FROM player_manager_players
+                WHERE player_uuid = ? OR name = ?
+                """,
+                rowMapper,
+                uuid,
+                name
+        );
+        return results.stream().findFirst();
+    }
+
+    public Optional<PlayerRecord> findByName(String name) {
+        List<PlayerRecord> results = jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE name = ?
+                """,
+                rowMapper,
+                name
+        );
+        return results.stream().findFirst();
+    }
+
+
+    public Optional<PlayerRecord> findByUuid(String uuid) {
+        List<PlayerRecord> results = jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE player_uuid = ?
                 """,
                 rowMapper,
                 uuid
         );
         return results.stream().findFirst();
     }
+
+    public List<PlayerRecord> findByIpAddress(String ipAddress) {
+        return jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE ip_address = ?
+                """,
+                rowMapper,
+                ipAddress
+        );
+    }
+
+    public Optional<PlayerRecord> findById(String id) {
+        List<PlayerRecord> results = jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                WHERE id = ?
+                """,
+                rowMapper,
+                id
+        );
+        return results.stream().findFirst();
+    }
+
+    public List<PlayerRecord> findAll() {
+        return jdbcTemplate.query("""
+                SELECT *
+                FROM player_manager_players
+                """,
+                rowMapper
+        );
+    }
+
+    public void deleteByUuid(String uuid) {
+        jdbcTemplate.update("""
+                DELETE FROM player_manager_players
+                WHERE player_uuid = ?
+                """,
+                uuid
+        );
+    }
+
+    public void deleteById(String id) {
+        jdbcTemplate.update("""
+                DELETE FROM player_manager_players
+                WHERE id = ?
+                """,
+                id
+        );
+    }
+
+
 }

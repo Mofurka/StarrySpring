@@ -29,7 +29,7 @@ public enum PlayerFirstNetStateCodec implements BinaryCodec<PlayerNetState> {
         netState.damageTeam(DamageTeamCodec.INSTANCE.read(storeDataReader));
         netState.landed(VlqUnsignedCodec.INSTANCE.read(storeDataReader));
         netState.chatMessage(StarStringCodec.INSTANCE.read(storeDataReader));
-        netState.newChatMessage(storeDataReader.readBoolean());
+        netState.newChatMessage(VlqUnsignedCodec.INSTANCE.read(storeDataReader));
         netState.emote(StarStringCodec.INSTANCE.read(storeDataReader));
         netState.inventory(PlayerInventoryCodec.INSTANCE.read(storeDataReader));
         storeDataReader.readRemainingBytes();

@@ -60,9 +60,4 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
         return PacketDecision.forward();
     }
 
-    @ChatCommand("debuglog") // checked
-    public void debugLogCommand(CommandContext context) {
-        context.reply("DebugLoggerPlugin is active! Use this command to verify that the plugin is working.");
-    }
-
 }

@@ -69,9 +69,9 @@ public final class MapVariantUtils {
     }
 
 
-    public static List<VariantValue> getList(MapVariantValue map, String... deepKeys) {
+    public static VariantValue[] getList(MapVariantValue map, String... deepKeys) {
         VariantValue value = get(map, deepKeys);
-        if (value instanceof ListVariantValue(List<VariantValue> listValue)) {
+        if (value instanceof ListVariantValue(VariantValue[] listValue)) {
             return listValue;
         }
         return null;
@@ -105,7 +105,7 @@ public final class MapVariantUtils {
 
         ObjectNode result;
         if (jsonNode.isObject()) {
-            result = ((ObjectNode) jsonNode).deepCopy();
+            result = jsonNode.deepCopy();
         } else {
             result = JsonNodeFactory.instance.objectNode();
         }
@@ -137,7 +137,7 @@ public final class MapVariantUtils {
             case IntVariantValue(int intValue) -> IntNode.valueOf(intValue);
             case DoubleVariantValue(double doubleValue) -> DoubleNode.valueOf(doubleValue);
             case StringVariantValue(String stringValue) -> TextNode.valueOf(stringValue);
-            case ListVariantValue(List<VariantValue> listValues) -> {
+            case ListVariantValue(VariantValue[] listValues) -> {
                 ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
                 for (VariantValue item : listValues) {
                     arrayNode.add(variantToJsonNode(item));
@@ -176,10 +176,13 @@ public final class MapVariantUtils {
             return new StringVariantValue(node.asText());
         }
         if (node.isArray()) {
-            List<VariantValue> values = new ArrayList<>();
-            for (JsonNode element : node) {
-                values.add(jsonNodeToVariant(element));
+            VariantValue[] values = new VariantValue[node.size()];
+            for (int i = 0; i < node.size(); i++) {
+                values[i] = jsonNodeToVariant(node.get(i));
             }
+//            for (JsonNode element : node) {
+//                values.add(jsonNodeToVariant(element));
+//            }
             return new ListVariantValue(values);
         }
         if (node.isObject()) {

@@ -19,7 +19,7 @@ public class ChatRecieveParser implements PacketParser<ChatReceive> {
         String name = StarStringCodec.INSTANCE.read(reader);
         reader.readUnsignedByte();
         String message = StarStringCodec.INSTANCE.read(reader);
-        List<VariantValue> variantValues = null;
+        VariantValue[] variantValues = null;
         if (reader.openProtocolVersion() >= 5) {
             variantValues = VariantCodec.INSTANCE.readList(reader);
         }
@@ -39,9 +39,9 @@ public class ChatRecieveParser implements PacketParser<ChatReceive> {
         writer.writeByte(0);
         StarStringCodec.INSTANCE.write(writer, payload.message());
         if (writer.openProtocolVersion() >= 5) {
-            List<VariantValue> data = payload.data();
+            VariantValue[] data = payload.data();
             if (data == null) {
-                data = List.of();
+                data = new VariantValue[0];
             }
             VariantCodec.INSTANCE.writeList(writer, data);
         }

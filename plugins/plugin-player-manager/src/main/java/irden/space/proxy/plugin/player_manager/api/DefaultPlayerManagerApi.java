@@ -1,10 +1,9 @@
 package irden.space.proxy.plugin.player_manager.api;
 
 import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
-import irden.space.proxy.plugin.player_manager.persistence.PlayerRecord;
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public class DefaultPlayerManagerApi implements PlayerManagerApi {
 
@@ -20,7 +19,7 @@ public class DefaultPlayerManagerApi implements PlayerManagerApi {
     }
 
     @Override
-    public Optional<PlayerRecord> findByUuid(UUID uuid) {
+    public Optional<PlayerRecord> findByUuid(String uuid) {
         return repository.findByUuid(uuid);
     }
 }

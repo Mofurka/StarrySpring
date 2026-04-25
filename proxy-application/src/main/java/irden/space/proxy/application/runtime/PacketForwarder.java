@@ -335,13 +335,17 @@ public class PacketForwarder implements Runnable {
     }
 
     private PluginSessionContext createPluginSessionContext(int openProtocolVersion) {
+        PermissionView permissionView = permissionId -> context.sessionPermissionService()
+                .permissions(session.getId().uuid().toString())
+                .has(permissionId);
         return new DefaultPluginSessionContext(
                 session.getId().uuid().toString(),
                 session.getClientIp(),
                 session.getClientCompression() == SessionTransportMode.ZSTD,
                 session.getUpstreamCompression() == SessionTransportMode.ZSTD,
                 openProtocolVersion,
-                this::sendPacket
+                this::sendPacket,
+                permissionView
         );
     }
 }

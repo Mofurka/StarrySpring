@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PluginManagerTest {
 
@@ -38,7 +40,7 @@ class PluginManagerTest {
             }
         };
 
-        PluginContext pluginContext = () -> registry;
+        PluginContext pluginContext = new DefaultPluginContext(registry);
 
         PluginManager manager = new PluginManager(
                 pluginLoader,
@@ -86,6 +88,7 @@ class PluginManagerTest {
         PacketInterceptorRegistry registry = new PacketInterceptorRegistry() {
             @Override
             public void register(PacketInterceptor interceptor) {
+                // no-op for this test
             }
 
             @Override
@@ -93,7 +96,7 @@ class PluginManagerTest {
                 return List.of();
             }
         };
-        PluginContext pluginContext = () -> registry;
+        PluginContext pluginContext = new DefaultPluginContext(registry);
 
         PluginManager manager = new PluginManager(
                 pluginLoader,
@@ -124,6 +127,66 @@ class PluginManagerTest {
                 ),
                 lifecycleEvents
         );
+    }
+
+    @Test
+    void clearsSessionPermissionsAfterDisconnectedCallbacksComplete() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        RecordingSessionPermissionService permissionService = new RecordingSessionPermissionService();
+        permissionService.updatePermissions("session-99", permissionId -> permissionId == 7);
+
+        SessionLifecyclePlugin plugin = new SessionLifecyclePlugin("core", List.of(), lifecycleEvents) {
+            @Override
+            public void onDisconnected(PluginSessionContext context) {
+                lifecycleEvents.add("permission:" + context.permissions().has(7));
+            }
+        };
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(plugin);
+            }
+        };
+        PacketInterceptorRegistry registry = new PacketInterceptorRegistry() {
+            @Override
+            public void register(PacketInterceptor interceptor) {
+                // no-op for this test
+            }
+
+            @Override
+            public List<PacketInterceptor> getAll() {
+                return List.of();
+            }
+        };
+        DefaultPluginContext pluginContext = new DefaultPluginContext(registry);
+        pluginContext.publishService(SessionPermissionService.class, permissionService);
+
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                pluginContext
+        );
+
+        manager.loadAndStart();
+
+        PluginSessionContext sessionContext = new DefaultPluginSessionContext(
+                "session-99",
+                "127.0.0.1",
+                false,
+                false,
+                1,
+                null,
+                permissionId -> permissionService.permissions("session-99").has(permissionId)
+        );
+
+        assertTrue(sessionContext.permissions().has(7));
+
+        manager.onDisconnected(sessionContext);
+
+        assertEquals(List.of("load:core", "start:core", "permission:true"), lifecycleEvents);
+        assertFalse(permissionService.permissions("session-99").has(7));
     }
 
     private static final class TestPlugin implements ProxyPlugin {
@@ -157,7 +220,7 @@ class PluginManagerTest {
         }
     }
 
-    private static final class SessionLifecyclePlugin implements ProxyPlugin {
+    private static class SessionLifecyclePlugin implements ProxyPlugin {
 
         private final PluginDescriptor descriptor;
         private final List<String> lifecycleEvents;
@@ -195,6 +258,25 @@ class PluginManagerTest {
         @Override
         public void onDisconnected(PluginSessionContext context) {
             lifecycleEvents.add("disconnected:" + descriptor.id() + ":" + context.sessionId());
+        }
+    }
+
+    private static final class RecordingSessionPermissionService implements SessionPermissionService {
+        private PermissionView permissions = PermissionView.EMPTY;
+
+        @Override
+        public PermissionView permissions(String sessionId) {
+            return permissions;
+        }
+
+        @Override
+        public void updatePermissions(String sessionId, PermissionView permissions) {
+            this.permissions = permissions;
+        }
+
+        @Override
+        public void clearPermissions(String sessionId) {
+            permissions = PermissionView.EMPTY;
         }
     }
 }

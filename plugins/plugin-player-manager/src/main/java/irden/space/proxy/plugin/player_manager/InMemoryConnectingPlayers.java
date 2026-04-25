@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,5 +30,10 @@ public class InMemoryConnectingPlayers implements PlayerRegistry<TempPlayer> {
     @Override
     public int size() {
         return playersBySessionId.size();
+    }
+
+    @Override
+    public List<TempPlayer> getAll() {
+        return List.copyOf(playersBySessionId.values());
     }
 }
