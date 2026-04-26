@@ -83,6 +83,7 @@ public final class ProxyPluginSupport {
                 .anyMatch(method -> method.isAnnotationPresent(PacketHandler.class));
     }
 
+
     private static void registerAnnotatedExtensions(ProxyPlugin plugin, PluginContext context) {
         for (PluginAnnotationRegistrar registrar : ServiceLoader.load(PluginAnnotationRegistrar.class)) {
             if (registrar.supports(plugin.getClass())) {

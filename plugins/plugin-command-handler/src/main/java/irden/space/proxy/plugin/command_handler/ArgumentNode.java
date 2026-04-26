@@ -1,16 +1,13 @@
 package irden.space.proxy.plugin.command_handler;
 
+import irden.space.proxy.plugin.api.Permission;
+
 import java.util.List;
 import java.util.Objects;
 
-public final class ArgumentNode<T> implements CommandNode {
-
-    private final String name;
-    private final String description;
-    private final ArgumentType<T> type;
-    private final boolean required;
-    private final List<CommandNode> children;
-    private final CommandExecutor executor;
+public record ArgumentNode<T>(String name, String description, ArgumentType<T> type, boolean required,
+                              List<CommandNode> children, CommandExecutor executor,
+                              List<Permission> requiredPermissions) implements CommandNode {
 
     public ArgumentNode(
             String name,
@@ -18,7 +15,8 @@ public final class ArgumentNode<T> implements CommandNode {
             ArgumentType<T> type,
             boolean required,
             List<CommandNode> children,
-            CommandExecutor executor
+            CommandExecutor executor,
+            List<Permission> requiredPermissions
     ) {
         this.name = normalizeName(name);
         this.description = description == null ? "" : description.trim();
@@ -26,38 +24,11 @@ public final class ArgumentNode<T> implements CommandNode {
         this.required = required;
         this.children = List.copyOf(children);
         this.executor = executor;
+        this.requiredPermissions = List.copyOf(requiredPermissions);
 
         if (type.greedy() && !children.isEmpty()) {
             throw new IllegalArgumentException("Greedy argument cannot have children: " + name);
         }
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public String description() {
-        return description;
-    }
-
-    public ArgumentType<T> type() {
-        return type;
-    }
-
-    public boolean required() {
-        return required;
-    }
-
-    @Override
-    public List<CommandNode> children() {
-        return children;
-    }
-
-    @Override
-    public CommandExecutor executor() {
-        return executor;
     }
 
     private String normalizeName(String value) {

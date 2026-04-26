@@ -1,45 +1,25 @@
 package irden.space.proxy.plugin.command_handler;
 
+import irden.space.proxy.plugin.api.Permission;
+
 import java.util.List;
 import java.util.Objects;
 
-public final class LiteralNode implements CommandNode {
-
-    private final String name;
-    private final String description;
-    private final List<CommandNode> children;
-    private final CommandExecutor executor;
+public record LiteralNode(String name, String description, List<CommandNode> children, CommandExecutor executor,
+                          List<Permission> requiredPermissions) implements CommandNode {
 
     public LiteralNode(
             String name,
             String description,
             List<CommandNode> children,
-            CommandExecutor executor
+            CommandExecutor executor,
+            List<Permission> requiredPermissions
     ) {
         this.name = normalizeName(name);
         this.description = description == null ? "" : description.trim();
         this.children = List.copyOf(children);
         this.executor = executor;
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public String description() {
-        return description;
-    }
-
-    @Override
-    public List<CommandNode> children() {
-        return children;
-    }
-
-    @Override
-    public CommandExecutor executor() {
-        return executor;
+        this.requiredPermissions = List.copyOf(requiredPermissions);
     }
 
     private String normalizeName(String value) {

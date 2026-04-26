@@ -139,7 +139,10 @@ public final class RoleManager {
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
             for (String permissionRule : safeList(configuredRole.getPermissions())) {
-                if (permissionRule != null && !permissionRule.isBlank() && !permissionRule.endsWith("*")) {
+                if (permissionRule != null
+                        && !permissionRule.isBlank()
+                        && !permissionRule.endsWith("*")
+                        && !PermissionRegistry.contains(permissionRule)) {
                     PermissionRegistry.registerIfAbsent(permissionRule);
                 }
             }

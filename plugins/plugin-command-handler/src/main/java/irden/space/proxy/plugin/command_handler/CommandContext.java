@@ -1,6 +1,8 @@
 package irden.space.proxy.plugin.command_handler;
 
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
+import irden.space.proxy.plugin.api.Permission;
+import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketType;
 
@@ -8,14 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public final class CommandContext {
-
-    private final PacketInterceptionContext packetContext;
-    private final String commandName;
-    private final String rawInput;
-    private final String argumentsLine;
-    private final List<String> rawArguments;
-    private final Map<String, Object> arguments;
+public record CommandContext(PacketInterceptionContext packetContext, String commandName, String rawInput,
+                             String argumentsLine, List<String> rawArguments, Map<String, Object> arguments) {
 
     public CommandContext(
             PacketInterceptionContext packetContext,
@@ -33,32 +29,24 @@ public final class CommandContext {
         this.arguments = Map.copyOf(arguments);
     }
 
-    public PacketInterceptionContext packetContext() {
-        return packetContext;
-    }
-
     public PluginSessionContext session() {
         return packetContext.session();
     }
 
-    public String commandName() {
-        return commandName;
+    public PermissionView permissions() {
+        return session().permissions();
     }
 
-    public String rawInput() {
-        return rawInput;
+    public boolean hasPermission(Permission permission) {
+        return permissions().has(permission);
     }
 
-    public String argumentsLine() {
-        return argumentsLine;
+    public boolean hasAllPermissions(Permission... permissions) {
+        return permissions().hasAll(permissions);
     }
 
-    public List<String> rawArguments() {
-        return rawArguments;
-    }
-
-    public Map<String, Object> arguments() {
-        return arguments;
+    public boolean hasAnyPermission(Permission... permissions) {
+        return permissions().hasAny(permissions);
     }
 
     public boolean has(String name) {

@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 
 import static irden.space.proxy.plugin.command_handler.CommandSpec.argument;
 import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
-import static java.lang.Boolean.FALSE;
 
 @PluginDefinition(
         id = "player-manager",
@@ -64,7 +63,6 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @OnLoad
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
-        ChatPermissions.registerDefaults();
         context.publishService(PlayerManagerPlugin.class, this);
         DataSource dataSource = context.requireService(DataSource.class);
         this.sessionPermissionService = context.requireService(SessionPermissionService.class);
@@ -151,14 +149,14 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         return PacketDecision.cancel();
     }
 
-    // Тест отправки сообщений с проверкой прав
-    @PacketHandler(value = PacketType.CHAT_SENT, direction = PacketDirection.TO_SERVER)
-    public PacketDecision onChatSent(PacketInterceptionContext context) {
-        if (log.isDebugEnabled() && !Permissions.has(context.session(), ChatPermissions.SENT.permission())) {
-            log.debug("Session {} attempted to send chat without '{}' permission", context.session().sessionId(), ChatPermissions.SENT.name());
-        }
-        return PacketDecision.forward();
-    }
+//    // Тест отправки сообщений с проверкой прав
+//    @PacketHandler(value = PacketType.CHAT_SENT, direction = PacketDirection.TO_SERVER)
+//    public PacketDecision onChatSent(PacketInterceptionContext context) {
+//        if (log.isDebugEnabled() && !Permissions.has(context.session(), PlayerManagerPermissions.SENT.permission())) {
+//            log.debug("Session {} attempted to send chat without '{}' permission", context.session().sessionId(), PlayerManagerPermissions.SENT.name());
+//        }
+//        return PacketDecision.forward();
+//    }
 
 
     @Override
@@ -338,7 +336,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
             aliases = {"u"},
             description = "use for manage players")
     public CommandSpec userCommand() {
-        return literal("user")
+        return literal("user").permission(PlayerManagerPermissions.USER.permission())
                 .then(argument("identifier", StringArgumentType.word()).description("Player name, UUID or client ID")
                         .then(literal("info")
                                 .executes(context -> {

@@ -46,7 +46,9 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
+                pluginContext,
+                () -> {
+                }
         );
 
         manager.loadAndStart();
@@ -102,7 +104,9 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
+                pluginContext,
+                () -> {
+                }
         );
 
         manager.loadAndStart();
@@ -166,7 +170,9 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
+                pluginContext,
+                () -> {
+                }
         );
 
         manager.loadAndStart();

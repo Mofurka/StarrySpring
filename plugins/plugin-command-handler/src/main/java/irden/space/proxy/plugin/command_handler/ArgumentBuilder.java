@@ -1,5 +1,7 @@
 package irden.space.proxy.plugin.command_handler;
 
+import irden.space.proxy.plugin.api.Permission;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +12,7 @@ public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode
     private String description = "";
     private boolean required = true;
     private final List<CommandNode> children = new ArrayList<>();
+    private final List<Permission> requiredPermissions = new ArrayList<>();
     private CommandExecutor executor;
 
     ArgumentBuilder(String name, ArgumentType<T> type) {
@@ -42,6 +45,27 @@ public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode
         return this;
     }
 
+    public ArgumentBuilder<T> permission(Permission permission) {
+        if (permission == null) {
+            throw new IllegalArgumentException("Permission must not be null");
+        }
+
+        requiredPermissions.add(permission);
+        return this;
+    }
+
+    public ArgumentBuilder<T> permissions(Permission... permissions) {
+        if (permissions == null) {
+            return this;
+        }
+
+        for (Permission permission : permissions) {
+            permission(permission);
+        }
+
+        return this;
+    }
+
     public ArgumentBuilder<T> executes(CommandExecutor executor) {
         this.executor = executor;
         return this;
@@ -49,6 +73,6 @@ public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode
 
     @Override
     public ArgumentNode<T> buildNode() {
-        return new ArgumentNode<>(name, description, type, required, children, executor);
+        return new ArgumentNode<>(name, description, type, required, children, executor, requiredPermissions);
     }
 }

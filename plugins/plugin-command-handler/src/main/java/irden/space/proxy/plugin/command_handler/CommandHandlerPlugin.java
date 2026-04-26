@@ -179,6 +179,14 @@ public class CommandHandlerPlugin implements ProxyPlugin {
 
         CommandParseResult.Success success = (CommandParseResult.Success) parseResult;
 
+        if (!hasRequiredPermissions(context.session(), success.matchedNodes())) {
+            context.session().sendToClient(
+                    PacketType.CHAT_RECEIVE,
+                    CommandMessages.systemMessage("You do not have permission to use this command.")
+            );
+            return PacketDecision.cancel();
+        }
+
         List<String> rawArguments = parsedCommand.tokens()
                 .stream()
                 .map(CommandToken::value)
@@ -217,6 +225,18 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         List<CommandToken> tokens = CommandTokenizer.tokenize(argumentsLine);
 
         return new ParsedCommand(commandName, argumentsLine, tokens);
+    }
+
+    private boolean hasRequiredPermissions(PluginSessionContext session, List<CommandNode> matchedNodes) {
+        PermissionView permissions = session.permissions();
+
+        for (CommandNode node : matchedNodes) {
+            if (node.hasRequiredPermissions() && !permissions.hasAll(node.requiredPermissions())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private record ParsedCommand(

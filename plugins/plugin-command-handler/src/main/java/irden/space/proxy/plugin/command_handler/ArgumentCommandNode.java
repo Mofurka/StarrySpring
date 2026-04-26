@@ -1,16 +1,12 @@
 package irden.space.proxy.plugin.command_handler;
 
+import irden.space.proxy.plugin.api.Permission;
+
 import java.util.List;
 import java.util.Objects;
 
-public final class ArgumentCommandNode<T> implements CommandNode {
-
-    private final String name;
-    private final String description;
-    private final ArgumentType<T> type;
-    private final boolean optional;
-    private final List<CommandNode> children;
-    private final CommandExecutor executor;
+public record ArgumentCommandNode<T>(String name, String description, ArgumentType<T> type, boolean optional,
+                                     List<CommandNode> children, CommandExecutor executor) implements CommandNode {
 
     public ArgumentCommandNode(
             String name,
@@ -29,31 +25,8 @@ public final class ArgumentCommandNode<T> implements CommandNode {
     }
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public String description() {
-        return description;
-    }
-
-    public ArgumentType<T> type() {
-        return type;
-    }
-
-    public boolean optional() {
-        return optional;
-    }
-
-    @Override
-    public List<CommandNode> children() {
-        return children;
-    }
-
-    @Override
-    public CommandExecutor executor() {
-        return executor;
+    public List<Permission> requiredPermissions() {
+        return List.of();
     }
 
     private static String normalizeName(String name) {

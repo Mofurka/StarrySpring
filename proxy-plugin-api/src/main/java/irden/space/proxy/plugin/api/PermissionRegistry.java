@@ -24,7 +24,6 @@ public final class PermissionRegistry {
 
     public static synchronized Permission registerIfAbsent(String name) {
         validatePermissionName(name);
-
         Integer existingId = permissions.get(name);
         if (existingId != null) {
             return new Permission(name, existingId);
@@ -62,6 +61,11 @@ public final class PermissionRegistry {
 
     public static synchronized Permission getPermission(String name) {
         return new Permission(name, getPermissionId(name));
+    }
+
+    public static synchronized boolean contains(String name) {
+        validatePermissionName(name);
+        return permissions.containsKey(name);
     }
 
     public static synchronized int getPermissionId(String name) {
