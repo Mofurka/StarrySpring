@@ -14,6 +14,14 @@ public final class PermissionRegistry {
     private PermissionRegistry() {
     }
 
+    public static synchronized List<Permission> allPermissions() {
+        List<Permission> all = new ArrayList<>(permissions.size());
+        for (Map.Entry<String, Integer> entry : permissions.entrySet()) {
+            all.add(new Permission(entry.getKey(), entry.getValue()));
+        }
+        return List.copyOf(all);
+    }
+
     public static synchronized Permission registerIfAbsent(String name) {
         validatePermissionName(name);
 

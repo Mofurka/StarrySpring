@@ -44,6 +44,8 @@ public final class EnumArgumentType<E extends Enum<E>> implements ArgumentType<E
 
     @Override
     public String displayName() {
-        return enumType.getSimpleName();
+        // instead of name we are using enum constants
+        return Arrays.toString(enumType.getEnumConstants()).toLowerCase(Locale.ROOT);
+
     }
 }

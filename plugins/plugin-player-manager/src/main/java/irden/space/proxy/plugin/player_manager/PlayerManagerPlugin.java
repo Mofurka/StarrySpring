@@ -5,14 +5,18 @@ import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStart;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.command_handler.*;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.Role;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 import irden.space.proxy.plugin.player_manager.model.UserPermissions;
 import irden.space.proxy.plugin.player_manager.permissions.PermissionResolver;
 import irden.space.proxy.plugin.player_manager.persistence.LiquibaseRunner;
+import irden.space.proxy.plugin.player_manager.persistence.PlayerAccessJdbcRepository;
 import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
 import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
+import irden.space.proxy.plugin.player_manager.roles.RoleActionType;
+import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
@@ -26,11 +30,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import static irden.space.proxy.plugin.command_handler.CommandSpec.argument;
+import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
+import static java.lang.Boolean.FALSE;
 
 @PluginDefinition(
         id = "player-manager",
@@ -46,20 +55,25 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     private final PlayerRegistry<TempPlayer> connectingPlayers = new InMemoryConnectingPlayers();
     private final Map<String, Role> rolesByName = new ConcurrentHashMap<>();
     private final PermissionResolver permissionResolver = new PermissionResolver();
+    private PlayerAccessJdbcRepository playerAccessRepository;
     private PlayerJdbcRepository playerRepository;
     private SessionPermissionService sessionPermissionService;
+    private RoleManager roleManager;
 
 
     @OnLoad
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
+        ChatPermissions.registerDefaults();
         context.publishService(PlayerManagerPlugin.class, this);
         DataSource dataSource = context.requireService(DataSource.class);
         this.sessionPermissionService = context.requireService(SessionPermissionService.class);
         LiquibaseRunner.runLiquibaseMigrations(dataSource);
-        ChatPermissions.registerDefaults();
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        this.playerAccessRepository = new PlayerAccessJdbcRepository(jdbcTemplate);
         this.playerRepository = new PlayerJdbcRepository(jdbcTemplate);
+        this.roleManager = new RoleManager();
+        reloadConfiguredRoles();
     }
 
     @OnStart
@@ -77,7 +91,8 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
         ClientConnect clientConnect = (ClientConnect) context.parsedPayload();
         if (playerRepository.findByUuid(clientConnect.playerUuid().toString()).isEmpty()) {
-            log.info("New player detected: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
+            if (log.isInfoEnabled())
+                log.info("New player detected: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
             playerRepository.save(PlayerRecord.builder()
                     .playerUuid(clientConnect.playerUuid().toString())
                     .name(clientConnect.playerName())
@@ -85,13 +100,14 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                     .createdAt(LocalDateTime.now())
                     .build());
         } else {
-            log.info("Existing player connecting: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
+            if (log.isInfoEnabled())
+                log.info("Existing player connecting: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
             playerRepository.updatePlayerIpAddress(clientConnect.playerUuid().toString(), context.session().clientIp());
         }
-
         TempPlayer player = TempPlayer.builder()
                 .name(clientConnect.playerName())
                 .uuid(clientConnect.playerUuid())
+                .account(clientConnect.account())
                 .sessionId(context.session().sessionId()).build();
         connectingPlayers.add(context.session().sessionId(), player);
         return PacketDecision.forward();
@@ -106,13 +122,19 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
             Player player = Player.builder()
                     .name(tempPlayer.name())
                     .uuid(tempPlayer.uuid())
+                    .account(tempPlayer.account())
                     .sessionContext(context.session())
                     .ipAddress(context.session().clientIp())
                     .clientId(connectSuccess.clientId())
                     .entityId(connectSuccess.clientId() * -65536) // This how clientId transforms to entityId.
                     .build();
-            PermissionSet set = resolvePermissions(List.of("starry.chat.*"));
-            bindSessionPermissions(context.session().sessionId(), List.of(), set);
+            ResolvedUserAccess resolvedUserAccess = resolveUserAccess(tempPlayer.uuid().toString(), tempPlayer.account());
+            bindSessionPermissions(
+                    context.session().sessionId(),
+                    resolvedUserAccess.roles(),
+                    resolvedUserAccess.grantedPermissions(),
+                    resolvedUserAccess.revokedPermissions()
+            );
             log.info(
                     "Player connected: name='{}', uuid={}, clientId={}, entityId={}",
                     player.name(),
@@ -132,10 +154,9 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     // Тест отправки сообщений с проверкой прав
     @PacketHandler(value = PacketType.CHAT_SENT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onChatSent(PacketInterceptionContext context) {
-        boolean has = Permissions.has(context.session(), ChatPermissions.SENT.permission());
-        System.out.println("Player " + context.session().sessionId() + " sent a chat message. Has permission to send: " + has);
-
-
+        if (log.isDebugEnabled() && !Permissions.has(context.session(), ChatPermissions.SENT.permission())) {
+            log.debug("Session {} attempted to send chat without '{}' permission", context.session().sessionId(), ChatPermissions.SENT.name());
+        }
         return PacketDecision.forward();
     }
 
@@ -153,6 +174,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     @Override
     public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
+        sessionPermissionService.clearPermissions(context.sessionId());
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.sessionId());
         if (tempPlayer != null) {
             log.info("Player connection attempt failed or was cancelled: name='{}', uuid={}", tempPlayer.name(), tempPlayer.uuid());
@@ -162,27 +184,6 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         if (player != null) {
             log.info("Player disconnected: name='{}', uuid={}", player.name(), player.uuid());
         }
-    }
-
-    public Role registerRole(String roleName, List<String> permissionRules, List<String> parentRoleNames) {
-        if (roleName == null || roleName.isBlank()) {
-            throw new IllegalArgumentException("Role name must not be blank");
-        }
-        if (rolesByName.containsKey(roleName)) {
-            throw new IllegalArgumentException("Role already exists: " + roleName);
-        }
-
-        Role role = new Role(roleName);
-        role.permissions().merge(permissionResolver.resolveRules(permissionRules));
-
-        if (parentRoleNames != null) {
-            for (String parentRoleName : parentRoleNames) {
-                role.inherit(requireRole(parentRoleName));
-            }
-        }
-
-        rolesByName.put(roleName, role);
-        return role;
     }
 
     public Optional<Role> findRole(String roleName) {
@@ -202,11 +203,56 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     }
 
     public void bindSessionPermissions(String sessionId, List<Role> roles, PermissionSet extraPermissions) {
-        sessionPermissionService.updatePermissions(sessionId, new UserPermissions(roles, extraPermissions));
+        bindSessionPermissions(sessionId, roles, extraPermissions, Permissions.none());
+    }
+
+    public void bindSessionPermissions(String sessionId, List<Role> roles, PermissionSet grantedPermissions, PermissionSet revokedPermissions) {
+        sessionPermissionService.updatePermissions(sessionId, new UserPermissions(roles, grantedPermissions, revokedPermissions));
     }
 
     public PermissionSet resolvePermissions(List<String> permissionRules) {
         return permissionResolver.resolveRules(permissionRules);
+    }
+
+    public void assignRoleToPlayer(String playerUuid, String roleName, String assignedBy) {
+        ensurePlayerAccessMutable(playerUuid);
+
+        if (RoleManager.OWNER_ROLE_NAME.equals(roleName)) {
+            throw new IllegalArgumentException("Owner role is managed internally and cannot be assigned manually");
+        }
+
+        requireRole(roleName);
+        playerAccessRepository.assignRole(playerUuid, roleName, assignedBy);
+        refreshOnlinePermissions(playerUuid);
+    }
+
+    public void removeRoleFromPlayer(String playerUuid, String roleName) {
+        ensurePlayerAccessMutable(playerUuid);
+
+        if (RoleManager.OWNER_ROLE_NAME.equals(roleName)) {
+            throw new IllegalArgumentException("Owner role cannot be removed manually");
+        }
+
+        playerAccessRepository.removeRole(playerUuid, roleName);
+        refreshOnlinePermissions(playerUuid);
+    }
+
+    public void grantPermissionToPlayer(String playerUuid, String permissionRule, String changedBy) {
+        ensurePlayerAccessMutable(playerUuid);
+        playerAccessRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), true, changedBy);
+        refreshOnlinePermissions(playerUuid);
+    }
+
+    public void revokePermissionFromPlayer(String playerUuid, String permissionRule, String changedBy) {
+        ensurePlayerAccessMutable(playerUuid);
+        playerAccessRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), false, changedBy);
+        refreshOnlinePermissions(playerUuid);
+    }
+
+    public void clearPermissionOverride(String playerUuid, String permissionRule) {
+        ensurePlayerAccessMutable(playerUuid);
+        playerAccessRepository.deletePermissionOverride(playerUuid, normalizePermissionRule(permissionRule));
+        refreshOnlinePermissions(playerUuid);
     }
 
     private List<Role> resolveRoles(List<String> roleNames) {
@@ -227,6 +273,172 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown role: " + roleName));
     }
 
+    private void reloadConfiguredRoles() {
+        rolesByName.clear();
+        rolesByName.putAll(roleManager.rolesByName());
+    }
+
+    private ResolvedUserAccess resolveUserAccess(String playerUuid, String accountName) {
+        if (roleManager.isOwner(playerUuid)) {
+            return new ResolvedUserAccess(resolveRoles(List.of(RoleManager.OWNER_ROLE_NAME)), Permissions.none(), Permissions.none());
+        }
+
+        List<String> storedRoleNames = playerAccessRepository.findRolesByPlayerUuid(playerUuid).stream()
+                .map(irden.space.proxy.plugin.player_manager.persistence.model.PlayerRoleRecord::roleName)
+                .toList();
+
+        List<Role> resolvedRoles = resolveRoles(roleManager.resolveRoleNamesForPlayer(playerUuid, accountName, storedRoleNames));
+
+        PermissionSet grantedPermissions = new PermissionSet();
+        PermissionSet revokedPermissions = new PermissionSet();
+        for (var permissionOverride : playerAccessRepository.findPermissionOverridesByPlayerUuid(playerUuid)) {
+            mergePermissionRule(
+                    permissionOverride.permissionName(),
+                    permissionOverride.granted() ? grantedPermissions : revokedPermissions
+            );
+        }
+
+        return new ResolvedUserAccess(resolvedRoles, grantedPermissions, revokedPermissions);
+    }
+
+    private void mergePermissionRule(String permissionRule, PermissionSet targetPermissions) {
+        String normalizedPermissionRule = normalizePermissionRule(permissionRule);
+        if (!normalizedPermissionRule.endsWith("*")) {
+            PermissionRegistry.registerIfAbsent(normalizedPermissionRule);
+        }
+        targetPermissions.merge(permissionResolver.resolveRule(normalizedPermissionRule));
+    }
+
+    private String normalizePermissionRule(String permissionRule) {
+        if (permissionRule == null || permissionRule.isBlank()) {
+            throw new IllegalArgumentException("Permission rule must not be blank");
+        }
+        return permissionRule.trim();
+    }
+
+    private void ensurePlayerAccessMutable(String playerUuid) {
+        if (roleManager.isOwner(playerUuid)) {
+            throw new IllegalStateException("Owner roles and permissions cannot be modified");
+        }
+    }
+
+    private void refreshOnlinePermissions(String playerUuid) {
+        getPlayerByUuid(playerUuid, true).ifPresent(player -> {
+            ResolvedUserAccess resolvedUserAccess = resolveUserAccess(playerUuid, player.account());
+            bindSessionPermissions(
+                    player.sessionContext().sessionId(),
+                    resolvedUserAccess.roles(),
+                    resolvedUserAccess.grantedPermissions(),
+                    resolvedUserAccess.revokedPermissions()
+            );
+        });
+    }
+
+    @ChatCommand(value = "user",
+            aliases = {"u"},
+            description = "use for manage players")
+    public CommandSpec userCommand() {
+        return literal("user")
+                .then(argument("identifier", StringArgumentType.word()).description("Player name, UUID or client ID")
+                        .then(literal("info")
+                                .executes(context -> {
+                                    String identifier = context.get("identifier", String.class);
+                                    Optional<Player> playerOpt = findPlayer(identifier, false);
+                                    if (playerOpt.isEmpty()) {
+                                        context.reply("Player not found: " + identifier);
+                                        return;
+                                    }
+                                    StringBuilder sb = new StringBuilder();
+                                    Player player = playerOpt.get();
+                                    sb.append("Player info:").append(System.lineSeparator());
+                                    sb.append("- Name: ").append(player.name()).append(System.lineSeparator());
+                                    sb.append("- UUID: ").append(player.uuid()).append(System.lineSeparator());
+                                    sb.append("- Online: ").append(player.online()).append(System.lineSeparator());
+                                    if (player.online()) {
+                                        sb.append("- Account: ").append(player.account()).append(System.lineSeparator());
+                                        sb.append("- Client ID: ").append(player.clientId()).append(System.lineSeparator());
+                                        sb.append("- Entity ID: ").append(player.entityId()).append(System.lineSeparator());
+                                        sb.append("- IP Address: ").append(player.ipAddress()).append(System.lineSeparator());
+                                    }
+                                    context.reply(sb.toString());
+                                }))
+                        .then(literal("permissions")
+                                .executes(context -> {
+                                    String identifier = context.get("identifier", String.class);
+                                    Optional<Player> playerOpt = findPlayer(identifier, false);
+                                    if (playerOpt.isEmpty()) {
+                                        context.reply("Player not found: " + identifier);
+                                        return;
+                                    }
+                                    Player player = playerOpt.get();
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append("Player permissions:").append(System.lineSeparator());
+                                    sb.append("- Name: ").append(player.name()).append(System.lineSeparator());
+                                    sb.append("- UUID: ").append(player.uuid()).append(System.lineSeparator());
+
+                                    List<String> permissionNames = listEffectivePermissionNames(player);
+                                    if (permissionNames.isEmpty()) {
+                                        sb.append("- Effective permissions: none").append(System.lineSeparator());
+                                        context.reply(sb.toString());
+                                        return;
+                                    }
+
+                                    sb.append("- Effective permissions (").append(permissionNames.size()).append("):").append(System.lineSeparator());
+                                    for (String permissionName : permissionNames) {
+                                        sb.append("  - ").append(permissionName).append(System.lineSeparator());
+                                    }
+                                    context.reply(sb.toString());
+                                })
+                        )
+                        .then(literal("role")
+                                .then(argument("action", EnumArgumentType.of(RoleActionType.class))
+                                        .then(argument("roles", StringArgumentType.greedyString()).description("Role names separated by space")
+                                                .executes(this::handlePlayerRoleUpdate)))
+                        )
+                ).build();
+    }
+
+
+    private void handlePlayerRoleUpdate(CommandContext ctx) {
+        String identifier = ctx.get("identifier", String.class);
+        Optional<Player> playerOpt = findPlayer(identifier, false);
+        if (playerOpt.isEmpty()) {
+            ctx.reply("Player not found: " + identifier);
+            return;
+        }
+        Player player = playerOpt.get();
+        RoleActionType actionType = ctx.get("action", RoleActionType.class);
+        String[] roleNames = Optional.ofNullable(ctx.get("roles", String.class))
+                .map(r -> r.split("\\s+"))
+                .orElse(new String[0]);
+        var sb = new StringBuilder();
+        for (int i = 0; i < roleNames.length; i++) {
+            roleNames[i] = roleNames[i].trim();
+            try {
+                switch (actionType) {
+                    case ADD -> {
+                        assignRoleToPlayer(player.uuid().toString(), roleNames[i], "console");
+                        sb.append("Assigned role '%s' to player '%s'%n".formatted(roleNames[i], player.name()));
+                    }
+                    case REMOVE -> {
+                        removeRoleFromPlayer(player.uuid().toString(), roleNames[i]);
+                        sb.append("Removed role '%s' from player '%s'%n".formatted(roleNames
+                                [i], player.name()));
+                    }
+                }
+            } catch (Exception e) {
+                sb.append("Failed to %s role '%s' for player '%s': %s%n".formatted(
+                        actionType == RoleActionType.ADD ? "assign" : "remove",
+                        roleNames[i],
+                        player.name(),
+                        e.getMessage()
+                ));
+                ctx.reply(sb.toString());
+                return;
+            }
+        }
+        ctx.reply(sb.toString());
+    }
 //    @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
 //    public PacketDecision onEntityCreate(PacketInterceptionContext context) {
 //        Entity entity = (Entity) context.parsedPayload();
@@ -379,5 +591,18 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                     .ipAddress(p.ipAddress())
                     .build());
         }
+    }
+
+    private List<String> listEffectivePermissionNames(Player player) {
+        PermissionView permissionView = player.permissions();
+        return PermissionRegistry.entries().entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.naturalOrder()))
+                .filter(entry -> permissionView.has(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private record ResolvedUserAccess(List<Role> roles, PermissionSet grantedPermissions,
+                                      PermissionSet revokedPermissions) {
     }
 }

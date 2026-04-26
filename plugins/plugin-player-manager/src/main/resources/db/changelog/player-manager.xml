@@ -70,4 +70,70 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="player-manager-002-create-player-roles" author="Mofurka">
+        <createTable tableName="player_manager_player_roles">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="player_uuid" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="role_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="assigned_by" type="varchar(255)"/>
+
+            <column name="assigned_at" type="java.sql.Types.TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="player_manager_player_roles"
+                columnNames="player_uuid, role_name"
+                constraintName="uk_player_manager_player_roles_uuid_role"/>
+
+        <createIndex tableName="player_manager_player_roles" indexName="idx_player_manager_player_roles_uuid">
+            <column name="player_uuid"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="player-manager-003-create-player-permission-overrides" author="Mofurka">
+        <createTable tableName="player_manager_player_permission_overrides">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="player_uuid" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="permission_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="granted" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="changed_by" type="varchar(255)"/>
+
+            <column name="changed_at" type="java.sql.Types.TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="player_manager_player_permission_overrides"
+                columnNames="player_uuid, permission_name"
+                constraintName="uk_player_manager_permission_overrides_uuid_permission"/>
+
+        <createIndex tableName="player_manager_player_permission_overrides" indexName="idx_player_manager_permission_overrides_uuid">
+            <column name="player_uuid"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

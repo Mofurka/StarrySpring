@@ -74,6 +74,7 @@ public final class CommandParser {
 
         return best(bestFailure, optionalSkipResult);
     }
+
     private MatchResult tryLiteralChildren(
             CommandNode current,
             String argumentsLine,
@@ -256,11 +257,24 @@ public final class CommandParser {
             if (child instanceof LiteralNode literal) {
                 expected.add(literal.name());
             } else if (child instanceof ArgumentNode<?> argument) {
-                String value = "<" + argument.name() + ":" + argument.type().displayName() + ">";
-                if (!argument.required()) {
-                    value = "[" + value + "]";
+//                String value = "<" + argument.name() + ":" + argument.type().displayName() + ">";
+//                if (!argument.required()) {
+//                    value = "[" + value + "]";
+//                }
+//                String value = "<" + argument.name() + ">" + ": " + argument.description();
+//                if (!argument.required()) {
+//                    value = "[" + value + "]";
+//                }
+                var sb = new StringBuilder();
+                sb.append("<").append(argument.name()).append(": ").append(argument.type().displayName());
+                if (!argument.description().isEmpty()) {
+                    sb.append(" - ").append(argument.description());
                 }
-                expected.add(value);
+                sb.append(">");
+                if (!argument.required()) {
+                    sb.insert(0, "[").append("]");
+                }
+                expected.add(sb.toString());
             }
         }
 
@@ -276,23 +290,23 @@ public final class CommandParser {
     private record MatchResult(int failureIndex, String failureMessage, Success success) {
 
         static MatchResult success(
-                    int index,
-                    CommandExecutor executor,
-                    Map<String, Object> arguments
-            ) {
-                return new MatchResult(
-                        index,
-                        "",
-                        new Success(executor, arguments)
-                );
-            }
-
-            static MatchResult failure(int index, String message) {
-                return new MatchResult(index, message, null);
-            }
-
-            String errorMessage() {
-                return failureMessage;
-            }
+                int index,
+                CommandExecutor executor,
+                Map<String, Object> arguments
+        ) {
+            return new MatchResult(
+                    index,
+                    "",
+                    new Success(executor, arguments)
+            );
         }
+
+        static MatchResult failure(int index, String message) {
+            return new MatchResult(index, message, null);
+        }
+
+        String errorMessage() {
+            return failureMessage;
+        }
+    }
 }

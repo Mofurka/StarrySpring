@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.api;
 
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.List;
 
 public class PermissionSet implements PermissionView {
 

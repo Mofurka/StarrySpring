@@ -7,7 +7,8 @@ import lombok.Builder;
 public record TempPlayer (
         String name,
         String sessionId,
-        StarUuid uuid
+        StarUuid uuid,
+        String account
 ){
 
 }

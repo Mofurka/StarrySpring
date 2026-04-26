@@ -1,0 +1,72 @@
+{
+  "defaultAccount": "Neofit",
+  "ownerUuid" : "58c329f6797ed81484c877727d2439c5",
+  "accounts": [
+    {
+      "name": "Host",
+      "colorPrefix": "#ff0000",
+      "priority": 0,
+      "permissions": [
+        "all"
+      ]
+    },
+    {
+      "name": "HostSupport",
+      "colorPrefix": "#ff0000",
+      "priority": 1,
+      "permissions": [
+        "all"
+      ]
+    },
+    {
+      "name": "GM",
+      "colorPrefix": "#0000ff",
+      "priority": 2,
+      "permissions": [
+      ],
+      "inherits": [
+        "Player"
+      ]
+    },
+    {
+      "name": "NPC",
+      "colorPrefix": "^green;",
+      "priority": 3,
+      "permissions": [
+      ],
+      "inherits": [
+        "Player"
+      ]
+    },
+    {
+      "name": "Builder",
+      "colorPrefix": "^blue;",
+      "priority": 4,
+      "permissions": [
+      ],
+      "inherits": [
+        "Player"
+      ]
+    },
+    {
+      "name": "Player",
+      "colorPrefix": "^blue;",
+      "priority": 5,
+      "permissions": [
+        "starry.chat.sent",
+        "starry.chat.recieve"
+      ],
+      "inherits": [
+        "Neofit"
+      ]
+    },
+    {
+      "name": "Neofit",
+      "colorPrefix": "#ff00ff",
+      "priority": 6,
+      "permissions": [
+        "command.help"
+      ]
+    }
+  ]
+}

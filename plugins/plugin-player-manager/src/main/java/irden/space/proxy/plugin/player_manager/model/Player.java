@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Player {
     private final StarUuid uuid;
     private String name;
+    private final String account;
     private final int clientId;
     private final int entityId;
     private final String ipAddress;
@@ -36,6 +37,9 @@ public class Player {
     }
     public int clientId() {
         return clientId;
+    }
+    public String account() {
+        return account;
     }
     public int entityId() {
         return entityId;

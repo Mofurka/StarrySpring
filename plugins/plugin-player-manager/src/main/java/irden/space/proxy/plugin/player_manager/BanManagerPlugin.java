@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -60,7 +61,7 @@ public class BanManagerPlugin implements ProxyPlugin {
             BanRecord activeBanRecord = optionalBanRecord.get();
             String reason = activeBanRecord.reason() != null ? activeBanRecord.reason() : "No reason provided";
             String expiresInfo = activeBanRecord.permanent() ? "This ban is permanent." :
-                    "This ban expires at " + activeBanRecord.expiresAt().toString() + "[UTC]" + " (in " + java.time.Duration.between(LocalDateTime.now(), activeBanRecord.expiresAt()).toMinutes() + " minutes)";
+                    "This ban expires at " + activeBanRecord.expiresAt().toString() + "[UTC]" + " (in " + Duration.between(LocalDateTime.now(), activeBanRecord.expiresAt()).toMinutes() + " minutes)";
             String message = "You are banned from this server. \nReason: " + reason + "\n" + expiresInfo;
 
             log.info("Blocked connection from {} (UUID: {}) due to active ban. Reason: {}",
@@ -83,21 +84,6 @@ public class BanManagerPlugin implements ProxyPlugin {
             usage = "/ban <player> [duration] [reason]"
     )
     public CommandSpec handleBanCommand() {
-//        if (context.arguments().isEmpty()) {
-//            context.reply("Usage: /ban <IP, ID, UUID, NAME> [duration] [reason]");
-//            return;
-//        }
-//
-//        List<String> arguments = context.arguments();
-//        String targetPlayer = arguments.get(0);
-//        String durationStr = arguments.size() > 1 ? arguments.get(1) : "permanent";
-//        String reason = arguments.size() > 2
-//                ? String.join(" ", arguments.subList(2, arguments.size()))
-//                : "No reason provided";
-//
-//        Player player = playerManagerPlugin.getPlayerBySessionId(context.session().sessionId()).orElse(null);
-//        BanOperationResult result = ban(targetPlayer, player == null ? null : player.name(), durationStr, reason);
-//        context.reply(result.message());
         return literal("ban")
                 .then(argument("target", StringArgumentType.word())
                         .then(argument("duration", StringArgumentType.word())

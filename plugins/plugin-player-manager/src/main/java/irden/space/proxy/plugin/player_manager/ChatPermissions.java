@@ -2,10 +2,6 @@ package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.api.Permission;
 import irden.space.proxy.plugin.api.PermissionRegistry;
-import lombok.experimental.UtilityClass;
-
-import irden.space.proxy.plugin.api.Permission;
-import irden.space.proxy.plugin.api.PermissionRegistry;
 
 public enum ChatPermissions {
     SENT("starry.chat.sent"),

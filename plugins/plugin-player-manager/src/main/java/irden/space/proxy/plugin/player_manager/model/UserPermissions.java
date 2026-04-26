@@ -3,13 +3,20 @@ package irden.space.proxy.plugin.player_manager.model;
 import irden.space.proxy.plugin.api.PermissionSet;
 import irden.space.proxy.plugin.api.PermissionView;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public final class UserPermissions implements PermissionView {
 
-    private final PermissionSet effectivePermissions;
+    private final PermissionSet grantedPermissions;
+    private final PermissionSet revokedPermissions;
 
     public UserPermissions(Collection<Role> roles, PermissionSet extraPermissions) {
+        this(roles, extraPermissions, null);
+    }
+
+    public UserPermissions(Collection<Role> roles, PermissionSet extraPermissions, PermissionSet revokedPermissions) {
 
         PermissionSet result = new PermissionSet();
 
@@ -21,17 +28,24 @@ public final class UserPermissions implements PermissionView {
             }
         }
 
-        result.merge(extraPermissions);
+        if (extraPermissions != null) {
+            result.merge(extraPermissions);
+        }
 
-        this.effectivePermissions = result;
+        this.grantedPermissions = result;
+        this.revokedPermissions = revokedPermissions == null ? new PermissionSet() : revokedPermissions.copy();
     }
 
     public PermissionSet effectivePermissions() {
-        return effectivePermissions.copy();
+        return grantedPermissions.copy();
+    }
+
+    public PermissionSet revokedPermissions() {
+        return revokedPermissions.copy();
     }
 
     @Override
     public boolean has(int permissionId) {
-        return effectivePermissions.has(permissionId);
+        return !revokedPermissions.has(permissionId) && grantedPermissions.has(permissionId);
     }
 }
