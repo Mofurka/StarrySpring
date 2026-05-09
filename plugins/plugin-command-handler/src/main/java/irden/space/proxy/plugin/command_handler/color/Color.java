@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.command_handler.color;
 
 import irden.space.proxy.protocol.payload.common.rgba.Rgba;
 
-import java.util.regex.Pattern;
 
 public enum Color {
     RED("red", new Rgba(255, 73, 66, 255)),

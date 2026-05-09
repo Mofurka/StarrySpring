@@ -13,6 +13,7 @@
         <module>plugin-debug-logger</module>
         <module>plugin-command-handler</module>
         <module>plugin-player-manager</module>
+        <module>plugin-discord-bot</module>
     </modules>
 
 </project>
