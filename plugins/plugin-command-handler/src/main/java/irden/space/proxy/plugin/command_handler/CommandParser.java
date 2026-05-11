@@ -6,14 +6,14 @@ public final class CommandParser {
 
     public CommandParseResult parse(
             CommandNode root,
-            String argumentsLine,
+            CommandArgumentContext commandContext,
             List<CommandToken> tokens
     ) {
         Objects.requireNonNull(root, "root");
-        Objects.requireNonNull(argumentsLine, "argumentsLine");
+        Objects.requireNonNull(commandContext, "commandContext");
         Objects.requireNonNull(tokens, "tokens");
 
-        MatchResult result = match(root, argumentsLine, tokens, 0, new LinkedHashMap<>(), List.of(root));
+        MatchResult result = match(root, commandContext, tokens, 0, new LinkedHashMap<>(), List.of(root));
 
         if (result.success != null) {
             return new CommandParseResult.Success(
@@ -28,7 +28,7 @@ public final class CommandParser {
 
     private MatchResult match(
             CommandNode current,
-            String argumentsLine,
+            CommandArgumentContext commandContext,
             List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments,
@@ -39,7 +39,7 @@ public final class CommandParser {
                 return MatchResult.success(index, current.executor(), arguments, matchedNodes);
             }
 
-            MatchResult optionalResult = trySkipOptionalChildren(current, argumentsLine, tokens, index, arguments, matchedNodes);
+            MatchResult optionalResult = trySkipOptionalChildren(current, commandContext, tokens, index, arguments, matchedNodes);
             if (optionalResult.success != null) {
                 return optionalResult;
             }
@@ -57,19 +57,19 @@ public final class CommandParser {
                 "Unexpected argument '" + token.value() + "'. Expected: " + expectedChildren(current)
         );
 
-        MatchResult literalResult = tryLiteralChildren(current, argumentsLine, tokens, index, arguments, matchedNodes);
+        MatchResult literalResult = tryLiteralChildren(current, commandContext, tokens, index, arguments, matchedNodes);
         if (literalResult.success != null) {
             return literalResult;
         }
         bestFailure = best(bestFailure, literalResult);
 
-        MatchResult argumentResult = tryArgumentChildren(current, argumentsLine, tokens, index, arguments, matchedNodes);
+        MatchResult argumentResult = tryArgumentChildren(current, commandContext, tokens, index, arguments, matchedNodes);
         if (argumentResult.success != null) {
             return argumentResult;
         }
         bestFailure = best(bestFailure, argumentResult);
 
-        MatchResult optionalSkipResult = trySkipOptionalChildren(current, argumentsLine, tokens, index, arguments, matchedNodes);
+        MatchResult optionalSkipResult = trySkipOptionalChildren(current, commandContext, tokens, index, arguments, matchedNodes);
         if (optionalSkipResult.success != null) {
             return optionalSkipResult;
         }
@@ -79,7 +79,7 @@ public final class CommandParser {
 
     private MatchResult tryLiteralChildren(
             CommandNode current,
-            String argumentsLine,
+            CommandArgumentContext commandContext,
             List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments,
@@ -100,7 +100,7 @@ public final class CommandParser {
 
             MatchResult result = match(
                     literal,
-                    argumentsLine,
+                    commandContext,
                     tokens,
                     index + 1,
                     copy(arguments),
@@ -119,7 +119,7 @@ public final class CommandParser {
 
     private MatchResult tryArgumentChildren(
             CommandNode current,
-            String argumentsLine,
+            CommandArgumentContext commandContext,
             List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments,
@@ -132,7 +132,7 @@ public final class CommandParser {
                 continue;
             }
 
-            MatchResult result = tryArgument(argumentNode, argumentsLine, tokens, index, arguments, matchedNodes);
+            MatchResult result = tryArgument(argumentNode, commandContext, tokens, index, arguments, matchedNodes);
 
             if (result.success != null) {
                 return result;
@@ -146,7 +146,7 @@ public final class CommandParser {
 
     private MatchResult tryArgument(
             ArgumentNode<?> argumentNode,
-            String argumentsLine,
+            CommandArgumentContext commandContext,
             List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments,
@@ -160,7 +160,7 @@ public final class CommandParser {
                 );
             }
 
-            return match(argumentNode, argumentsLine, tokens, index, copy(arguments), appendNode(matchedNodes, argumentNode));
+            return match(argumentNode, commandContext, tokens, index, copy(arguments), appendNode(matchedNodes, argumentNode));
         }
 
         String rawValue;
@@ -169,7 +169,7 @@ public final class CommandParser {
         if (argumentNode.type().greedy()) {
             CommandToken firstToken = tokens.get(index);
 
-            rawValue = argumentsLine.substring(firstToken.start()).trim();
+            rawValue = commandContext.argumentsLine().substring(firstToken.start()).trim();
             nextIndex = tokens.size();
         } else {
             rawValue = tokens.get(index).value();
@@ -179,7 +179,7 @@ public final class CommandParser {
         Object parsedValue;
 
         try {
-            parsedValue = argumentNode.type().parse(rawValue);
+            parsedValue = argumentNode.type().parse(commandContext.withArguments(arguments), rawValue);
         } catch (ArgumentParseException e) {
             return MatchResult.failure(
                     index,
@@ -195,12 +195,12 @@ public final class CommandParser {
         LinkedHashMap<String, Object> nextArguments = copy(arguments);
         nextArguments.put(argumentNode.name(), parsedValue);
 
-        return match(argumentNode, argumentsLine, tokens, nextIndex, nextArguments, appendNode(matchedNodes, argumentNode));
+        return match(argumentNode, commandContext, tokens, nextIndex, nextArguments, appendNode(matchedNodes, argumentNode));
     }
 
     private MatchResult trySkipOptionalChildren(
             CommandNode current,
-            String argumentsLine,
+            CommandArgumentContext commandContext,
             List<CommandToken> tokens,
             int index,
             LinkedHashMap<String, Object> arguments,
@@ -217,7 +217,7 @@ public final class CommandParser {
                 continue;
             }
 
-            MatchResult result = match(argumentNode, argumentsLine, tokens, index, copy(arguments), appendNode(matchedNodes, argumentNode));
+            MatchResult result = match(argumentNode, commandContext, tokens, index, copy(arguments), appendNode(matchedNodes, argumentNode));
 
             if (result.success != null) {
                 return result;

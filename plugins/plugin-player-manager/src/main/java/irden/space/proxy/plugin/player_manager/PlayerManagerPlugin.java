@@ -6,6 +6,11 @@ import irden.space.proxy.plugin.api.annotations.OnStart;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.*;
+import irden.space.proxy.plugin.player_manager.api.DefaultPlayerManagerApi;
+import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
+import irden.space.proxy.plugin.player_manager.command.ExecutorPlayerContextResolver;
+import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
+import irden.space.proxy.plugin.player_manager.command.PlayerTargetArgumentType;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.Role;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
@@ -32,9 +37,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static irden.space.proxy.plugin.command_handler.CommandSpec.argument;
@@ -58,6 +66,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     private PlayerJdbcRepository playerRepository;
     private SessionPermissionService sessionPermissionService;
     private RoleManager roleManager;
+    private DefaultPlayerManagerApi playerManagerApi;
 
 
     @OnLoad
@@ -72,6 +81,11 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         this.playerRepository = new PlayerJdbcRepository(jdbcTemplate);
         this.roleManager = new RoleManager();
         reloadConfiguredRoles();
+
+        this.playerManagerApi = new DefaultPlayerManagerApi(this);
+        context.publishService(PlayerManagerApi.class, playerManagerApi);
+        context.requireService(CommandHandlerPlugin.class)
+                .addContextResolver(new ExecutorPlayerContextResolver(playerManagerApi));
     }
 
     @OnStart
@@ -337,17 +351,12 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
             description = "use for manage players")
     public CommandSpec userCommand() {
         return literal("user").permission(PlayerManagerPermissions.USER.permission())
-                .then(argument("identifier", StringArgumentType.word()).description("Player name, UUID or client ID")
                         .then(literal("info")
+                                .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
                                 .executes(context -> {
-                                    String identifier = context.get("identifier", String.class);
-                                    Optional<Player> playerOpt = findPlayer(identifier, false);
-                                    if (playerOpt.isEmpty()) {
-                                        context.reply("Player not found: " + identifier);
-                                        return;
-                                    }
+                                    PlayerTarget identifier = context.get("identifier", PlayerTarget.class);
+                                    Player player = identifier.player();
                                     StringBuilder sb = new StringBuilder();
-                                    Player player = playerOpt.get();
                                     sb.append("Player info:").append(System.lineSeparator());
                                     sb.append("- Name: ").append(player.name()).append(System.lineSeparator());
                                     sb.append("- UUID: ").append(player.uuid()).append(System.lineSeparator());
@@ -359,16 +368,12 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                                         sb.append("- IP Address: ").append(player.ipAddress()).append(System.lineSeparator());
                                     }
                                     context.reply(sb.toString());
-                                }))
+                                })))
                         .then(literal("permissions")
+                                .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
                                 .executes(context -> {
-                                    String identifier = context.get("identifier", String.class);
-                                    Optional<Player> playerOpt = findPlayer(identifier, false);
-                                    if (playerOpt.isEmpty()) {
-                                        context.reply("Player not found: " + identifier);
-                                        return;
-                                    }
-                                    Player player = playerOpt.get();
+                                    PlayerTarget identifier = context.get("identifier", PlayerTarget.class);
+                                    Player player = identifier.player();
                                     StringBuilder sb = new StringBuilder();
                                     sb.append("Player permissions:").append(System.lineSeparator());
                                     sb.append("- Name: ").append(player.name()).append(System.lineSeparator());
@@ -387,24 +392,19 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                                     }
                                     context.reply(sb.toString());
                                 })
-                        )
+                        ))
                         .then(literal("role")
                                 .then(argument("action", EnumArgumentType.of(RoleActionType.class))
                                         .then(argument("roles", StringArgumentType.greedyString()).description("Role names separated by space")
                                                 .executes(this::handlePlayerRoleUpdate)))
                         )
-                ).build();
+                .build();
     }
 
 
     private void handlePlayerRoleUpdate(CommandContext ctx) {
-        String identifier = ctx.get("identifier", String.class);
-        Optional<Player> playerOpt = findPlayer(identifier, false);
-        if (playerOpt.isEmpty()) {
-            ctx.reply("Player not found: " + identifier);
-            return;
-        }
-        Player player = playerOpt.get();
+        PlayerTarget identifier = ctx.get("identifier", PlayerTarget.class);
+        Player player = identifier.player();
         RoleActionType actionType = ctx.get("action", RoleActionType.class);
         String[] roleNames = Optional.ofNullable(ctx.get("roles", String.class))
                 .map(r -> r.split("\\s+"))
@@ -437,6 +437,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         }
         ctx.reply(sb.toString());
     }
+/*
 //    @PacketHandler(value = PacketType.ENTITY_CREATE, direction = PacketDirection.TO_CLIENT)
 //    public PacketDecision onEntityCreate(PacketInterceptionContext context) {
 //        Entity entity = (Entity) context.parsedPayload();
@@ -500,6 +501,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
 //        context.session().sendToClient(PacketType.ENTITY_UPDATE, player.build());
 //        context.reply("Nametag update sent to connectionId=" + connectionIdStr);
 //    }
+*/
 
 
     public Optional<Player> findPlayer(String identifier, boolean loggedIn) {
@@ -526,6 +528,41 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         }
         return Optional.empty();
     }
+
+public List<Player> searchPlayers(String prefix, int limit, boolean loggedIn) {
+    String normalizedPrefix = prefix == null ? "" : prefix.trim().toLowerCase(Locale.ROOT);
+    int safeLimit = limit <= 0 ? Integer.MAX_VALUE : limit;
+
+    Stream<Player> source = loggedIn
+            ? players.getAll().stream()
+            : Stream.concat(
+                    players.getAll().stream(),
+                    playerRepository.findAll().stream()
+                            .map(record -> Player.builder()
+                                    .name(record.name())
+                                    .uuid(StarUuid.fromHex(record.playerUuid()))
+                                    .ipAddress(record.ipAddress())
+                                    .build())
+            );
+
+    Map<String, Player> uniquePlayers = source
+            .filter(Objects::nonNull)
+            .collect(java.util.stream.Collectors.toMap(
+                    player -> player.uuid().toString(),
+                    Function.identity(),
+                    this::preferOnlinePlayer,
+                    java.util.LinkedHashMap::new
+            ));
+
+    return uniquePlayers.values().stream()
+            .filter(player -> matchesPlayerSearch(player, normalizedPrefix))
+            .sorted(Comparator
+                    .comparingInt((Player player) -> playerSearchRank(player, normalizedPrefix))
+                    .thenComparing(Player::online, Comparator.reverseOrder())
+                    .thenComparing(Player::name, String.CASE_INSENSITIVE_ORDER))
+            .limit(safeLimit)
+            .toList();
+}
 
 
     public List<Player> findAllPlayersByIpAddress(String ipAddress) {
@@ -598,6 +635,56 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                 .filter(entry -> permissionView.has(entry.getValue()))
                 .map(Map.Entry::getKey)
                 .toList();
+    }
+
+    private Player preferOnlinePlayer(Player left, Player right) {
+        if (left.online() == right.online()) {
+            return left;
+        }
+
+        return left.online() ? left : right;
+    }
+
+    private boolean matchesPlayerSearch(Player player, String normalizedPrefix) {
+        if (normalizedPrefix.isBlank()) {
+            return true;
+        }
+
+        String playerName = player.name().toLowerCase(Locale.ROOT);
+        String playerUuid = player.uuid().toString().toLowerCase(Locale.ROOT);
+        String clientId = player.online() ? Integer.toString(player.clientId()) : "";
+
+        return playerName.contains(normalizedPrefix)
+                || playerUuid.startsWith(normalizedPrefix)
+                || clientId.startsWith(normalizedPrefix);
+    }
+
+    private int playerSearchRank(Player player, String normalizedPrefix) {
+        if (normalizedPrefix.isBlank()) {
+            return player.online() ? 0 : 1;
+        }
+
+        String playerName = player.name().toLowerCase(Locale.ROOT);
+        String playerUuid = player.uuid().toString().toLowerCase(Locale.ROOT);
+        String clientId = player.online() ? Integer.toString(player.clientId()) : "";
+
+        if (playerName.equals(normalizedPrefix)) {
+            return 0;
+        }
+        if (playerName.startsWith(normalizedPrefix)) {
+            return 1;
+        }
+        if (playerName.contains(normalizedPrefix)) {
+            return 2;
+        }
+        if (playerUuid.startsWith(normalizedPrefix)) {
+            return 3;
+        }
+        if (clientId.startsWith(normalizedPrefix)) {
+            return 4;
+        }
+
+        return 5;
     }
 
     private record ResolvedUserAccess(List<Role> roles, PermissionSet grantedPermissions,

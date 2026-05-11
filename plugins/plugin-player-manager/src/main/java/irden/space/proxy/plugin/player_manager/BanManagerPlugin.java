@@ -4,8 +4,11 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
+import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
 import irden.space.proxy.plugin.command_handler.StringArgumentType;
+import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
+import irden.space.proxy.plugin.player_manager.command.*;
 import irden.space.proxy.plugin.player_manager.model.BanOperationResult;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.persistence.BanRecordJdbcRepository;
@@ -37,14 +40,14 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
 public class BanManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(BanManagerPlugin.class);
     private BanRecordJdbcRepository banRecordRepository;
-    private PlayerManagerPlugin playerManagerPlugin;
+    private PlayerManagerApi playerManagerApi;
 
     @OnLoad
     public void handleLoad(PluginContext context) {
         DataSource dataSource = context.requireService(DataSource.class);
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         this.banRecordRepository = new BanRecordJdbcRepository(jdbcTemplate);
-        this.playerManagerPlugin = context.requireService(PlayerManagerPlugin.class);
+        this.playerManagerApi = context.requireService(PlayerManagerApi.class);
     }
 
 
@@ -85,20 +88,12 @@ public class BanManagerPlugin implements ProxyPlugin {
     )
     public CommandSpec handleBanCommand() {
         return literal("ban")
-                .then(argument("target", StringArgumentType.word())
+                .then(argument("target", BanTargetArgumentType.banTarget(() -> playerManagerApi))
                         .then(argument("duration", StringArgumentType.word())
                                 .optional()
                                 .then(argument("reason", StringArgumentType.greedyString())
                                         .optional()
-                                        .executes(context -> {
-                                            String target = context.get("target", String.class);
-                                            String duration = context.getOrDefault("duration", String.class, "permanent");
-                                            String reason = context.getOrDefault("reason", String.class, "No reason provided");
-
-                                            Player player = playerManagerPlugin.getPlayerBySessionId(context.session().sessionId()).orElse(null);
-                                            BanOperationResult result = ban(target, player == null ? null : player.name(), duration, reason);
-                                            context.reply(result.message());
-                                        }))))
+                                        .executes(this::handleBan))))
                 .build();
     }
 
@@ -108,13 +103,14 @@ public class BanManagerPlugin implements ProxyPlugin {
     )
     public CommandSpec kickCommand() {
         return literal("kick")
-                .then(argument("target", StringArgumentType.word())
+                .then(argument("target", PlayerOnlineTargetArgumentType.playerTarget(()  -> playerManagerApi))
                         .then(argument("reason", StringArgumentType.greedyString())
                                 .optional()
                                 .executes(context -> {
-                                    String target = context.get("target", String.class);
+                                    PlayerTarget target = context.get("target", PlayerTarget.class);
                                     String reason = context.getOrDefault("reason", String.class, "No reason");
-                                    context.reply("Kicked " + target + ". Reason: " + reason);
+                                    target.player().kick(reason);
+                                    context.reply("Kicked " + target.player().name() + ". Reason: " + reason);
                                 })))
                 .build();
     }
@@ -127,17 +123,31 @@ public class BanManagerPlugin implements ProxyPlugin {
     )
     public CommandSpec handleUnbanCommand() {
         return literal("unban")
-                .then(argument("target", StringArgumentType.word())
+                .then(argument("target", BanTargetArgumentType.banTarget(() -> playerManagerApi))
                         .executes(context -> {
-                            String target = context.get("target", String.class);
-                            boolean success = unban(target);
+                            BanTarget target = context.get("target", BanTarget.class);
+                            boolean success = unban(target.value());
                             if (success) {
-                                context.reply("Successfully unbanned " + target);
+                                context.reply("Successfully unbanned " + target.value());
                             } else {
-                                context.reply("No active ban found for " + target);
+                                context.reply("No active ban found for " + target.value());
                             }
                         }))
                 .build();
+    }
+
+    private void handleBan(CommandContext context) {
+        BanTarget target = context.get("target", BanTarget.class);
+        Player executor = context.sender(Player.class).orElse(Player.builder().name("Unknown").build());
+
+        BanOperationResult result = ban(
+                target.value(),
+                executor == null ? null : executor.name(),
+                context.getOrDefault("duration", String.class, "permanent"),
+                context.getOrDefault("reason", String.class, "No reason provided")
+        );
+
+        context.reply(result.message());
     }
 
     public boolean unban(String targetPlayer) {
@@ -150,7 +160,7 @@ public class BanManagerPlugin implements ProxyPlugin {
             return updated > 0;
         }
 
-        Optional<Player> optionalPlayer = playerManagerPlugin.findPlayer(targetPlayer, false);
+        Optional<Player> optionalPlayer = playerManagerApi.findPlayer(targetPlayer, false);
         if (optionalPlayer.isEmpty()) {
             return false;
         }
@@ -201,7 +211,7 @@ public class BanManagerPlugin implements ProxyPlugin {
                 .build();
 
         banRecordRepository.save(banRecord);
-        playerManagerPlugin.findAllPlayersByIpAddress(ipAddress)
+        playerManagerApi.findAllPlayersByIpAddress(ipAddress)
                 .forEach(player -> player.kick("You have been banned from this server. \nReason: " + reason));
 
         return new BanOperationResult(true, "IP address " + ipAddress + " has been banned. Reason: " + reason);
@@ -214,7 +224,7 @@ public class BanManagerPlugin implements ProxyPlugin {
             LocalDateTime expiresAt,
             String reason
     ) {
-        Optional<Player> optionalPlayer = playerManagerPlugin.findPlayer(targetPlayer, false);
+        Optional<Player> optionalPlayer = playerManagerApi.findPlayer(targetPlayer, false);
         if (optionalPlayer.isEmpty()) {
             return new BanOperationResult(false, "Player not found: " + targetPlayer);
         }
