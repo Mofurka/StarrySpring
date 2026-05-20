@@ -390,8 +390,9 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                         ))
                         .then(literal("role")
                                 .then(argument("action", EnumArgumentType.of(RoleActionType.class))
-                                        .then(argument("roles", StringArgumentType.greedyString()).description("Role names separated by space")
-                                                .executes(this::handlePlayerRoleUpdate)))
+                                        .then(argument("roles", StringArgumentType.word()).description("Role names separated by comma without spaces!")
+                                                .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
+                                                .executes(this::handlePlayerRoleUpdate))))
                         )
                 .build();
     }
@@ -402,7 +403,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         Player player = identifier.player();
         RoleActionType actionType = ctx.get("action", RoleActionType.class);
         String[] roleNames = Optional.ofNullable(ctx.get("roles", String.class))
-                .map(r -> r.split("\\s+"))
+                .map(r -> r.split(",+"))
                 .orElse(new String[0]);
         var sb = new StringBuilder();
         for (int i = 0; i < roleNames.length; i++) {
