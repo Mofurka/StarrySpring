@@ -34,6 +34,11 @@ public class PacketForwarder implements Runnable {
     private final RuntimePacketInspector packetInspector;
     private final PacketInterceptionService packetInterceptionService;
     private final PluginSessionLifecycleService pluginSessionLifecycleService;
+    private final String sessionId;
+    private final PermissionView permissionView;
+
+    private volatile PluginSessionContext cachedPluginSessionContext;
+    private volatile int cachedOpenProtocolVersion = Integer.MIN_VALUE;
 
     public PacketForwarder(
             InputStream source,
@@ -58,6 +63,10 @@ public class PacketForwarder implements Runnable {
         this.packetInspector = packetInspector;
         this.packetInterceptionService = packetInterceptionService;
         this.pluginSessionLifecycleService = pluginSessionLifecycleService;
+        this.sessionId = session.getId().uuid().toString();
+        this.permissionView = permissionId -> context.sessionPermissionService()
+                .permissions(sessionId)
+                .has(permissionId);
     }
 
     @Override
@@ -335,17 +344,29 @@ public class PacketForwarder implements Runnable {
     }
 
     private PluginSessionContext createPluginSessionContext(int openProtocolVersion) {
-        PermissionView permissionView = permissionId -> context.sessionPermissionService()
-                .permissions(session.getId().uuid().toString())
-                .has(permissionId);
-        return new DefaultPluginSessionContext(
-                session.getId().uuid().toString(),
-                session.getClientIp(),
-                session.getClientCompression() == SessionTransportMode.ZSTD,
-                session.getUpstreamCompression() == SessionTransportMode.ZSTD,
-                openProtocolVersion,
-                this::sendPacket,
-                permissionView
-        );
+        PluginSessionContext cachedContext = cachedPluginSessionContext;
+        if (cachedContext != null && cachedOpenProtocolVersion == openProtocolVersion) {
+            return cachedContext;
+        }
+
+        synchronized (this) {
+            cachedContext = cachedPluginSessionContext;
+            if (cachedContext != null && cachedOpenProtocolVersion == openProtocolVersion) {
+                return cachedContext;
+            }
+
+            PluginSessionContext newContext = new DefaultPluginSessionContext(
+                    sessionId,
+                    session.getClientIp(),
+                    session.getClientCompression() == SessionTransportMode.ZSTD,
+                    session.getUpstreamCompression() == SessionTransportMode.ZSTD,
+                    openProtocolVersion,
+                    this::sendPacket,
+                    permissionView
+            );
+            cachedOpenProtocolVersion = openProtocolVersion;
+            cachedPluginSessionContext = newContext;
+            return newContext;
+        }
     }
 }

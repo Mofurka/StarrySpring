@@ -6,6 +6,8 @@ import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
+import java.util.Map;
+
 public record DiscordSessionContext(
         String userId,
         String userName,
@@ -26,6 +28,11 @@ public record DiscordSessionContext(
     @Override
     public String clientIp() {
         return "discord";
+    }
+
+    @Override
+    public Map<String, Object> attributes() {
+        return Map.of();
     }
 
     @Override

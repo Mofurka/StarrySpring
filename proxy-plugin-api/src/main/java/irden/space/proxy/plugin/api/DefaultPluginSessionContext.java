@@ -5,6 +5,8 @@ import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 public class DefaultPluginSessionContext implements PluginSessionContext {
@@ -16,6 +18,7 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     private final int openProtocolVersion;
     private final BiConsumer<PacketDirection, PacketEnvelope> packetSender;
     private final PermissionView permissions;
+    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
 
     public DefaultPluginSessionContext(
             String sessionId,
@@ -99,6 +102,11 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     @Override
     public String clientIp() {
         return clientIp;
+    }
+
+    @Override
+    public Map<String, Object> attributes() {
+        return attributes;
     }
 
     @Override
