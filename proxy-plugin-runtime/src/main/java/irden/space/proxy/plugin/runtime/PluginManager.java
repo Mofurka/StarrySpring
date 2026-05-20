@@ -16,9 +16,9 @@ public class PluginManager implements PluginSessionLifecycleService {
     private final PluginDependencyResolver dependencyResolver;
     private final PacketInterceptorRegistry interceptorRegistry;
     private final PluginContext pluginContext;
-    private final PermissionBootstrapper permissionBootstrapper;
 
     private final List<ProxyPlugin> loadedPlugins = new ArrayList<>();
+
 
     public PluginManager(
             PluginLoader pluginLoader,
@@ -26,31 +26,13 @@ public class PluginManager implements PluginSessionLifecycleService {
             PacketInterceptorRegistry interceptorRegistry,
             PluginContext pluginContext
     ) {
-        this(
-                pluginLoader,
-                dependencyResolver,
-                interceptorRegistry,
-                pluginContext,
-                new ClasspathPermissionBootstrapper()
-        );
-    }
-
-    public PluginManager(
-            PluginLoader pluginLoader,
-            PluginDependencyResolver dependencyResolver,
-            PacketInterceptorRegistry interceptorRegistry,
-            PluginContext pluginContext,
-            PermissionBootstrapper permissionBootstrapper
-    ) {
         this.pluginLoader = pluginLoader;
         this.dependencyResolver = dependencyResolver;
         this.interceptorRegistry = interceptorRegistry;
         this.pluginContext = pluginContext;
-        this.permissionBootstrapper = permissionBootstrapper;
     }
 
     public void loadAndStart() {
-        permissionBootstrapper.bootstrap();
 
         List<ProxyPlugin> plugins = pluginLoader.loadPlugins();
         log.info("Discovered {} plugin(s)", plugins.size());
@@ -65,6 +47,12 @@ public class PluginManager implements PluginSessionLifecycleService {
                         .map(plugin -> plugin.descriptor().id())
                         .toList()
         );
+
+        for (ProxyPlugin plugin : ordered) {
+            log.info("Registering permissions for plugin {}", describePlugin(plugin));
+            plugin.registerPluginPermissions(pluginContext);
+            log.info("Registered permissions for plugin '{}'", plugin.descriptor().id());
+        }
 
         for (ProxyPlugin plugin : ordered) {
             log.info("Loading plugin {}", describePlugin(plugin));

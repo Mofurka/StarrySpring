@@ -15,10 +15,19 @@ final class PluginNativeRuntimeHints implements RuntimeHintsRegistrar {
 
     @Override
     public void registerHints(RuntimeHints hints, @Nullable ClassLoader classLoader) {
-        ClassLoader effectiveClassLoader = classLoader != null ? classLoader : PluginNativeRuntimeHints.class.getClassLoader();
+        ClassLoader effectiveClassLoader = resolveClassLoader(classLoader);
 
         registerServiceProviders(hints, effectiveClassLoader, ProxyPlugin.class);
         registerServiceProviders(hints, effectiveClassLoader, PluginAnnotationRegistrar.class);
+    }
+
+    private ClassLoader resolveClassLoader(@Nullable ClassLoader classLoader) {
+        if (classLoader != null) {
+            return classLoader;
+        }
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        return contextClassLoader != null ? contextClassLoader : PluginNativeRuntimeHints.class.getClassLoader();
     }
 
     private <T> void registerServiceProviders(RuntimeHints hints, ClassLoader classLoader, Class<T> serviceType) {
@@ -40,4 +49,3 @@ final class PluginNativeRuntimeHints implements RuntimeHintsRegistrar {
         }
     }
 }
-

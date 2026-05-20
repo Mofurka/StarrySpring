@@ -1,5 +1,7 @@
 package irden.space.proxy.plugin.api;
 
+import java.util.Objects;
+
 public interface PermissionEnum {
 
     String permissionNode();
@@ -9,23 +11,33 @@ public interface PermissionEnum {
     }
 
     default void registerDefaults() {
-        Class<?> permissionType = getClass();
+        registerDefaults(getClass().asSubclass(PermissionEnum.class));
+    }
+
+    static void registerDefaults(Iterable<Class<? extends PermissionEnum>> permissionTypes) {
+        Objects.requireNonNull(permissionTypes, "permissionTypes");
+
+        for (Class<? extends PermissionEnum> permissionType : permissionTypes) {
+            registerDefaults(permissionType);
+        }
+    }
+
+    static void registerDefaults(Class<? extends PermissionEnum> permissionType) {
+        Objects.requireNonNull(permissionType, "permissionType");
         if (!permissionType.isEnum()) {
             throw new IllegalStateException("PermissionEnum implementations must be enums: " + permissionType.getName());
         }
 
-        synchronized (permissionType) {
-            Object[] enumConstants = permissionType.getEnumConstants();
-            if (enumConstants == null) {
-                throw new IllegalStateException("Failed to resolve enum constants for permission type " + permissionType.getName());
-            }
+        Object[] enumConstants = permissionType.getEnumConstants();
+        if (enumConstants == null) {
+            throw new IllegalStateException("Failed to resolve enum constants for permission type " + permissionType.getName());
+        }
 
-            for (Object enumConstant : enumConstants) {
-                if (!(enumConstant instanceof PermissionEnum permissionEnum)) {
-                    throw new IllegalStateException("Enum constant does not implement PermissionEnum: " + permissionType.getName());
-                }
-                PermissionRegistry.registerIfAbsent(permissionEnum.permissionNode());
+        for (Object enumConstant : enumConstants) {
+            if (!(enumConstant instanceof PermissionEnum permissionEnum)) {
+                throw new IllegalStateException("Enum constant does not implement PermissionEnum: " + permissionType.getName());
             }
+            PermissionRegistry.registerIfAbsent(permissionEnum.permissionNode());
         }
     }
 }

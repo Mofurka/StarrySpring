@@ -42,25 +42,20 @@ public class PluginRuntimeConfiguration {
         return new PluginDependencyResolver();
     }
 
-    @Bean
-    public PermissionBootstrapper permissionBootstrapper() {
-        return new ClasspathPermissionBootstrapper();
-    }
+
 
     @Bean
     public PluginManager pluginManager(
             PluginLoader pluginLoader,
             PluginDependencyResolver pluginDependencyResolver,
             PacketInterceptorRegistry packetInterceptorRegistry,
-            PluginContext pluginContext,
-            PermissionBootstrapper permissionBootstrapper
+            PluginContext pluginContext
     ) {
         return new PluginManager(
                 pluginLoader,
                 pluginDependencyResolver,
                 packetInterceptorRegistry,
-                pluginContext,
-                permissionBootstrapper
+                pluginContext
         );
     }
 

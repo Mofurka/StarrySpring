@@ -7,6 +7,10 @@ public interface ProxyPlugin {
         return ProxyPluginSupport.descriptor(this);
     }
 
+    default void registerPluginPermissions(PluginContext context) {
+        ProxyPluginSupport.registerPluginPermissions(this, context);
+    }
+
     default void onLoad(PluginContext context) {
         ProxyPluginSupport.onLoad(this, context);
     }

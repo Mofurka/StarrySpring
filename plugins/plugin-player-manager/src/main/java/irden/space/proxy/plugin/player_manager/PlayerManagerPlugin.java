@@ -1,10 +1,7 @@
 package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.api.*;
-import irden.space.proxy.plugin.api.annotations.OnLoad;
-import irden.space.proxy.plugin.api.annotations.OnStart;
-import irden.space.proxy.plugin.api.annotations.OnStop;
-import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.api.annotations.*;
 import irden.space.proxy.plugin.command_handler.*;
 import irden.space.proxy.plugin.player_manager.api.DefaultPlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
@@ -61,6 +58,12 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     private SessionPermissionService sessionPermissionService;
     private RoleManager roleManager;
     private DefaultPlayerManagerApi playerManagerApi;
+
+    @SuppressWarnings("unused")
+    @RegisterPluginPermissions
+    public List<Class<? extends PermissionEnum>> registerPermissions() {
+        return List.of(PlayerManagerPermissions.class);
+    }
 
 
     @OnLoad
