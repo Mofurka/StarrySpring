@@ -65,6 +65,11 @@ class CommandParserTest {
         }
 
         @Override
+        public Map<String, Object> attributes() {
+            return Map.of();
+        }
+
+        @Override
         public boolean clientZstdEnabled() {
             return false;
         }
