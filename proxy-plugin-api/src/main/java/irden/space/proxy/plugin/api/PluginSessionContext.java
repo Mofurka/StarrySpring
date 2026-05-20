@@ -7,6 +7,9 @@ import irden.space.proxy.protocol.packet.PacketEnvelopes;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
+import java.util.Collections;
+import java.util.Map;
+
 public interface PluginSessionContext {
 
     String sessionId();
@@ -19,6 +22,10 @@ public interface PluginSessionContext {
 
     default PermissionView permissions() {
         return PermissionView.EMPTY;
+    }
+
+    default Map<String, Object> attributes() {
+        return Collections.emptyMap();
     }
 
     default int openProtocolVersion() {

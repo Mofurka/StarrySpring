@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.discord;
 
+import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
@@ -9,8 +10,13 @@ public record DiscordSessionContext(
         String userId,
         String userName,
         String displayName,
+        PermissionView permissions,
         Object event
 ) implements PluginSessionContext {
+
+    public DiscordSessionContext {
+        permissions = permissions == null ? PermissionView.EMPTY : permissions;
+    }
 
     @Override
     public String sessionId() {
@@ -30,6 +36,11 @@ public record DiscordSessionContext(
     @Override
     public boolean upstreamZstdEnabled() {
         return false;
+    }
+
+    @Override
+    public PermissionView permissions() {
+        return permissions;
     }
 
     @Override

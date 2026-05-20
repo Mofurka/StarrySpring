@@ -3,27 +3,25 @@ package irden.space.proxy.plugin.player_manager.model;
 import irden.space.proxy.plugin.api.PermissionSet;
 import irden.space.proxy.plugin.api.PermissionView;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public final class UserPermissions implements PermissionView {
 
     private final PermissionSet grantedPermissions;
     private final PermissionSet revokedPermissions;
 
-    public UserPermissions(Collection<Role> roles, PermissionSet extraPermissions) {
-        this(roles, extraPermissions, null);
+    public UserPermissions(Collection<StarryRole> starryRoles, PermissionSet extraPermissions) {
+        this(starryRoles, extraPermissions, null);
     }
 
-    public UserPermissions(Collection<Role> roles, PermissionSet extraPermissions, PermissionSet revokedPermissions) {
+    public UserPermissions(Collection<StarryRole> starryRoles, PermissionSet extraPermissions, PermissionSet revokedPermissions) {
 
         PermissionSet result = new PermissionSet();
 
-        if (roles != null) {
-            for (Role role : roles) {
-                if (role != null) {
-                    result.merge(role.effectivePermissions());
+        if (starryRoles != null) {
+            for (StarryRole starryRole : starryRoles) {
+                if (starryRole != null) {
+                    result.merge(starryRole.effectivePermissions());
                 }
             }
         }

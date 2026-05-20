@@ -3,20 +3,14 @@ package irden.space.proxy.plugin.player_manager.roles;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import irden.space.proxy.plugin.api.PermissionRegistry;
-import irden.space.proxy.plugin.player_manager.model.Role;
+import irden.space.proxy.plugin.player_manager.model.StarryRole;
 import irden.space.proxy.plugin.player_manager.permissions.PermissionResolver;
 import irden.space.proxy.plugin.player_manager.permissions.model.StarryRoles;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 public final class RoleManager {
     public static final String OWNER_ROLE_NAME = "Owner";
@@ -27,7 +21,7 @@ public final class RoleManager {
     private final Path configPath;
     private final PermissionResolver permissionResolver = new PermissionResolver();
     private StarryRoles rolesConfig;
-    private Map<String, Role> rolesByName = Map.of();
+    private Map<String, StarryRole> rolesByName = Map.of();
 
     public RoleManager() {
         this(Path.of("config/permissions.jsonc"));
@@ -43,11 +37,11 @@ public final class RoleManager {
         this.rolesByName = buildRoles(this.rolesConfig);
     }
 
-    public synchronized Map<String, Role> rolesByName() {
+    public synchronized Map<String, StarryRole> rolesByName() {
         return Map.copyOf(rolesByName);
     }
 
-    public synchronized Optional<Role> findRole(String roleName) {
+    public synchronized Optional<StarryRole> findRole(String roleName) {
         if (roleName == null || roleName.isBlank()) {
             return Optional.empty();
         }
@@ -121,12 +115,12 @@ public final class RoleManager {
         }
     }
 
-    private Map<String, Role> buildRoles(StarryRoles config) {
-        Map<String, Role> resolvedRoles = new LinkedHashMap<>();
+    private Map<String, StarryRole> buildRoles(StarryRoles config) {
+        Map<String, StarryRole> resolvedRoles = new LinkedHashMap<>();
 
-        Role ownerRole = new Role(OWNER_ROLE_NAME);
-        ownerRole.permissions().grantAllAccess();
-        resolvedRoles.put(OWNER_ROLE_NAME, ownerRole);
+        StarryRole ownerStarryRole = new StarryRole(OWNER_ROLE_NAME);
+        ownerStarryRole.permissions().grantAllAccess();
+        resolvedRoles.put(OWNER_ROLE_NAME, ownerStarryRole);
 
         List<StarryRoles.StarryRole> configuredRoles = config.getAccounts() == null ? List.of() : config.getAccounts();
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
@@ -134,7 +128,7 @@ public final class RoleManager {
             if (resolvedRoles.containsKey(roleName)) {
                 throw new IllegalStateException("Duplicate role name in permissions configuration: " + roleName);
             }
-            resolvedRoles.put(roleName, new Role(roleName));
+            resolvedRoles.put(roleName, new StarryRole(roleName));
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
@@ -149,14 +143,14 @@ public final class RoleManager {
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
-            Role role = requireRole(resolvedRoles, configuredRole.getName());
-            role.permissions().merge(permissionResolver.resolveRules(safeList(configuredRole.getPermissions())));
+            StarryRole starryRole = requireRole(resolvedRoles, configuredRole.getName());
+            starryRole.permissions().merge(permissionResolver.resolveRules(safeList(configuredRole.getPermissions())));
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
-            Role role = requireRole(resolvedRoles, configuredRole.getName());
+            StarryRole starryRole = requireRole(resolvedRoles, configuredRole.getName());
             for (String inheritedRoleName : safeList(configuredRole.getInherits())) {
-                role.inherit(requireRole(resolvedRoles, inheritedRoleName));
+                starryRole.inherit(requireRole(resolvedRoles, inheritedRoleName));
             }
         }
 
@@ -171,13 +165,13 @@ public final class RoleManager {
         return Map.copyOf(resolvedRoles);
     }
 
-    private Role requireRole(Map<String, Role> roles, String roleName) {
+    private StarryRole requireRole(Map<String, StarryRole> roles, String roleName) {
         String normalizedRoleName = normalizeRoleName(roleName);
-        Role role = roles.get(normalizedRoleName);
-        if (role == null) {
+        StarryRole starryRole = roles.get(normalizedRoleName);
+        if (starryRole == null) {
             throw new IllegalStateException("Unknown role in permissions configuration: " + normalizedRoleName);
         }
-        return role;
+        return starryRole;
     }
 
     private static List<String> safeList(List<String> values) {

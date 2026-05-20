@@ -24,7 +24,7 @@ public class Player {
     private final String sessionId;
     private final LocalDateTime lastSeen;
     private final PluginSessionContext sessionContext;
-    private final Map<Object, Object> metadata = new ConcurrentHashMap<>();
+    private final Map<String, Object> metadata = new ConcurrentHashMap<>();
 
     public String name() {
         return name;
@@ -66,7 +66,8 @@ public class Player {
     public boolean online() {
         return sessionContext != null;
     }
-    public Map<Object, Object> metadata() {
+
+    public Map<String, Object> metadata() {
         return metadata;
     }
 

@@ -12,7 +12,7 @@ import irden.space.proxy.plugin.player_manager.command.ExecutorPlayerContextReso
 import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
 import irden.space.proxy.plugin.player_manager.command.PlayerTargetArgumentType;
 import irden.space.proxy.plugin.player_manager.model.Player;
-import irden.space.proxy.plugin.player_manager.model.Role;
+import irden.space.proxy.plugin.player_manager.model.StarryRole;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 import irden.space.proxy.plugin.player_manager.model.UserPermissions;
 import irden.space.proxy.plugin.player_manager.permissions.PermissionResolver;
@@ -34,13 +34,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -60,7 +54,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(PlayerManagerPlugin.class);
     private final PlayerRegistry<Player> players = new InMemoryPlayerRegistry();
     private final PlayerRegistry<TempPlayer> connectingPlayers = new InMemoryConnectingPlayers();
-    private final Map<String, Role> rolesByName = new ConcurrentHashMap<>();
+    private final Map<String, StarryRole> rolesByName = new ConcurrentHashMap<>();
     private final PermissionResolver permissionResolver = new PermissionResolver();
     private PlayerAccessJdbcRepository playerAccessRepository;
     private PlayerJdbcRepository playerRepository;
@@ -144,7 +138,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
             ResolvedUserAccess resolvedUserAccess = resolveUserAccess(tempPlayer.uuid().toString(), tempPlayer.account());
             bindSessionPermissions(
                     context.session().sessionId(),
-                    resolvedUserAccess.roles(),
+                    resolvedUserAccess.starryRoles(),
                     resolvedUserAccess.grantedPermissions(),
                     resolvedUserAccess.revokedPermissions()
             );
@@ -199,7 +193,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         }
     }
 
-    public Optional<Role> findRole(String roleName) {
+    public Optional<StarryRole> findRole(String roleName) {
         if (roleName == null) {
             return Optional.empty();
         }
@@ -211,16 +205,16 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         bindSessionPermissions(sessionId, resolveRoles(roleNames), extraPermissionRules);
     }
 
-    public void bindSessionPermissions(String sessionId, List<Role> roles, List<String> extraPermissionRules) {
-        bindSessionPermissions(sessionId, roles, permissionResolver.resolveRules(extraPermissionRules));
+    public void bindSessionPermissions(String sessionId, List<StarryRole> starryRoles, List<String> extraPermissionRules) {
+        bindSessionPermissions(sessionId, starryRoles, permissionResolver.resolveRules(extraPermissionRules));
     }
 
-    public void bindSessionPermissions(String sessionId, List<Role> roles, PermissionSet extraPermissions) {
-        bindSessionPermissions(sessionId, roles, extraPermissions, Permissions.none());
+    public void bindSessionPermissions(String sessionId, List<StarryRole> starryRoles, PermissionSet extraPermissions) {
+        bindSessionPermissions(sessionId, starryRoles, extraPermissions, Permissions.none());
     }
 
-    public void bindSessionPermissions(String sessionId, List<Role> roles, PermissionSet grantedPermissions, PermissionSet revokedPermissions) {
-        sessionPermissionService.updatePermissions(sessionId, new UserPermissions(roles, grantedPermissions, revokedPermissions));
+    public void bindSessionPermissions(String sessionId, List<StarryRole> starryRoles, PermissionSet grantedPermissions, PermissionSet revokedPermissions) {
+        sessionPermissionService.updatePermissions(sessionId, new UserPermissions(starryRoles, grantedPermissions, revokedPermissions));
     }
 
     public PermissionSet resolvePermissions(List<String> permissionRules) {
@@ -268,20 +262,20 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         refreshOnlinePermissions(playerUuid);
     }
 
-    private List<Role> resolveRoles(List<String> roleNames) {
+    private List<StarryRole> resolveRoles(List<String> roleNames) {
         if (roleNames == null || roleNames.isEmpty()) {
             return List.of();
         }
 
-        List<Role> resolvedRoles = new ArrayList<>(roleNames.size());
+        List<StarryRole> resolvedStarryRoles = new ArrayList<>(roleNames.size());
         for (String roleName : roleNames) {
-            resolvedRoles.add(requireRole(roleName));
+            resolvedStarryRoles.add(requireRole(roleName));
         }
 
-        return List.copyOf(resolvedRoles);
+        return List.copyOf(resolvedStarryRoles);
     }
 
-    private Role requireRole(String roleName) {
+    private StarryRole requireRole(String roleName) {
         return findRole(roleName)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown role: " + roleName));
     }
@@ -300,7 +294,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                 .map(irden.space.proxy.plugin.player_manager.persistence.model.PlayerRoleRecord::roleName)
                 .toList();
 
-        List<Role> resolvedRoles = resolveRoles(roleManager.resolveRoleNamesForPlayer(playerUuid, accountName, storedRoleNames));
+        List<StarryRole> resolvedStarryRoles = resolveRoles(roleManager.resolveRoleNamesForPlayer(playerUuid, accountName, storedRoleNames));
 
         PermissionSet grantedPermissions = new PermissionSet();
         PermissionSet revokedPermissions = new PermissionSet();
@@ -311,7 +305,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
             );
         }
 
-        return new ResolvedUserAccess(resolvedRoles, grantedPermissions, revokedPermissions);
+        return new ResolvedUserAccess(resolvedStarryRoles, grantedPermissions, revokedPermissions);
     }
 
     private void mergePermissionRule(String permissionRule, PermissionSet targetPermissions) {
@@ -340,7 +334,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
             ResolvedUserAccess resolvedUserAccess = resolveUserAccess(playerUuid, player.account());
             bindSessionPermissions(
                     player.sessionContext().sessionId(),
-                    resolvedUserAccess.roles(),
+                    resolvedUserAccess.starryRoles(),
                     resolvedUserAccess.grantedPermissions(),
                     resolvedUserAccess.revokedPermissions()
             );
@@ -688,7 +682,7 @@ public List<Player> searchPlayers(String prefix, int limit, boolean loggedIn) {
         return 5;
     }
 
-    private record ResolvedUserAccess(List<Role> roles, PermissionSet grantedPermissions,
+    private record ResolvedUserAccess(List<StarryRole> starryRoles, PermissionSet grantedPermissions,
                                       PermissionSet revokedPermissions) {
     }
 }

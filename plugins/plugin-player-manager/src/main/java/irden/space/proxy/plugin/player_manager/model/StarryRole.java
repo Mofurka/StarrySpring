@@ -4,13 +4,13 @@ import irden.space.proxy.plugin.api.PermissionSet;
 
 import java.util.*;
 
-public final class Role {
+public final class StarryRole {
 
     private final String name;
     private final PermissionSet permissions = new PermissionSet();
-    private final List<Role> parents = new ArrayList<>();
+    private final List<StarryRole> parents = new ArrayList<>();
 
-    public Role(String name) {
+    public StarryRole(String name) {
         this.name = name;
     }
 
@@ -22,23 +22,23 @@ public final class Role {
         return effectivePermissions(Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
-    private PermissionSet effectivePermissions(Set<Role> visitedRoles) {
-        if (!visitedRoles.add(this)) {
+    private PermissionSet effectivePermissions(Set<StarryRole> visitedStarryRoles) {
+        if (!visitedStarryRoles.add(this)) {
             throw new IllegalStateException("Cyclic role inheritance detected for role: " + name);
         }
 
         PermissionSet result = permissions.copy();
 
-        for (Role parent : parents) {
-            result.merge(parent.effectivePermissions(visitedRoles));
+        for (StarryRole parent : parents) {
+            result.merge(parent.effectivePermissions(visitedStarryRoles));
         }
 
-        visitedRoles.remove(this);
+        visitedStarryRoles.remove(this);
 
         return result;
     }
 
-    public void inherit(Role parent) {
+    public void inherit(StarryRole parent) {
         if (parent == null) {
             throw new IllegalArgumentException("Parent role must not be null");
         }

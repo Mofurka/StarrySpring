@@ -2,14 +2,20 @@ package irden.space.proxy.plugin.discord;
 
 
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
+import irden.space.proxy.plugin.api.PermissionView;
+import irden.space.proxy.plugin.api.Permissions;
 import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.command_handler.RegisteredCommand;
 import irden.space.proxy.plugin.discord.model.DiscordRoleManager;
+import irden.space.proxy.plugin.player_manager.model.StarryRole;
+import irden.space.proxy.plugin.player_manager.model.UserPermissions;
 import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -22,17 +28,13 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class DiscordBot extends ListenerAdapter {
     private final Logger log = LoggerFactory.getLogger(DiscordBot.class);
     private final JDA jda;
     private final CommandHandlerPlugin commandHandler;
+    private final RoleManager roleManager;
     private final DiscordRoleManager discordRoleManager = new DiscordRoleManager();
 
     public DiscordBot(String token, CommandHandlerPlugin commandHandler, RoleManager roleManager) {
@@ -43,10 +45,12 @@ public final class DiscordBot extends ListenerAdapter {
             this.jda = jdaAuth.awaitReady();
 
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.info("Failed to initialize Discord bot: {}", e.getMessage());
-            throw new RuntimeException(e);
+            throw new IllegalStateException("Failed to initialize Discord bot", e);
         }
         this.commandHandler = commandHandler;
+        this.roleManager = roleManager;
         registerCommands();
         this.jda.addEventListener(this);
 
@@ -119,10 +123,10 @@ public final class DiscordBot extends ListenerAdapter {
     }
 
     private PacketInterceptionContext createDiscordPacketContext(SlashCommandInteractionEvent event) {
-        DiscordSessionContext session = new DiscordSessionContext(
+        DiscordSessionContext session = createDiscordSessionContext(
                 event.getUser().getId(),
                 event.getUser().getName(),
-                event.getMember() != null ? event.getMember().getEffectiveName() : event.getUser().getName(),
+                event.getMember(),
                 event
         );
         StringBuilder rawInput = new StringBuilder("/").append(event.getName());
@@ -140,13 +144,72 @@ public final class DiscordBot extends ListenerAdapter {
     }
 
     private PacketInterceptionContext createDiscordPacketAutocompleteContext(CommandAutoCompleteInteractionEvent event) {
-        DiscordSessionContext session = new DiscordSessionContext(
+        DiscordSessionContext session = createDiscordSessionContext(
                 event.getUser().getId(),
                 event.getUser().getName(),
-                event.getMember() != null ? event.getMember().getEffectiveName() : event.getUser().getName(),
+                event.getMember(),
                 null
         );
         return new PacketInterceptionContext(session, null, event, PacketDirection.TO_SERVER);
+    }
+
+    private DiscordSessionContext createDiscordSessionContext(
+            String userId,
+            String userName,
+            Member member,
+            Object event
+    ) {
+        return new DiscordSessionContext(
+                userId,
+                userName,
+                member != null ? member.getEffectiveName() : userName,
+                resolveDiscordPermissions(userId, member),
+                event
+        );
+    }
+
+    private PermissionView resolveDiscordPermissions(String userId, Member member) {
+        LinkedHashSet<String> resolvedRoleNames = new LinkedHashSet<>();
+
+        String defaultRoleName = roleManager.defaultRoleName();
+        if (defaultRoleName != null && !defaultRoleName.isBlank()) {
+            resolvedRoleNames.add(defaultRoleName);
+        }
+
+        if (member != null) {
+            resolvedRoleNames.addAll(
+                    discordRoleManager.resolveServerRoleNames(
+                            member.getRoles().stream()
+                                    .map(Role::getIdLong)
+                                    .toList()
+                    )
+            );
+        }
+
+        if (resolvedRoleNames.isEmpty()) {
+            return PermissionView.EMPTY;
+        }
+
+        List<StarryRole> grantedStarryRoles = new ArrayList<>();
+        List<String> unknownRoleNames = new ArrayList<>();
+
+        for (String roleName : resolvedRoleNames) {
+            roleManager.findRole(roleName)
+                    .ifPresentOrElse(
+                            grantedStarryRoles::add,
+                            () -> unknownRoleNames.add(roleName)
+                    );
+        }
+
+        if (!unknownRoleNames.isEmpty()) {
+            log.warn("Discord user {} matched unknown server roles from config: {}", userId, unknownRoleNames);
+        }
+
+        if (grantedStarryRoles.isEmpty()) {
+            return PermissionView.EMPTY;
+        }
+
+        return new UserPermissions(grantedStarryRoles, Permissions.none());
     }
 
 
