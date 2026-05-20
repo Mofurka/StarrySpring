@@ -4,6 +4,8 @@ package irden.space.proxy.plugin.discord;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.command_handler.RegisteredCommand;
+import irden.space.proxy.plugin.discord.model.DiscordRoleManager;
+import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
 import net.dv8tion.jda.api.JDA;
@@ -31,8 +33,9 @@ public final class DiscordBot extends ListenerAdapter {
     private final Logger log = LoggerFactory.getLogger(DiscordBot.class);
     private final JDA jda;
     private final CommandHandlerPlugin commandHandler;
+    private final DiscordRoleManager discordRoleManager = new DiscordRoleManager();
 
-    public DiscordBot(String token, CommandHandlerPlugin commandHandler) {
+    public DiscordBot(String token, CommandHandlerPlugin commandHandler, RoleManager roleManager) {
         EnumSet<GatewayIntent> intents = EnumSet.allOf(GatewayIntent.class);
         var jdaAuth = JDABuilder.createDefault(token, intents)
                 .build();

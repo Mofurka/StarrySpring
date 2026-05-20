@@ -26,6 +26,6 @@ public class StarryRoles {
         private String colorPrefix = "^blue;";
         private int priority = 0;
         private List<String> inherits = List.of();
-        private List<String> permissions = List.of("command.help");
+        private List<String> permissions = List.of();
     }
 }

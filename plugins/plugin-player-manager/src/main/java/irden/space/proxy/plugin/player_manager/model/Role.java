@@ -1,14 +1,13 @@
 package irden.space.proxy.plugin.player_manager.model;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Set;
+import irden.space.proxy.plugin.api.PermissionSet;
+
+import java.util.*;
 
 public final class Role {
 
     private final String name;
-    private final irden.space.proxy.plugin.api.PermissionSet permissions = new irden.space.proxy.plugin.api.PermissionSet();
+    private final PermissionSet permissions = new PermissionSet();
     private final List<Role> parents = new ArrayList<>();
 
     public Role(String name) {
@@ -19,16 +18,16 @@ public final class Role {
         return name;
     }
 
-    public irden.space.proxy.plugin.api.PermissionSet effectivePermissions() {
-        return effectivePermissions(java.util.Collections.newSetFromMap(new IdentityHashMap<>()));
+    public PermissionSet effectivePermissions() {
+        return effectivePermissions(Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
-    private irden.space.proxy.plugin.api.PermissionSet effectivePermissions(Set<Role> visitedRoles) {
+    private PermissionSet effectivePermissions(Set<Role> visitedRoles) {
         if (!visitedRoles.add(this)) {
             throw new IllegalStateException("Cyclic role inheritance detected for role: " + name);
         }
 
-        irden.space.proxy.plugin.api.PermissionSet result = permissions.copy();
+        PermissionSet result = permissions.copy();
 
         for (Role parent : parents) {
             result.merge(parent.effectivePermissions(visitedRoles));
@@ -53,7 +52,7 @@ public final class Role {
         parents.add(parent);
     }
 
-    public irden.space.proxy.plugin.api.PermissionSet permissions() {
+    public PermissionSet permissions() {
         return permissions;
     }
 }

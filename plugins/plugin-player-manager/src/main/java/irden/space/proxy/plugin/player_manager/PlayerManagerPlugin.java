@@ -84,6 +84,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
 
         this.playerManagerApi = new DefaultPlayerManagerApi(this);
         context.publishService(PlayerManagerApi.class, playerManagerApi);
+        context.publishService(RoleManager.class, roleManager);
         context.requireService(CommandHandlerPlugin.class)
                 .addContextResolver(new ExecutorPlayerContextResolver(playerManagerApi));
     }
