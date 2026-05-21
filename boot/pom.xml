@@ -79,23 +79,8 @@
 
         <!--Plugins-->
         <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-debug-logger</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-command-handler</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-player-manager</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-discord-bot</artifactId>
+            <groupId>irden.space</groupId>
+            <artifactId>plugins</artifactId>
             <version>1.0.0</version>
         </dependency>
     </dependencies>

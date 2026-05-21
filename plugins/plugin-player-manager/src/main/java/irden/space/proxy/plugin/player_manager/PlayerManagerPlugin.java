@@ -153,7 +153,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
                     player.entityId()
             );
             players.add(context.session().sessionId(), player);
-
+            context.session().attributes().putIfAbsent("player", player);
             return PacketDecision.forward();
         }
         ConnectFailure connectFailure = new ConnectFailure("Player connection state not found. Please try again.");

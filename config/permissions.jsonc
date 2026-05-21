@@ -53,8 +53,8 @@
       "colorPrefix": "^blue;",
       "priority": 5,
       "permissions": [
-        "starry.chat.sent",
-        "starry.chat.recieve"
+        "chat.sent",
+        "chat.recieve"
       ],
       "inherits": [
         "Neofit"

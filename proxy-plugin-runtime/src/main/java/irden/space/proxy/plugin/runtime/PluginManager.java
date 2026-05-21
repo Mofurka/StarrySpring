@@ -68,12 +68,13 @@ public class PluginManager implements PluginSessionLifecycleService {
         }
 
         log.info(
-                "Plugin runtime started with {} loaded plugin(s): {}",
-                loadedPlugins.size(),
-                loadedPlugins.stream()
-                        .map(this::describePlugin)
-                        .toList()
+                "Plugin runtime started with {} loaded plugin(s)",
+                loadedPlugins.size()
+
         );
+        loadedPlugins.stream()
+                .map(this::describePlugin)
+                .forEach(pluginInfo -> log.info("Loaded plugin: {}", pluginInfo));
     }
 
     public void stopAll() {
