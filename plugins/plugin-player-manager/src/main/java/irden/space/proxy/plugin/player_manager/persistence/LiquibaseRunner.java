@@ -1,14 +1,13 @@
 package irden.space.proxy.plugin.player_manager.persistence;
 
 import irden.space.proxy.plugin.api.PluginLiquibaseRunner;
+import lombok.experimental.UtilityClass;
 
 import javax.sql.DataSource;
 
+@UtilityClass
 public final class LiquibaseRunner {
 
-    private LiquibaseRunner() {
-        // Private constructor to prevent instantiation
-    }
 
     public static void runLiquibaseMigrations(DataSource dataSource) {
 

@@ -5,10 +5,8 @@ import irden.space.proxy.plugin.api.PluginRuntimeService;
 import irden.space.proxy.plugin.api.PluginRuntimeView;
 import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
-import irden.space.proxy.plugin.command_handler.ChatCommand;
-import irden.space.proxy.plugin.command_handler.CommandContext;
-import irden.space.proxy.plugin.command_handler.CommandSpec;
-import irden.space.proxy.plugin.command_handler.StringArgumentType;
+import irden.space.proxy.plugin.command_handler.*;
+import irden.space.proxy.plugin.runtime_admin.arguments.PluginArgumentType;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
@@ -44,9 +42,9 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
                 .then(literal("list")
                         .permission(PluginRuntimeAdminPermissions.LIST.permission())
                         .executes(context -> context.reply(formatPlugins(runtimeService.plugins()))))
-                .then(operation("start", PluginRuntimeAdminPermissions.START, pluginId -> runtimeService.startPlugin(pluginId)))
-                .then(operation("stop", PluginRuntimeAdminPermissions.STOP, pluginId -> runtimeService.stopPlugin(pluginId)))
-                .then(operation("reload", PluginRuntimeAdminPermissions.RELOAD, pluginId -> runtimeService.reloadPlugin(pluginId)))
+                .then(operation("start", PluginRuntimeAdminPermissions.START, runtimeService::startPlugin))
+                .then(operation("stop", PluginRuntimeAdminPermissions.STOP, runtimeService::stopPlugin))
+                .then(operation("reload", PluginRuntimeAdminPermissions.RELOAD, runtimeService::reloadPlugin))
                 .build();
     }
 
@@ -68,14 +66,14 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
         return result.toString();
     }
 
-    private irden.space.proxy.plugin.command_handler.LiteralBuilder operation(
+    private LiteralBuilder operation(
             String operation,
             PluginRuntimeAdminPermissions permission,
             PluginOperation pluginOperation
     ) {
         return literal(operation)
                 .permission(permission.permission())
-                .then(argument("pluginId", StringArgumentType.word())
+                .then(argument("pluginId", PluginArgumentType.pluginName(this))
                         .executes(context -> executeOperation(context, operation, pluginOperation)));
     }
 
@@ -84,6 +82,23 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
         List<String> affectedPlugins = pluginOperation.execute(pluginId);
         String affected = affectedPlugins.isEmpty() ? "none" : String.join(", ", affectedPlugins);
         context.reply("Plugin " + operation + " completed. Affected: " + affected);
+    }
+
+
+    public List<String> searchPlugins(String input, int limit) {
+        return runtimeService.plugins().stream()
+                .map(view -> view.descriptor().id())
+                .filter(id -> id.contains(input))
+                .limit(limit)
+                .toList();
+    }
+
+    public String findPluginId(String input) {
+        return runtimeService.plugins().stream()
+                .map(view -> view.descriptor().id())
+                .filter(id -> id.equals(input))
+                .findFirst()
+                .orElse(null);
     }
 
     @FunctionalInterface

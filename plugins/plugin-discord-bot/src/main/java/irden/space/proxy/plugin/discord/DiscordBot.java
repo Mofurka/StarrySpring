@@ -59,7 +59,6 @@ public final class DiscordBot extends ListenerAdapter {
         this.discordRoleManager = discordRoleManager;
         registerCommands();
         this.jda.addEventListener(this);
-
     }
 
     public void registerCommands() {
