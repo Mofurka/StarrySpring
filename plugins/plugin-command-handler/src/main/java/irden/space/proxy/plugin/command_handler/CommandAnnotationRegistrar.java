@@ -19,6 +19,7 @@ public class CommandAnnotationRegistrar implements PluginAnnotationRegistrar {
 
     @Override
     public void register(ProxyPlugin plugin, PluginContext context) {
+        context.onRemove(() -> CommandRegistry.global().unregisterByPluginId(plugin.descriptor().id()));
         Arrays.stream(plugin.getClass().getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(ChatCommand.class))
                 .forEach(method -> register(plugin, method));

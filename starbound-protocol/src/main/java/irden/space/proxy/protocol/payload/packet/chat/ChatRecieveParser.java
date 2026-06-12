@@ -9,8 +9,6 @@ import irden.space.proxy.protocol.payload.common.chat_header.ChatHeader;
 import irden.space.proxy.protocol.payload.common.chat_header.ChatHeaderCodec;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
-import java.util.List;
-
 public class ChatRecieveParser implements PacketParser<ChatReceive> {
 
     @Override

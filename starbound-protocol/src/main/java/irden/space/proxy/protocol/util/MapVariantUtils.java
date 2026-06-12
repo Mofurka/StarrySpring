@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.node.*;
 import irden.space.proxy.protocol.codec.variant.*;
 import lombok.experimental.UtilityClass;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @UtilityClass
 public final class MapVariantUtils {

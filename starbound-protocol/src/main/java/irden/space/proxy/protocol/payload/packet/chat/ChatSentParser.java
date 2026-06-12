@@ -8,8 +8,6 @@ import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.payload.packet.chat.consts.ChatSentMode;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
-import java.util.List;
-
 public class ChatSentParser implements PacketParser<ChatSent> {
     @Override
     public ChatSent parse(BinaryReader reader) {

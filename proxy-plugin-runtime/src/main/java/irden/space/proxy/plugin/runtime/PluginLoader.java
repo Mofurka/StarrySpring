@@ -1,24 +1,23 @@
 package irden.space.proxy.plugin.runtime;
 
-
-
-import irden.space.proxy.plugin.api.ProxyPlugin;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceLoader;
 
+public class PluginLoader implements AutoCloseable {
 
-public class PluginLoader {
+    public List<PluginCandidate> loadPluginCandidates() {
+        return List.of();
+    }
 
-    public List<ProxyPlugin> loadPlugins() {
-        ServiceLoader<ProxyPlugin> loader = ServiceLoader.load(ProxyPlugin.class);
-        List<ProxyPlugin> plugins = new ArrayList<>();
+    public void reloadPluginCandidates(List<PluginCandidate> plugins) {
+        // Classpath plugin classes cannot reload their application classloader.
+    }
 
-        for (ProxyPlugin plugin : loader) {
-            plugins.add(plugin);
-        }
+    public void validateReloadPluginCandidates(List<PluginCandidate> plugins) {
+        // Classpath plugins only recreate their managed containers.
+    }
 
-        return plugins;
+    @Override
+    public void close() {
+        // Classpath plugins do not own a dedicated class loader.
     }
 }

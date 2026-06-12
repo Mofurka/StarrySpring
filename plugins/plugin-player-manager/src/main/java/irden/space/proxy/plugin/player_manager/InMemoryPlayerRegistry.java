@@ -2,11 +2,13 @@ package irden.space.proxy.plugin.player_manager;
 
 
 import irden.space.proxy.plugin.player_manager.model.Player;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component("onlinePlayerRegistry")
 public final class InMemoryPlayerRegistry implements PlayerRegistry<Player> {
     private final Map<String, Player> playersBySessionId = new ConcurrentHashMap<>();
 

@@ -5,10 +5,13 @@ import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.SessionPermissionService;
 import irden.space.proxy.plugin.runtime.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
+import java.nio.file.Path;
 
 @Configuration
 public class PluginRuntimeConfiguration {
@@ -31,8 +34,8 @@ public class PluginRuntimeConfiguration {
     }
 
     @Bean
-    public PluginLoader pluginLoader() {
-        return new PluginLoader();
+    public PluginLoader pluginLoader(@Value("${starry.plugins.directory:runtime-plugins}") String pluginsDirectory) {
+        return new Pf4jPluginLoader(Path.of(pluginsDirectory));
     }
 
     @Bean
@@ -47,14 +50,28 @@ public class PluginRuntimeConfiguration {
             PluginLoader pluginLoader,
             PluginDependencyResolver pluginDependencyResolver,
             PacketInterceptorRegistry packetInterceptorRegistry,
-            PluginContext pluginContext
+            PluginContext pluginContext,
+            PluginContainerFactory pluginContainerFactory
     ) {
-        return new PluginManager(
+        PluginManager manager = new PluginManager(
                 pluginLoader,
                 pluginDependencyResolver,
                 packetInterceptorRegistry,
-                pluginContext
+                pluginContext,
+                pluginContainerFactory
         );
+        return manager;
+    }
+
+    @Bean
+    public PluginContainerFactory pluginContainerFactory(
+            ApplicationContext applicationContext,
+            PluginContext pluginContext
+    ) {
+        if (!(pluginContext instanceof PluginServiceProvider pluginServiceProvider)) {
+            throw new IllegalStateException("PluginContext must expose plugin services to Spring plugin containers");
+        }
+        return new SpringPluginContainerFactory(applicationContext, pluginServiceProvider);
     }
 
     @Bean

@@ -6,8 +6,6 @@ import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import irden.space.proxy.protocol.payload.packet.chat.consts.ChatReceiveMode;
 import lombok.experimental.UtilityClass;
 
-import java.util.List;
-
 @UtilityClass
 final class CommandMessages {
 

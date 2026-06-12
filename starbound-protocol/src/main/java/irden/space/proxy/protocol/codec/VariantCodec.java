@@ -2,9 +2,7 @@ package irden.space.proxy.protocol.codec;
 
 import irden.space.proxy.protocol.codec.variant.*;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public enum VariantCodec implements BinaryCodec<VariantValue> {

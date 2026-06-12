@@ -35,9 +35,14 @@ public final class DiscordBot extends ListenerAdapter {
     private final JDA jda;
     private final CommandHandlerPlugin commandHandler;
     private final RoleManager roleManager;
-    private final DiscordRoleManager discordRoleManager = new DiscordRoleManager();
+    private final DiscordRoleManager discordRoleManager;
 
-    public DiscordBot(String token, CommandHandlerPlugin commandHandler, RoleManager roleManager) {
+    public DiscordBot(
+            String token,
+            CommandHandlerPlugin commandHandler,
+            RoleManager roleManager,
+            DiscordRoleManager discordRoleManager
+    ) {
         EnumSet<GatewayIntent> intents = EnumSet.allOf(GatewayIntent.class);
         var jdaAuth = JDABuilder.createDefault(token, intents)
                 .build();
@@ -51,9 +56,9 @@ public final class DiscordBot extends ListenerAdapter {
         }
         this.commandHandler = commandHandler;
         this.roleManager = roleManager;
+        this.discordRoleManager = discordRoleManager;
         registerCommands();
         this.jda.addEventListener(this);
-
     }
 
     public void registerCommands() {

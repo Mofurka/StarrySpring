@@ -17,6 +17,11 @@ public class DefaultPacketInterceptorRegistry implements PacketInterceptorRegist
     }
 
     @Override
+    public void unregister(PacketInterceptor interceptor) {
+        interceptors.remove(interceptor);
+    }
+
+    @Override
     public List<PacketInterceptor> getAll() {
         return List.copyOf(interceptors);
     }

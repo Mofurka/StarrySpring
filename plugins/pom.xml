@@ -37,6 +37,11 @@
             <artifactId>plugin-debug-logger</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>irden.space.plugin</groupId>
+            <artifactId>plugin-runtime-admin</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <modules>
@@ -45,6 +50,7 @@
         <module>plugin-player-manager</module>
         <module>plugin-discord-bot</module>
         <module>plugin-star-custom-chat</module>
+        <module>plugin-runtime-admin</module>
     </modules>
 
 </project>

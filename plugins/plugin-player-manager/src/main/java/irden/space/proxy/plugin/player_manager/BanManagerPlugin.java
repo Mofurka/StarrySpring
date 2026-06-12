@@ -1,14 +1,16 @@
 package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.api.*;
-import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
 import irden.space.proxy.plugin.command_handler.StringArgumentType;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
-import irden.space.proxy.plugin.player_manager.command.*;
+import irden.space.proxy.plugin.player_manager.command.BanTarget;
+import irden.space.proxy.plugin.player_manager.command.BanTargetArgumentType;
+import irden.space.proxy.plugin.player_manager.command.PlayerOnlineTargetArgumentType;
+import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
 import irden.space.proxy.plugin.player_manager.model.BanOperationResult;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.persistence.BanRecordJdbcRepository;
@@ -19,9 +21,8 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -37,17 +38,16 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
         author = "https://github.com/Mofurka",
         dependsOn = {"player-manager"}
 )
+@PluginSpringConfiguration(value = BanManagerSpringConfiguration.class, scanPluginPackage = false)
+@Component
 public class BanManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(BanManagerPlugin.class);
-    private BanRecordJdbcRepository banRecordRepository;
-    private PlayerManagerApi playerManagerApi;
+    private final BanRecordJdbcRepository banRecordRepository;
+    private final PlayerManagerApi playerManagerApi;
 
-    @OnLoad
-    public void handleLoad(PluginContext context) {
-        DataSource dataSource = context.requireService(DataSource.class);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        this.banRecordRepository = new BanRecordJdbcRepository(jdbcTemplate);
-        this.playerManagerApi = context.requireService(PlayerManagerApi.class);
+    public BanManagerPlugin(BanRecordJdbcRepository banRecordRepository, PlayerManagerApi playerManagerApi) {
+        this.banRecordRepository = banRecordRepository;
+        this.playerManagerApi = playerManagerApi;
     }
 
 

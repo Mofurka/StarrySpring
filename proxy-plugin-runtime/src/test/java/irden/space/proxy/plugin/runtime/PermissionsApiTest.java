@@ -1,10 +1,7 @@
 package irden.space.proxy.plugin.runtime;
 
+import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.DefaultPluginSessionContext;
-import irden.space.proxy.plugin.api.Permission;
-import irden.space.proxy.plugin.api.PermissionSet;
-import irden.space.proxy.plugin.api.PermissionView;
-import irden.space.proxy.plugin.api.Permissions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

@@ -2,9 +2,11 @@ package irden.space.proxy.plugin.player_manager.permissions;
 
 import irden.space.proxy.plugin.api.PermissionRegistry;
 import irden.space.proxy.plugin.api.PermissionSet;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 
+@Component
 public final class PermissionResolver {
 
     public PermissionSet resolveRules(Collection<String> rules) {

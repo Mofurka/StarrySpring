@@ -1,7 +1,8 @@
 package irden.space.proxy.plugin.api;
 
+import org.pf4j.ExtensionPoint;
 
-public interface ProxyPlugin {
+public interface ProxyPlugin extends ExtensionPoint {
 
     default PluginDescriptor descriptor() {
         return ProxyPluginSupport.descriptor(this);

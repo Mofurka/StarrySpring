@@ -1,15 +1,17 @@
 package irden.space.proxy.plugin.debug;
 
-import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.PacketDecision;
+import irden.space.proxy.plugin.api.PacketInterceptionContext;
+import irden.space.proxy.plugin.api.PluginDefinition;
+import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
-import irden.space.proxy.plugin.command_handler.ChatCommand;
-import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 @PluginDefinition(
         id = "debug-logger",
@@ -19,12 +21,13 @@ import org.slf4j.LoggerFactory;
         author = "https://github.com/Mofurka",
         description = "A plugin that logs all packets and lifecycle events for debugging purposes. And also my test area."
 )
+@Component
 public final class DebugLoggerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(DebugLoggerPlugin.class);
 
 
     @OnLoad
-    public void handleLoad(PluginContext context) {
+    public void handleLoad() {
         log.info("Loading plugin '{}'", descriptor().id());
     }
 

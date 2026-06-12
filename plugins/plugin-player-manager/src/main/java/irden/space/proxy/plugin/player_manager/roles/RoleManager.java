@@ -6,12 +6,16 @@ import irden.space.proxy.plugin.api.PermissionRegistry;
 import irden.space.proxy.plugin.player_manager.model.StarryRole;
 import irden.space.proxy.plugin.player_manager.permissions.PermissionResolver;
 import irden.space.proxy.plugin.player_manager.permissions.model.StarryRoles;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@Component
 public final class RoleManager {
     public static final String OWNER_ROLE_NAME = "Owner";
 
@@ -19,16 +23,21 @@ public final class RoleManager {
             .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
     private final Path configPath;
-    private final PermissionResolver permissionResolver = new PermissionResolver();
+    private final PermissionResolver permissionResolver;
     private StarryRoles rolesConfig;
     private Map<String, StarryRole> rolesByName = Map.of();
 
-    public RoleManager() {
-        this(Path.of("config/permissions.jsonc"));
+    @Autowired
+    public RoleManager(
+            @Value("${starry.player-manager.permissions-path:config/permissions.jsonc}") String configPath,
+            PermissionResolver permissionResolver
+    ) {
+        this(Path.of(configPath), permissionResolver);
     }
 
-    public RoleManager(Path configPath) {
+    public RoleManager(Path configPath, PermissionResolver permissionResolver) {
         this.configPath = Objects.requireNonNull(configPath, "configPath");
+        this.permissionResolver = Objects.requireNonNull(permissionResolver, "permissionResolver");
         reload();
     }
 

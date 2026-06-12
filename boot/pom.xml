@@ -3,12 +3,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
 
     <properties>
         <start-class>irden.space.boot.ServerBootApplication</start-class>
         <java.version>25</java.version>
-        <spring-boot.version>4.0.5</spring-boot.version>
+        <spring-boot.version>4.1.0</spring-boot.version>
         <lombok.version>1.18.44</lombok.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven.compiler.source>25</maven.compiler.source>
@@ -44,7 +49,7 @@
         <dependency>
             <groupId>irden.space.plugin</groupId>
             <artifactId>proxy-plugin-api</artifactId>
-            <version>1.0.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>irden.space.plugin</groupId>
@@ -75,6 +80,12 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>6.0.3</version>
+            <scope>test</scope>
+        </dependency>
 
 
         <!--Plugins-->
@@ -82,6 +93,7 @@
             <groupId>irden.space</groupId>
             <artifactId>plugins</artifactId>
             <version>1.0.0</version>
+            <type>pom</type>
         </dependency>
     </dependencies>
 
@@ -101,9 +113,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>${start-class}</mainClass>
-                </configuration>
+
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
