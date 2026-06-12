@@ -1,14 +1,12 @@
 package irden.space.proxy.plugin.runtime.fixture;
 
-import irden.space.proxy.plugin.api.PluginDescriptor;
+import irden.space.proxy.plugin.api.PluginContext;
+import irden.space.proxy.plugin.api.PluginDefinition;
 import irden.space.proxy.plugin.api.ProxyPlugin;
 
-import java.util.List;
-
+@PluginDefinition(id = "external-test", name = "External Test", version = "1.0.0")
 public final class ExternalTestPlugin implements ProxyPlugin {
 
-    @Override
-    public PluginDescriptor descriptor() {
-        return new PluginDescriptor("external-test", "External Test", "1.0.0", List.of());
+    public ExternalTestPlugin(PluginContext pluginContext) {
     }
 }

@@ -26,7 +26,6 @@ import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -50,29 +49,47 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
 @Component
 public final class PlayerManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(PlayerManagerPlugin.class);
-    @Autowired
-    @Qualifier("onlinePlayerRegistry")
-    private PlayerRegistry<Player> players;
-    @Autowired
-    @Qualifier("connectingPlayerRegistry")
-    private PlayerRegistry<TempPlayer> connectingPlayers;
+    private final PlayerRegistry<Player> players;
+    private final PlayerRegistry<TempPlayer> connectingPlayers;
     private final Map<String, StarryRole> rolesByName = new ConcurrentHashMap<>();
-    @Autowired
-    private DataSource dataSource;
-    @Autowired
-    private PlayerAccessJdbcRepository playerAccessRepository;
-    @Autowired
-    private PlayerJdbcRepository playerRepository;
-    @Autowired
-    private SessionPermissionService sessionPermissionService;
-    @Autowired
-    private RoleManager roleManager;
-    @Autowired
-    private PermissionResolver permissionResolver;
-    @Autowired
-    private PlayerDirectory playerDirectory;
-    @Autowired
-    private DefaultPlayerManagerApi playerManagerApi;
+    private final DataSource dataSource;
+    private final PlayerAccessJdbcRepository playerAccessRepository;
+    private final PlayerJdbcRepository playerRepository;
+    private final SessionPermissionService sessionPermissionService;
+    private final RoleManager roleManager;
+    private final PermissionResolver permissionResolver;
+    private final PlayerDirectory playerDirectory;
+    private final DefaultPlayerManagerApi playerManagerApi;
+    private final CommandHandlerPlugin commandHandler;
+    private final PluginContext pluginContext;
+
+    public PlayerManagerPlugin(
+            @Qualifier("onlinePlayerRegistry") PlayerRegistry<Player> players,
+            @Qualifier("connectingPlayerRegistry") PlayerRegistry<TempPlayer> connectingPlayers,
+            DataSource dataSource,
+            PlayerAccessJdbcRepository playerAccessRepository,
+            PlayerJdbcRepository playerRepository,
+            SessionPermissionService sessionPermissionService,
+            RoleManager roleManager,
+            PermissionResolver permissionResolver,
+            PlayerDirectory playerDirectory,
+            DefaultPlayerManagerApi playerManagerApi,
+            CommandHandlerPlugin commandHandler,
+            PluginContext pluginContext
+    ) {
+        this.players = players;
+        this.connectingPlayers = connectingPlayers;
+        this.dataSource = dataSource;
+        this.playerAccessRepository = playerAccessRepository;
+        this.playerRepository = playerRepository;
+        this.sessionPermissionService = sessionPermissionService;
+        this.roleManager = roleManager;
+        this.permissionResolver = permissionResolver;
+        this.playerDirectory = playerDirectory;
+        this.playerManagerApi = playerManagerApi;
+        this.commandHandler = commandHandler;
+        this.pluginContext = pluginContext;
+    }
 
     @SuppressWarnings("unused")
     @RegisterPluginPermissions
@@ -82,18 +99,29 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
 
 
     @OnLoad
-    public void handleLoad(PluginContext context) {
+    public void handleLoad() {
         log.info("Loading plugin '{}'", descriptor().id());
-        context.publishService(PlayerManagerPlugin.class, this);
         LiquibaseRunner.runLiquibaseMigrations(dataSource);
         reloadConfiguredRoles();
 
-        context.publishService(PlayerManagerApi.class, playerManagerApi);
-        context.publishService(RoleManager.class, roleManager);
-        CommandHandlerPlugin commandHandler = context.requireService(CommandHandlerPlugin.class);
         ExecutorPlayerContextResolver contextResolver = new ExecutorPlayerContextResolver(playerManagerApi);
         commandHandler.addContextResolver(contextResolver);
-        context.onRemove(() -> commandHandler.removeContextResolver(contextResolver));
+        pluginContext.onRemove(() -> commandHandler.removeContextResolver(contextResolver));
+    }
+
+    @PublishService
+    public PlayerManagerPlugin publishPlayerManagerPlugin() {
+        return this;
+    }
+
+    @PublishService(PlayerManagerApi.class)
+    public DefaultPlayerManagerApi publishPlayerManagerApi() {
+        return playerManagerApi;
+    }
+
+    @PublishService
+    public RoleManager publishRoleManager() {
+        return roleManager;
     }
 
     @OnStart

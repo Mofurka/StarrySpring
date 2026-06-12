@@ -54,13 +54,13 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     }
 
     private void doLoadAndStart() {
-        List<ProxyPlugin> plugins = pluginLoader.loadPlugins();
+        List<PluginCandidate> plugins = pluginLoader.loadPluginCandidates();
         log.info("Discovered {} plugin(s)", plugins.size());
-        for (ProxyPlugin plugin : plugins) {
+        for (PluginCandidate plugin : plugins) {
             log.info("Discovered plugin: {}", describePlugin(plugin));
         }
 
-        List<ProxyPlugin> ordered = dependencyResolver.resolveLoadOrder(plugins);
+        List<PluginCandidate> ordered = dependencyResolver.resolveCandidateLoadOrder(plugins);
         log.info(
                 "Resolved plugin load order: {}",
                 ordered.stream()
@@ -132,24 +132,24 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
 
     public synchronized List<String> reloadPlugin(String pluginId) {
         Set<String> pluginsToReload = resolveDependentClosure(pluginId);
-        List<ProxyPlugin> previousPluginInstances = new ArrayList<>(pluginsToReload.size());
+        List<PluginCandidate> previousPluginCandidates = new ArrayList<>(pluginsToReload.size());
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
             ProxyPlugin plugin = loadedPlugins.get(i).plugin();
             if (pluginsToReload.contains(plugin.descriptor().id())) {
-                previousPluginInstances.add(plugin);
+                previousPluginCandidates.add(PluginCandidate.fromInstance(plugin));
             }
         }
 
-        pluginLoader.validateReloadPlugins(previousPluginInstances);
+        pluginLoader.validateReloadPluginCandidates(previousPluginCandidates);
         List<String> stoppedPluginIds = stopPlugin(pluginId);
-        pluginLoader.reloadPlugins(previousPluginInstances);
+        pluginLoader.reloadPluginCandidates(previousPluginCandidates);
         return startPlugins(new LinkedHashSet<>(stoppedPluginIds));
     }
 
     @Override
     public synchronized List<PluginRuntimeView> plugins() {
         Map<String, PluginRuntimeView> views = new LinkedHashMap<>();
-        for (ProxyPlugin plugin : pluginLoader.loadPlugins()) {
+        for (PluginCandidate plugin : pluginLoader.loadPluginCandidates()) {
             views.put(
                     plugin.descriptor().id(),
                     new PluginRuntimeView(plugin.descriptor(), PluginRuntimeState.STOPPED)
@@ -166,12 +166,12 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     }
 
     private List<String> startPlugins(Set<String> requestedPluginIds) {
-        Map<String, ProxyPlugin> availablePlugins = new LinkedHashMap<>();
+        Map<String, PluginCandidate> availablePlugins = new LinkedHashMap<>();
         for (PluginContainer container : loadedPlugins) {
             ProxyPlugin plugin = container.plugin();
-            availablePlugins.put(plugin.descriptor().id(), plugin);
+            availablePlugins.put(plugin.descriptor().id(), PluginCandidate.fromInstance(plugin));
         }
-        for (ProxyPlugin plugin : pluginLoader.loadPlugins()) {
+        for (PluginCandidate plugin : pluginLoader.loadPluginCandidates()) {
             availablePlugins.putIfAbsent(plugin.descriptor().id(), plugin);
         }
 
@@ -181,12 +181,12 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
             }
         }
 
-        List<ProxyPlugin> ordered = dependencyResolver.resolveLoadOrder(List.copyOf(availablePlugins.values()));
+        List<PluginCandidate> ordered = dependencyResolver.resolveCandidateLoadOrder(List.copyOf(availablePlugins.values()));
         Set<String> requiredPluginIds = new LinkedHashSet<>();
         for (String requestedPluginId : requestedPluginIds) {
             requiredPluginIds.addAll(resolveDependencyClosure(requestedPluginId, availablePlugins));
         }
-        List<ProxyPlugin> pluginsToStart = ordered.stream()
+        List<PluginCandidate> pluginsToStart = ordered.stream()
                 .filter(plugin -> requiredPluginIds.contains(plugin.descriptor().id()))
                 .filter(plugin -> findLoadedPlugin(plugin.descriptor().id()) == null)
                 .toList();
@@ -237,6 +237,12 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
                 + "', dependsOn=" + formatDependencies(descriptor.dependsOn());
     }
 
+    private String describePlugin(PluginCandidate plugin) {
+        PluginDescriptor descriptor = plugin.descriptor();
+        return "id='" + descriptor.id() + "', name='" + descriptor.name() + "', version='" + descriptor.version()
+                + "', dependsOn=" + formatDependencies(descriptor.dependsOn());
+    }
+
     private void invokeSessionLifecycle(
             ProxyPlugin plugin,
             String lifecycleName,
@@ -262,15 +268,23 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     }
 
     private PluginContext contextFor(ProxyPlugin plugin) {
+        return contextFor(plugin.descriptor().id());
+    }
+
+    private PluginContext contextFor(String pluginId) {
         if (pluginContext instanceof PluginContextManager contextManager) {
-            return contextManager.forPlugin(plugin.descriptor().id());
+            return contextManager.forPlugin(pluginId);
         }
         return pluginContext;
     }
 
     private void removePluginRegistrations(ProxyPlugin plugin) {
+        removePluginRegistrations(plugin.descriptor().id());
+    }
+
+    private void removePluginRegistrations(String pluginId) {
         if (pluginContext instanceof PluginContextManager contextManager) {
-            contextManager.removePlugin(plugin.descriptor().id());
+            contextManager.removePlugin(pluginId);
         }
     }
 
@@ -304,7 +318,7 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         return result;
     }
 
-    private Set<String> resolveDependencyClosure(String pluginId, Map<String, ProxyPlugin> availablePlugins) {
+    private Set<String> resolveDependencyClosure(String pluginId, Map<String, PluginCandidate> availablePlugins) {
         Set<String> result = new LinkedHashSet<>();
         collectDependencies(pluginId, availablePlugins, result);
         return result;
@@ -312,14 +326,14 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
 
     private void collectDependencies(
             String pluginId,
-            Map<String, ProxyPlugin> availablePlugins,
+            Map<String, PluginCandidate> availablePlugins,
             Set<String> result
     ) {
         if (!result.add(pluginId)) {
             return;
         }
 
-        ProxyPlugin plugin = availablePlugins.get(pluginId);
+        PluginCandidate plugin = availablePlugins.get(pluginId);
         if (plugin == null) {
             throw new NoSuchElementException("Plugin '" + pluginId + "' is not available");
         }
@@ -328,29 +342,34 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         }
     }
 
-    private List<String> startResolvedPlugins(List<ProxyPlugin> plugins) {
+    private List<String> startResolvedPlugins(List<PluginCandidate> plugins) {
         if (plugins.isEmpty()) {
             return List.of();
         }
 
         List<PluginContainer> startedContainers = new ArrayList<>(plugins.size());
         try {
-            for (ProxyPlugin plugin : plugins) {
-                log.info("Registering permissions for plugin {}", describePlugin(plugin));
-                plugin.registerPluginPermissions(contextFor(plugin));
-                log.info("Registered permissions for plugin '{}'", plugin.descriptor().id());
-            }
-
-            for (ProxyPlugin plugin : plugins) {
-                log.info("Loading plugin {}", describePlugin(plugin));
-                PluginContainer container = containerFactory.create(plugin);
+            for (PluginCandidate candidate : plugins) {
+                log.info("Loading plugin {}", describePlugin(candidate));
+                PluginContext scopedContext = contextFor(candidate.descriptor().id());
+                PluginContainer container = containerFactory.create(candidate, scopedContext);
                 try {
-                    container.plugin().onLoad(contextFor(plugin));
+                    ProxyPlugin plugin = container.plugin();
+                    if (!candidate.descriptor().equals(plugin.descriptor())) {
+                        throw new IllegalStateException(
+                                "Spring-created plugin descriptor does not match discovered candidate: expected %s, got %s"
+                                        .formatted(candidate.descriptor(), plugin.descriptor())
+                        );
+                    }
+                    log.info("Registering permissions for plugin {}", describePlugin(plugin));
+                    plugin.registerPluginPermissions(scopedContext);
+                    log.info("Registered permissions for plugin '{}'", plugin.descriptor().id());
+                    container.plugin().onLoad(scopedContext);
                     loadedPlugins.add(container);
                     startedContainers.add(container);
                     log.info("Loaded plugin '{}'", plugin.descriptor().id());
                 } catch (RuntimeException | Error e) {
-                    removePluginRegistrations(plugin);
+                    removePluginRegistrations(candidate.descriptor().id());
                     container.close();
                     throw e;
                 }

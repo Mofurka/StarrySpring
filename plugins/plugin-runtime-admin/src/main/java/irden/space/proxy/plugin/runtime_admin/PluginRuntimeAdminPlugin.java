@@ -1,7 +1,9 @@
 package irden.space.proxy.plugin.runtime_admin;
 
-import irden.space.proxy.plugin.api.*;
-import irden.space.proxy.plugin.api.annotations.OnLoad;
+import irden.space.proxy.plugin.api.PluginDefinition;
+import irden.space.proxy.plugin.api.PluginRuntimeService;
+import irden.space.proxy.plugin.api.PluginRuntimeView;
+import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
@@ -25,16 +27,15 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
 @Component
 public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
 
-    private PluginRuntimeService runtimeService;
+    private final PluginRuntimeService runtimeService;
+
+    public PluginRuntimeAdminPlugin(PluginRuntimeService runtimeService) {
+        this.runtimeService = runtimeService;
+    }
 
     @RegisterPluginPermissions
     public Class<? extends PluginRuntimeAdminPermissions> registerPermissions() {
         return PluginRuntimeAdminPermissions.class;
-    }
-
-    @OnLoad
-    public void handleLoad(PluginContext context) {
-        runtimeService = context.requireService(PluginRuntimeService.class);
     }
 
     @ChatCommand(value = "plugin", description = "Manage runtime plugins")

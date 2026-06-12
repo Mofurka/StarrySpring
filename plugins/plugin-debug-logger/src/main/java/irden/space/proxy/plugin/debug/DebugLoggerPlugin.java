@@ -1,6 +1,9 @@
 package irden.space.proxy.plugin.debug;
 
-import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.PacketDecision;
+import irden.space.proxy.plugin.api.PacketInterceptionContext;
+import irden.space.proxy.plugin.api.PluginDefinition;
+import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
@@ -24,7 +27,7 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
 
 
     @OnLoad
-    public void handleLoad(PluginContext context) {
+    public void handleLoad() {
         log.info("Loading plugin '{}'", descriptor().id());
     }
 

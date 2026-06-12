@@ -1,6 +1,5 @@
 package irden.space.proxy.plugin.runtime;
 
-import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.runtime.fixture.ExternalTestPlugin;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,19 +26,19 @@ class Pf4jPluginLoaderTest {
         createPluginJar(pluginsDirectory.resolve("external-test.jar"));
         Pf4jPluginLoader loader = new Pf4jPluginLoader(pluginsDirectory);
 
-        ProxyPlugin firstInstance = findExternalPlugin(loader.loadPlugins());
-        ClassLoader firstClassLoader = firstInstance.getClass().getClassLoader();
+        PluginCandidate firstCandidate = findExternalPlugin(loader.loadPluginCandidates());
+        ClassLoader firstClassLoader = firstCandidate.pluginClass().getClassLoader();
 
-        loader.reloadPlugins(List.of(firstInstance));
+        loader.reloadPluginCandidates(List.of(firstCandidate));
 
-        ProxyPlugin secondInstance = findExternalPlugin(loader.loadPlugins());
-        assertEquals("external-test", secondInstance.descriptor().id());
-        assertNotSame(firstClassLoader, secondInstance.getClass().getClassLoader());
+        PluginCandidate secondCandidate = findExternalPlugin(loader.loadPluginCandidates());
+        assertEquals("external-test", secondCandidate.descriptor().id());
+        assertNotSame(firstClassLoader, secondCandidate.pluginClass().getClassLoader());
 
         loader.close();
     }
 
-    private ProxyPlugin findExternalPlugin(List<ProxyPlugin> plugins) {
+    private PluginCandidate findExternalPlugin(List<PluginCandidate> plugins) {
         return plugins.stream()
                 .filter(plugin -> "external-test".equals(plugin.descriptor().id()))
                 .findFirst()

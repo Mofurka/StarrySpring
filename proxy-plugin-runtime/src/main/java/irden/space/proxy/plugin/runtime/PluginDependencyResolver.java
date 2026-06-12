@@ -63,6 +63,58 @@ public class PluginDependencyResolver {
         return result;
     }
 
+    public List<PluginCandidate> resolveCandidateLoadOrder(List<PluginCandidate> plugins) {
+        log.info("Resolving dependencies for {} plugin candidate(s)", plugins.size());
+
+        Map<String, PluginCandidate> byId = new HashMap<>();
+        for (PluginCandidate plugin : plugins) {
+            PluginCandidate existing = byId.putIfAbsent(plugin.descriptor().id(), plugin);
+            if (existing != null) {
+                throw new IllegalStateException("Duplicate plugin id '" + plugin.descriptor().id() + "'");
+            }
+        }
+
+        for (PluginCandidate plugin : plugins) {
+            for (String dependency : plugin.descriptor().dependsOn()) {
+                if (!byId.containsKey(dependency)) {
+                    throw new IllegalStateException(
+                            "Plugin '" + plugin.descriptor().id() + "' depends on missing plugin '" + dependency + "'"
+                    );
+                }
+            }
+        }
+
+        List<PluginCandidate> result = new ArrayList<>();
+        Set<String> visiting = new HashSet<>();
+        Set<String> visited = new HashSet<>();
+        for (PluginCandidate plugin : plugins) {
+            visitCandidate(plugin, byId, visiting, visited, result);
+        }
+        return result;
+    }
+
+    private void visitCandidate(
+            PluginCandidate plugin,
+            Map<String, PluginCandidate> byId,
+            Set<String> visiting,
+            Set<String> visited,
+            List<PluginCandidate> result
+    ) {
+        String id = plugin.descriptor().id();
+        if (visited.contains(id)) {
+            return;
+        }
+        if (!visiting.add(id)) {
+            throw new IllegalStateException("Cyclic plugin dependency detected at plugin '" + id + "'");
+        }
+        for (String dependency : plugin.descriptor().dependsOn()) {
+            visitCandidate(byId.get(dependency), byId, visiting, visited, result);
+        }
+        visiting.remove(id);
+        visited.add(id);
+        result.add(plugin);
+    }
+
     private void visit(
             ProxyPlugin plugin,
             Map<String, ProxyPlugin> byId,

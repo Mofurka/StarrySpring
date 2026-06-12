@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class DefaultPluginContext implements PluginContextManager {
+public class DefaultPluginContext implements PluginContextManager, PluginServiceProvider {
 
     private final PacketInterceptorRegistry packetInterceptorRegistry;
     private final Map<Class<?>, ServiceRegistration> services = new ConcurrentHashMap<>();
@@ -158,6 +158,22 @@ public class DefaultPluginContext implements PluginContextManager {
         if (cleanupFailure != null) {
             throw cleanupFailure;
         }
+    }
+
+    @Override
+    public Map<Class<?>, Object> servicesPublishedBy(java.util.Collection<String> pluginIds) {
+        if (pluginIds == null || pluginIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Set<String> requestedPluginIds = Set.copyOf(pluginIds);
+        Map<Class<?>, Object> result = new java.util.LinkedHashMap<>();
+        services.forEach((serviceType, registration) -> {
+            if (registration.pluginId() != null && requestedPluginIds.contains(registration.pluginId())) {
+                result.put(serviceType, registration.service());
+            }
+        });
+        return Map.copyOf(result);
     }
 
     private RuntimeException runCleanupCallbacks(String pluginId) {

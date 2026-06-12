@@ -1,6 +1,9 @@
 package irden.space.boot;
 
-import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.PacketInterceptionService;
+import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
+import irden.space.proxy.plugin.api.PluginContext;
+import irden.space.proxy.plugin.api.SessionPermissionService;
 import irden.space.proxy.plugin.runtime.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -57,13 +60,18 @@ public class PluginRuntimeConfiguration {
                 pluginContext,
                 pluginContainerFactory
         );
-        pluginContext.publishService(PluginRuntimeService.class, manager);
         return manager;
     }
 
     @Bean
-    public PluginContainerFactory pluginContainerFactory(ApplicationContext applicationContext) {
-        return new SpringPluginContainerFactory(applicationContext);
+    public PluginContainerFactory pluginContainerFactory(
+            ApplicationContext applicationContext,
+            PluginContext pluginContext
+    ) {
+        if (!(pluginContext instanceof PluginServiceProvider pluginServiceProvider)) {
+            throw new IllegalStateException("PluginContext must expose plugin services to Spring plugin containers");
+        }
+        return new SpringPluginContainerFactory(applicationContext, pluginServiceProvider);
     }
 
     @Bean

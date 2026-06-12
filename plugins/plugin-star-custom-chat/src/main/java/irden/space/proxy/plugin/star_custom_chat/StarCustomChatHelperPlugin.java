@@ -1,7 +1,10 @@
 package irden.space.proxy.plugin.star_custom_chat;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.PacketDecision;
+import irden.space.proxy.plugin.api.PacketInterceptionContext;
+import irden.space.proxy.plugin.api.PluginDefinition;
+import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
@@ -38,12 +41,15 @@ public final class StarCustomChatHelperPlugin implements ProxyPlugin {
     private static final String COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE = "irdenchat_command_autocomplete";
     private static final String SERVER_NAME = "IrdenServer";
 
-    private CommandHandlerPlugin commandHandlerPlugin;
+    private final CommandHandlerPlugin commandHandlerPlugin;
+
+    public StarCustomChatHelperPlugin(CommandHandlerPlugin commandHandlerPlugin) {
+        this.commandHandlerPlugin = commandHandlerPlugin;
+    }
 
     @OnLoad
-    public void handleLoad(PluginContext context) {
+    public void handleLoad() {
         log.info("Loading plugin '{}'", descriptor().id());
-        this.commandHandlerPlugin = context.requireService(CommandHandlerPlugin.class);
     }
 
 

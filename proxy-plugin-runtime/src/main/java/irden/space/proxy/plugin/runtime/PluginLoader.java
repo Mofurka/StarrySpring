@@ -22,12 +22,32 @@ public class PluginLoader implements AutoCloseable {
         return plugins;
     }
 
+    public List<PluginCandidate> loadPluginCandidates() {
+        return loadPlugins().stream()
+                .map(PluginCandidate::fromInstance)
+                .toList();
+    }
+
     public void reloadPlugins(List<ProxyPlugin> plugins) {
         // Classpath plugins cannot reload their application class loader.
     }
 
+    public void reloadPluginCandidates(List<PluginCandidate> plugins) {
+        reloadPlugins(plugins.stream()
+                .map(PluginCandidate::bootstrapInstance)
+                .filter(java.util.Objects::nonNull)
+                .toList());
+    }
+
     public void validateReloadPlugins(List<ProxyPlugin> plugins) {
         // Classpath plugins only recreate their managed containers.
+    }
+
+    public void validateReloadPluginCandidates(List<PluginCandidate> plugins) {
+        validateReloadPlugins(plugins.stream()
+                .map(PluginCandidate::bootstrapInstance)
+                .filter(java.util.Objects::nonNull)
+                .toList());
     }
 
     @Override

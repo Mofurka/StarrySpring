@@ -1,7 +1,6 @@
 package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.api.*;
-import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
@@ -22,7 +21,6 @@ import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -44,13 +42,12 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
 @Component
 public class BanManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(BanManagerPlugin.class);
-    @Autowired
-    private BanRecordJdbcRepository banRecordRepository;
-    private PlayerManagerApi playerManagerApi;
+    private final BanRecordJdbcRepository banRecordRepository;
+    private final PlayerManagerApi playerManagerApi;
 
-    @OnLoad
-    public void handleLoad(PluginContext context) {
-        this.playerManagerApi = context.requireService(PlayerManagerApi.class);
+    public BanManagerPlugin(BanRecordJdbcRepository banRecordRepository, PlayerManagerApi playerManagerApi) {
+        this.banRecordRepository = banRecordRepository;
+        this.playerManagerApi = playerManagerApi;
     }
 
 

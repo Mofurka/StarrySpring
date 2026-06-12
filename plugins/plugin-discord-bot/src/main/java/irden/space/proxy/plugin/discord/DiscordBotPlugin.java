@@ -11,7 +11,6 @@ import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -28,20 +27,31 @@ import java.util.Optional;
 public final class DiscordBotPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(DiscordBotPlugin.class);
     private DiscordBot bot;
-    private CommandHandlerPlugin commandHandler;
-    private RoleManager roleManager;
-    @Autowired
-    private DiscordBotFactory botFactory;
-    @Autowired
-    private CommandContextResolver discordExecutorPlayerResolver;
+    private final CommandHandlerPlugin commandHandler;
+    private final RoleManager roleManager;
+    private final DiscordBotFactory botFactory;
+    private final CommandContextResolver discordExecutorPlayerResolver;
+    private final PluginContext pluginContext;
+
+    public DiscordBotPlugin(
+            CommandHandlerPlugin commandHandler,
+            RoleManager roleManager,
+            DiscordBotFactory botFactory,
+            CommandContextResolver discordExecutorPlayerResolver,
+            PluginContext pluginContext
+    ) {
+        this.commandHandler = commandHandler;
+        this.roleManager = roleManager;
+        this.botFactory = botFactory;
+        this.discordExecutorPlayerResolver = discordExecutorPlayerResolver;
+        this.pluginContext = pluginContext;
+    }
 
     @OnLoad
-    public void handleLoad(PluginContext context) {
+    public void handleLoad() {
         log.info("Loading plugin '{}'", descriptor().id());
-        this.commandHandler = context.requireService(CommandHandlerPlugin.class);
-        this.roleManager = context.requireService(RoleManager.class);
         this.commandHandler.addContextResolver(discordExecutorPlayerResolver);
-        context.onRemove(() -> this.commandHandler.removeContextResolver(discordExecutorPlayerResolver));
+        pluginContext.onRemove(() -> this.commandHandler.removeContextResolver(discordExecutorPlayerResolver));
     }
 
     @OnStart
