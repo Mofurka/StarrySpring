@@ -5,7 +5,10 @@ import irden.space.proxy.plugin.api.PluginRuntimeService;
 import irden.space.proxy.plugin.api.PluginRuntimeView;
 import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
-import irden.space.proxy.plugin.command_handler.*;
+import irden.space.proxy.plugin.command_handler.ChatCommand;
+import irden.space.proxy.plugin.command_handler.CommandContext;
+import irden.space.proxy.plugin.command_handler.CommandSpec;
+import irden.space.proxy.plugin.command_handler.LiteralBuilder;
 import irden.space.proxy.plugin.runtime_admin.arguments.PluginArgumentType;
 import org.springframework.stereotype.Component;
 
