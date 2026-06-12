@@ -4,6 +4,7 @@ import irden.space.boot.pluginfixture.ComponentScannedPlugin;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.runtime.DefaultPacketInterceptorRegistry;
 import irden.space.proxy.plugin.runtime.DefaultPluginContext;
+import irden.space.proxy.plugin.runtime.PluginCandidate;
 import irden.space.proxy.plugin.runtime.PluginContainer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +22,13 @@ class SpringPluginContainerFactoryTest {
         AnnotationConfigApplicationContext rootContext = new AnnotationConfigApplicationContext();
         rootContext.refresh();
 
-        ComponentScannedPlugin plugin = new ComponentScannedPlugin();
-        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(plugin);
+        ComponentScannedPlugin descriptorSource = new ComponentScannedPlugin();
+        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
+                candidate(ComponentScannedPlugin.class, descriptorSource.descriptor()),
+                null
+        );
+        ComponentScannedPlugin plugin = (ComponentScannedPlugin) container.plugin();
 
-        assertSame(plugin, container.plugin());
         assertTrue(plugin.dependency() != null);
 
         container.close();
@@ -38,10 +42,12 @@ class SpringPluginContainerFactoryTest {
         rootContext.registerBean(RootDependency.class, () -> rootDependency);
         rootContext.refresh();
 
-        SpringManagedPlugin plugin = new SpringManagedPlugin();
-        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(plugin);
+        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
+                candidate(SpringManagedPlugin.class, new SpringManagedPlugin().descriptor()),
+                null
+        );
+        SpringManagedPlugin plugin = (SpringManagedPlugin) container.plugin();
 
-        assertSame(plugin, container.plugin());
         assertSame(rootDependency, plugin.rootDependency);
         assertTrue(!plugin.resource.closed);
 
@@ -58,9 +64,11 @@ class SpringPluginContainerFactoryTest {
         DefaultPluginContext pluginContext = new DefaultPluginContext(new DefaultPacketInterceptorRegistry());
         SharedPluginService service = new SharedPluginService();
         pluginContext.forPlugin("provider").publishService(SharedPluginService.class, service);
-        DependencyConsumerPlugin plugin = new DependencyConsumerPlugin();
-
-        PluginContainer container = new SpringPluginContainerFactory(rootContext, pluginContext).create(plugin);
+        PluginContainer container = new SpringPluginContainerFactory(rootContext, pluginContext).create(
+                candidate(DependencyConsumerPlugin.class, new DependencyConsumerPlugin().descriptor()),
+                pluginContext.forPlugin("consumer")
+        );
+        DependencyConsumerPlugin plugin = (DependencyConsumerPlugin) container.plugin();
 
         assertSame(service, plugin.service);
 
@@ -78,7 +86,13 @@ class SpringPluginContainerFactoryTest {
 
         assertThrows(
                 RuntimeException.class,
-                () -> new SpringPluginContainerFactory(rootContext, pluginContext).create(new UndeclaredDependencyConsumerPlugin())
+                () -> new SpringPluginContainerFactory(rootContext, pluginContext).create(
+                        candidate(
+                                UndeclaredDependencyConsumerPlugin.class,
+                                new UndeclaredDependencyConsumerPlugin().descriptor()
+                        ),
+                        pluginContext.forPlugin("consumer")
+                )
         );
 
         rootContext.close();
@@ -92,9 +106,11 @@ class SpringPluginContainerFactoryTest {
         rootContext.registerBean(PluginContext.class, () -> rootPluginContext);
         rootContext.registerBean(PacketInterceptorRegistry.class, rootPluginContext::packetInterceptorRegistry);
         rootContext.refresh();
-        ScopedContextPlugin plugin = new ScopedContextPlugin();
-
-        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(plugin, scopedContext);
+        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
+                candidate(ScopedContextPlugin.class, new ScopedContextPlugin().descriptor()),
+                scopedContext
+        );
+        ScopedContextPlugin plugin = (ScopedContextPlugin) container.plugin();
 
         assertSame(scopedContext, plugin.pluginContext);
         assertSame(scopedContext.packetInterceptorRegistry(), plugin.interceptorRegistry);
@@ -104,6 +120,13 @@ class SpringPluginContainerFactoryTest {
     }
 
     static final class RootDependency {
+    }
+
+    private static PluginCandidate candidate(
+            Class<? extends ProxyPlugin> pluginClass,
+            PluginDescriptor descriptor
+    ) {
+        return new PluginCandidate(pluginClass, descriptor);
     }
 
     static final class PluginOwnedResource implements AutoCloseable {

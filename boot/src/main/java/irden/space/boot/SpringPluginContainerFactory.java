@@ -30,16 +30,6 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     }
 
     @Override
-    public PluginContainer create(ProxyPlugin plugin) {
-        return create(plugin, null);
-    }
-
-    @Override
-    public PluginContainer create(ProxyPlugin plugin, PluginContext scopedContext) {
-        return create(PluginCandidate.fromInstance(plugin), scopedContext);
-    }
-
-    @Override
     public PluginContainer create(PluginCandidate candidate, PluginContext scopedContext) {
         AnnotationConfigApplicationContext pluginContext = new AnnotationConfigApplicationContext();
         try {
@@ -111,15 +101,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void registerPluginBean(AnnotationConfigApplicationContext context, PluginCandidate candidate) {
-        if (candidate.bootstrapInstance() == null) {
-            context.registerBean("proxyPlugin", (Class) candidate.pluginClass());
-            return;
-        }
-        context.registerBean(
-                "proxyPlugin",
-                (Class) candidate.pluginClass(),
-                candidate::bootstrapInstance
-        );
+        context.registerBean("proxyPlugin", (Class) candidate.pluginClass());
     }
 
     private void scanPluginComponents(

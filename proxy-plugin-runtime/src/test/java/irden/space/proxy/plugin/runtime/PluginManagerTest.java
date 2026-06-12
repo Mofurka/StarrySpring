@@ -4,9 +4,7 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.protocol.packet.PacketType;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,8 +19,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(featurePlugin, corePlugin);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(featurePlugin, corePlugin);
             }
         };
 
@@ -46,8 +44,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
-
+                pluginContext,
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -82,8 +80,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(featurePlugin, corePlugin);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(featurePlugin, corePlugin);
             }
         };
         PacketInterceptorRegistry registry = new PacketInterceptorRegistry() {
@@ -103,8 +101,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
-
+                pluginContext,
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -146,8 +144,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(plugin);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(plugin);
             }
         };
         PacketInterceptorRegistry registry = new PacketInterceptorRegistry() {
@@ -168,8 +166,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
-
+                pluginContext,
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -200,8 +198,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(plugin);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(plugin);
             }
 
             @Override
@@ -222,10 +220,10 @@ class PluginManagerTest {
         };
 
         List<String> closedContainers = new ArrayList<>();
-        PluginContainerFactory containerFactory = candidate -> new PluginContainer() {
+        PluginContainerFactory containerFactory = (candidate, context) -> new PluginContainer() {
             @Override
             public ProxyPlugin plugin() {
-                return candidate;
+                return pluginFor(candidate);
             }
 
             @Override
@@ -268,8 +266,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(plugin);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(plugin);
             }
         };
 
@@ -277,7 +275,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                pluginContext
+                pluginContext,
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -302,8 +301,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(leaf, independent, feature, core);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(leaf, independent, feature, core);
             }
         };
         DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
@@ -311,7 +310,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -348,7 +348,8 @@ class PluginManagerTest {
                 new PluginLoader(),
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         assertThrows(NoSuchElementException.class, () -> manager.stopPlugin("missing"));
@@ -364,8 +365,8 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(leaf, independent, feature, core);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(leaf, independent, feature, core);
             }
         };
         DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
@@ -373,7 +374,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -404,13 +406,14 @@ class PluginManagerTest {
         PluginManager manager = new PluginManager(
                 new PluginLoader() {
                     @Override
-                    public List<ProxyPlugin> loadPlugins() {
+                    public List<PluginCandidate> loadPluginCandidates() {
                         return List.of();
                     }
                 },
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         assertThrows(NoSuchElementException.class, () -> manager.startPlugin("missing"));
@@ -427,12 +430,12 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(leaf, independent, feature, core);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(leaf, independent, feature, core);
             }
 
             @Override
-            public void reloadPlugins(List<ProxyPlugin> plugins) {
+            public void reloadPluginCandidates(List<PluginCandidate> plugins) {
                 reloadedPluginIds.addAll(plugins.stream().map(plugin -> plugin.descriptor().id()).toList());
             }
         };
@@ -441,7 +444,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -476,12 +480,12 @@ class PluginManagerTest {
 
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(feature, core);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(feature, core);
             }
 
             @Override
-            public void validateReloadPlugins(List<ProxyPlugin> plugins) {
+            public void validateReloadPluginCandidates(List<PluginCandidate> plugins) {
                 throw new IllegalStateException("reload not supported");
             }
         };
@@ -490,7 +494,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -509,8 +514,8 @@ class PluginManagerTest {
         TestPlugin feature = new TestPlugin("feature", List.of("core"), new ArrayList<>());
         PluginLoader pluginLoader = new PluginLoader() {
             @Override
-            public List<ProxyPlugin> loadPlugins() {
-                return List.of(feature, core);
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(feature, core);
             }
         };
         DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
@@ -518,7 +523,8 @@ class PluginManagerTest {
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
-                new DefaultPluginContext(registry)
+                new DefaultPluginContext(registry),
+                testContainers()
         );
 
         manager.loadAndStart();
@@ -533,6 +539,43 @@ class PluginManagerTest {
         );
 
         manager.stopAll();
+    }
+
+    private static final Map<PluginCandidate, ProxyPlugin> TEST_PLUGINS =
+            Collections.synchronizedMap(new IdentityHashMap<>());
+
+    private static List<PluginCandidate> candidates(ProxyPlugin... plugins) {
+        return java.util.Arrays.stream(plugins)
+                .map(plugin -> {
+                    PluginCandidate candidate = new PluginCandidate(
+                            plugin.getClass().asSubclass(ProxyPlugin.class),
+                            plugin.descriptor()
+                    );
+                    TEST_PLUGINS.put(candidate, plugin);
+                    return candidate;
+                })
+                .toList();
+    }
+
+    private static ProxyPlugin pluginFor(PluginCandidate candidate) {
+        ProxyPlugin plugin = TEST_PLUGINS.get(candidate);
+        if (plugin == null) {
+            throw new IllegalStateException("No test plugin instance for " + candidate.descriptor().id());
+        }
+        return plugin;
+    }
+
+    private static PluginContainerFactory testContainers() {
+        return (candidate, context) -> new PluginContainer() {
+            @Override
+            public ProxyPlugin plugin() {
+                return pluginFor(candidate);
+            }
+
+            @Override
+            public void close() {
+            }
+        };
     }
 
     private static class TestPlugin implements ProxyPlugin {

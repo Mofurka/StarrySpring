@@ -28,31 +28,6 @@ public final class Pf4jPluginLoader extends PluginLoader {
     }
 
     @Override
-    public synchronized List<ProxyPlugin> loadPlugins() {
-        if (!started) {
-            try {
-                pf4jPluginManager.loadPlugins();
-                pf4jPluginManager.startPlugins();
-                started = true;
-            } catch (RuntimeException | Error e) {
-                pf4jPluginManager.unloadPlugins();
-                throw e;
-            }
-        }
-
-        List<ProxyPlugin> plugins = new ArrayList<>(classpathPluginLoader.loadPlugins());
-        List<ProxyPlugin> externalPlugins = pf4jPluginManager.getExtensions(ProxyPlugin.class);
-        plugins.addAll(externalPlugins);
-
-        log.info(
-                "Discovered {} classpath plugin(s) and {} external PF4J plugin(s)",
-                plugins.size() - externalPlugins.size(),
-                externalPlugins.size()
-        );
-        return List.copyOf(plugins);
-    }
-
-    @Override
     public synchronized List<PluginCandidate> loadPluginCandidates() {
         ensureStarted();
 
@@ -86,32 +61,6 @@ public final class Pf4jPluginLoader extends PluginLoader {
     }
 
     @Override
-    public synchronized void reloadPlugins(List<ProxyPlugin> plugins) {
-        Map<String, Path> pluginPaths = resolveReloadablePluginPaths(plugins);
-        List<Map.Entry<String, Path>> pluginsInStopOrder = List.copyOf(pluginPaths.entrySet());
-        for (Map.Entry<String, Path> plugin : pluginsInStopOrder) {
-            pf4jPluginManager.stopPlugin(plugin.getKey());
-            if (!pf4jPluginManager.unloadPlugin(plugin.getKey())) {
-                throw new IllegalStateException("Failed to unload PF4J plugin '" + plugin.getKey() + "'");
-            }
-        }
-
-        List<String> reloadedPluginIds = new ArrayList<>(pluginsInStopOrder.size());
-        for (int i = pluginsInStopOrder.size() - 1; i >= 0; i--) {
-            String reloadedPluginId = pf4jPluginManager.loadPlugin(pluginsInStopOrder.get(i).getValue());
-            reloadedPluginIds.add(reloadedPluginId);
-        }
-        for (String reloadedPluginId : reloadedPluginIds) {
-            pf4jPluginManager.startPlugin(reloadedPluginId);
-        }
-    }
-
-    @Override
-    public synchronized void validateReloadPlugins(List<ProxyPlugin> plugins) {
-        resolveReloadablePluginPaths(plugins);
-    }
-
-    @Override
     public synchronized void reloadPluginCandidates(List<PluginCandidate> plugins) {
         reloadPluginPaths(resolveReloadablePluginCandidatePaths(plugins));
     }
@@ -119,26 +68,6 @@ public final class Pf4jPluginLoader extends PluginLoader {
     @Override
     public synchronized void validateReloadPluginCandidates(List<PluginCandidate> plugins) {
         resolveReloadablePluginCandidatePaths(plugins);
-    }
-
-    private Map<String, Path> resolveReloadablePluginPaths(List<ProxyPlugin> plugins) {
-        Map<String, Path> pluginPaths = new LinkedHashMap<>();
-        for (ProxyPlugin plugin : plugins) {
-            PluginWrapper wrapper = pf4jPluginManager.whichPlugin(plugin.getClass());
-            if (wrapper == null) {
-                continue;
-            }
-
-            List<ProxyPlugin> extensions = pf4jPluginManager.getExtensions(ProxyPlugin.class, wrapper.getPluginId());
-            if (extensions.size() != 1) {
-                throw new IllegalStateException(
-                        "PF4J plugin '%s' exports %d ProxyPlugin extensions; runtime reload currently requires exactly one"
-                                .formatted(wrapper.getPluginId(), extensions.size())
-                );
-            }
-            pluginPaths.putIfAbsent(wrapper.getPluginId(), wrapper.getPluginPath());
-        }
-        return pluginPaths;
     }
 
     private Map<String, Path> resolveReloadablePluginCandidatePaths(List<PluginCandidate> plugins) {

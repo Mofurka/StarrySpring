@@ -25,15 +25,6 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
             PluginLoader pluginLoader,
             PluginDependencyResolver dependencyResolver,
             PacketInterceptorRegistry interceptorRegistry,
-            PluginContext pluginContext
-    ) {
-        this(pluginLoader, dependencyResolver, interceptorRegistry, pluginContext, PluginContainerFactory.unmanaged());
-    }
-
-    public PluginManager(
-            PluginLoader pluginLoader,
-            PluginDependencyResolver dependencyResolver,
-            PacketInterceptorRegistry interceptorRegistry,
             PluginContext pluginContext,
             PluginContainerFactory containerFactory
     ) {
@@ -136,7 +127,10 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
             ProxyPlugin plugin = loadedPlugins.get(i).plugin();
             if (pluginsToReload.contains(plugin.descriptor().id())) {
-                previousPluginCandidates.add(PluginCandidate.fromInstance(plugin));
+                previousPluginCandidates.add(new PluginCandidate(
+                        plugin.getClass().asSubclass(ProxyPlugin.class),
+                        plugin.descriptor()
+                ));
             }
         }
 
@@ -169,7 +163,10 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         Map<String, PluginCandidate> availablePlugins = new LinkedHashMap<>();
         for (PluginContainer container : loadedPlugins) {
             ProxyPlugin plugin = container.plugin();
-            availablePlugins.put(plugin.descriptor().id(), PluginCandidate.fromInstance(plugin));
+            availablePlugins.put(
+                    plugin.descriptor().id(),
+                    new PluginCandidate(plugin.getClass().asSubclass(ProxyPlugin.class), plugin.descriptor())
+            );
         }
         for (PluginCandidate plugin : pluginLoader.loadPluginCandidates()) {
             availablePlugins.putIfAbsent(plugin.descriptor().id(), plugin);
