@@ -17,7 +17,10 @@ public class PluginDependencyResolver {
 
         Map<String, ProxyPlugin> byId = new HashMap<>();
         for (ProxyPlugin plugin : plugins) {
-            byId.put(plugin.descriptor().id(), plugin);
+            ProxyPlugin existing = byId.putIfAbsent(plugin.descriptor().id(), plugin);
+            if (existing != null) {
+                throw new IllegalStateException("Duplicate plugin id '" + plugin.descriptor().id() + "'");
+            }
         }
 
         for (ProxyPlugin plugin : plugins) {

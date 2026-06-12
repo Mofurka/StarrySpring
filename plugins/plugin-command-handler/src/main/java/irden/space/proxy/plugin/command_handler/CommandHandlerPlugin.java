@@ -8,6 +8,8 @@ import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -19,12 +21,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
         author = "https://github.com/Mofurka",
         description = "A plugin that allows you to handle commands sent by clients."
 )
+@Component
 public class CommandHandlerPlugin implements ProxyPlugin {
 
     private static final String COMMAND_PREFIX = "/";
     private static final Logger log = LoggerFactory.getLogger(CommandHandlerPlugin.class);
 
-    private final CommandParser commandParser = new CommandParser();
+    @Autowired
+    private CommandParser commandParser;
     private final List<CommandContextResolver> contextResolvers = new CopyOnWriteArrayList<>();
 
     @OnLoad

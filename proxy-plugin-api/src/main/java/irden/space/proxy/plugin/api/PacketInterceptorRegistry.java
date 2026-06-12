@@ -10,6 +10,10 @@ public interface PacketInterceptorRegistry {
 
     void register(PacketInterceptor interceptor);
 
+    default void unregister(PacketInterceptor interceptor) {
+        throw new UnsupportedOperationException("Interceptor removal is not supported by this registry");
+    }
+
     default void register(PacketType packetType, PacketInterceptorHandler handler) {
         Objects.requireNonNull(packetType, "packetType");
         register(EnumSet.of(packetType), List.of(), handler);

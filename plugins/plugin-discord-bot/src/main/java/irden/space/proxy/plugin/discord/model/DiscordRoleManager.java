@@ -3,6 +3,8 @@ package irden.space.proxy.plugin.discord.model;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +14,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
+@Component
+@Lazy
 public final class DiscordRoleManager {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(JsonParser.Feature.ALLOW_COMMENTS, true);

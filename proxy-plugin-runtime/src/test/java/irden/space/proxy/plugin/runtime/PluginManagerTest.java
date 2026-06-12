@@ -1,10 +1,12 @@
 package irden.space.proxy.plugin.runtime;
 
 import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.protocol.packet.PacketType;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -190,7 +192,350 @@ class PluginManagerTest {
         assertFalse(permissionService.permissions("session-99").has(7));
     }
 
-    private static final class TestPlugin implements ProxyPlugin {
+    @Test
+    void closesPluginContainersAndLoaderWhenStopped() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        TestPlugin plugin = new TestPlugin("core", List.of(), lifecycleEvents);
+        boolean[] loaderClosed = {false};
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(plugin);
+            }
+
+            @Override
+            public void close() {
+                loaderClosed[0] = true;
+            }
+        };
+
+        PacketInterceptorRegistry registry = new PacketInterceptorRegistry() {
+            @Override
+            public void register(PacketInterceptor interceptor) {
+            }
+
+            @Override
+            public List<PacketInterceptor> getAll() {
+                return List.of();
+            }
+        };
+
+        List<String> closedContainers = new ArrayList<>();
+        PluginContainerFactory containerFactory = candidate -> new PluginContainer() {
+            @Override
+            public ProxyPlugin plugin() {
+                return candidate;
+            }
+
+            @Override
+            public void close() {
+                closedContainers.add(candidate.descriptor().id());
+            }
+        };
+
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry),
+                containerFactory
+        );
+
+        manager.loadAndStart();
+        manager.stopAll();
+
+        assertEquals(List.of("core"), closedContainers);
+        assertTrue(loaderClosed[0]);
+        assertTrue(manager.getLoadedPlugins().isEmpty());
+    }
+
+    @Test
+    void removesPluginOwnedServicesAndInterceptorsWhenStopped() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        DefaultPluginContext pluginContext = new DefaultPluginContext(registry);
+        Runnable applicationService = () -> {
+        };
+        pluginContext.publishService(Runnable.class, applicationService);
+
+        ProxyPlugin plugin = new TestPlugin("core", List.of(), new ArrayList<>()) {
+            @Override
+            public void onLoad(PluginContext context) {
+                context.publishService(Comparable.class, new ComparableService());
+                context.packetInterceptorRegistry().register(PacketType.CHAT_SENT, packetContext -> PacketDecision.forward());
+            }
+        };
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(plugin);
+            }
+        };
+
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                pluginContext
+        );
+
+        manager.loadAndStart();
+
+        assertTrue(pluginContext.findService(Comparable.class).isPresent());
+        assertEquals(1, registry.getAll().size());
+
+        manager.stopAll();
+
+        assertTrue(pluginContext.findService(Comparable.class).isEmpty());
+        assertSame(applicationService, pluginContext.requireService(Runnable.class));
+        assertTrue(registry.getAll().isEmpty());
+    }
+
+    @Test
+    void stopsPluginAndTransitiveDependentsInReverseLoadOrder() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        TestPlugin core = new TestPlugin("core", List.of(), lifecycleEvents);
+        TestPlugin feature = new TestPlugin("feature", List.of("core"), lifecycleEvents);
+        TestPlugin leaf = new TestPlugin("leaf", List.of("feature"), lifecycleEvents);
+        TestPlugin independent = new TestPlugin("independent", List.of(), lifecycleEvents);
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(leaf, independent, feature, core);
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        manager.loadAndStart();
+
+        assertEquals(List.of("leaf", "feature", "core"), manager.stopPlugin("core"));
+        assertEquals(List.of(independent), manager.getLoadedPlugins());
+        assertEquals(
+                List.of(
+                        "load:core",
+                        "load:feature",
+                        "load:leaf",
+                        "load:independent",
+                        "start:core",
+                        "start:feature",
+                        "start:leaf",
+                        "start:independent",
+                        "stop:leaf",
+                        "stop:feature",
+                        "stop:core"
+                ),
+                lifecycleEvents
+        );
+
+        manager.stopAll();
+
+        assertEquals("stop:independent", lifecycleEvents.getLast());
+        assertEquals(4, lifecycleEvents.stream().filter(event -> event.startsWith("stop:")).count());
+    }
+
+    @Test
+    void rejectsStoppingUnknownPlugin() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                new PluginLoader(),
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        assertThrows(NoSuchElementException.class, () -> manager.stopPlugin("missing"));
+    }
+
+    @Test
+    void startsPluginAndMissingDependenciesInLoadOrder() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        TestPlugin core = new TestPlugin("core", List.of(), lifecycleEvents);
+        TestPlugin feature = new TestPlugin("feature", List.of("core"), lifecycleEvents);
+        TestPlugin leaf = new TestPlugin("leaf", List.of("feature"), lifecycleEvents);
+        TestPlugin independent = new TestPlugin("independent", List.of(), lifecycleEvents);
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(leaf, independent, feature, core);
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        manager.loadAndStart();
+        manager.stopPlugin("core");
+        lifecycleEvents.clear();
+
+        assertEquals(List.of("core", "feature", "leaf"), manager.startPlugin("leaf"));
+        assertEquals(List.of(independent, core, feature, leaf), manager.getLoadedPlugins());
+        assertEquals(
+                List.of(
+                        "load:core",
+                        "load:feature",
+                        "load:leaf",
+                        "start:core",
+                        "start:feature",
+                        "start:leaf"
+                ),
+                lifecycleEvents
+        );
+        assertTrue(manager.startPlugin("leaf").isEmpty());
+
+        manager.stopAll();
+    }
+
+    @Test
+    void rejectsStartingUnavailablePlugin() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                new PluginLoader() {
+                    @Override
+                    public List<ProxyPlugin> loadPlugins() {
+                        return List.of();
+                    }
+                },
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        assertThrows(NoSuchElementException.class, () -> manager.startPlugin("missing"));
+    }
+
+    @Test
+    void reloadsPluginAndPreviouslyActiveDependents() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        TestPlugin core = new TestPlugin("core", List.of(), lifecycleEvents);
+        TestPlugin feature = new TestPlugin("feature", List.of("core"), lifecycleEvents);
+        TestPlugin leaf = new TestPlugin("leaf", List.of("feature"), lifecycleEvents);
+        TestPlugin independent = new TestPlugin("independent", List.of(), lifecycleEvents);
+        List<String> reloadedPluginIds = new ArrayList<>();
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(leaf, independent, feature, core);
+            }
+
+            @Override
+            public void reloadPlugins(List<ProxyPlugin> plugins) {
+                reloadedPluginIds.addAll(plugins.stream().map(plugin -> plugin.descriptor().id()).toList());
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        manager.loadAndStart();
+        lifecycleEvents.clear();
+
+        assertEquals(List.of("core", "feature", "leaf"), manager.reloadPlugin("core"));
+        assertEquals(List.of("leaf", "feature", "core"), reloadedPluginIds);
+        assertEquals(List.of(independent, core, feature, leaf), manager.getLoadedPlugins());
+        assertEquals(
+                List.of(
+                        "stop:leaf",
+                        "stop:feature",
+                        "stop:core",
+                        "load:core",
+                        "load:feature",
+                        "load:leaf",
+                        "start:core",
+                        "start:feature",
+                        "start:leaf"
+                ),
+                lifecycleEvents
+        );
+
+        manager.stopAll();
+    }
+
+    @Test
+    void validatesReloadBeforeStoppingPlugins() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        TestPlugin core = new TestPlugin("core", List.of(), lifecycleEvents);
+        TestPlugin feature = new TestPlugin("feature", List.of("core"), lifecycleEvents);
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(feature, core);
+            }
+
+            @Override
+            public void validateReloadPlugins(List<ProxyPlugin> plugins) {
+                throw new IllegalStateException("reload not supported");
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        manager.loadAndStart();
+        lifecycleEvents.clear();
+
+        assertThrows(IllegalStateException.class, () -> manager.reloadPlugin("core"));
+        assertEquals(List.of(core, feature), manager.getLoadedPlugins());
+        assertTrue(lifecycleEvents.isEmpty());
+
+        manager.stopAll();
+    }
+
+    @Test
+    void exposesLoadedAndStoppedPluginsThroughRuntimeApi() {
+        TestPlugin core = new TestPlugin("core", List.of(), new ArrayList<>());
+        TestPlugin feature = new TestPlugin("feature", List.of("core"), new ArrayList<>());
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<ProxyPlugin> loadPlugins() {
+                return List.of(feature, core);
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry)
+        );
+
+        manager.loadAndStart();
+        manager.stopPlugin("feature");
+
+        assertEquals(
+                List.of(
+                        new PluginRuntimeView(feature.descriptor(), PluginRuntimeState.STOPPED),
+                        new PluginRuntimeView(core.descriptor(), PluginRuntimeState.LOADED)
+                ),
+                manager.plugins()
+        );
+
+        manager.stopAll();
+    }
+
+    private static class TestPlugin implements ProxyPlugin {
 
         private final PluginDescriptor descriptor;
         private final List<String> lifecycleEvents;
@@ -278,6 +623,13 @@ class PluginManagerTest {
         @Override
         public void clearPermissions(String sessionId) {
             permissions = PermissionView.EMPTY;
+        }
+    }
+
+    private static final class ComparableService implements Comparable<ComparableService> {
+        @Override
+        public int compareTo(ComparableService ignored) {
+            return 0;
         }
     }
 }

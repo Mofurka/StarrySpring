@@ -8,6 +8,10 @@ spring:
   liquibase:
     enabled: false
 
+starry:
+  plugins:
+    directory: runtime-plugins
+
 
 
 proxy:

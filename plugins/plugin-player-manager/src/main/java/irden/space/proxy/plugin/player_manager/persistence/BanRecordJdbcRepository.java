@@ -2,10 +2,12 @@ package irden.space.proxy.plugin.player_manager.persistence;
 
 import irden.space.proxy.plugin.player_manager.persistence.model.BanRecord;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public class BanRecordJdbcRepository {
 
     private final JdbcTemplate jdbcTemplate;

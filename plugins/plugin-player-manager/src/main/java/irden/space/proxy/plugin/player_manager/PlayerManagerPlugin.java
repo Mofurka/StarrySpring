@@ -21,20 +21,19 @@ import irden.space.proxy.plugin.player_manager.roles.RoleActionType;
 import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
-import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static irden.space.proxy.plugin.command_handler.CommandSpec.argument;
 import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
@@ -47,16 +46,32 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
         author = "https://github.com/Mofurka",
         description = "Plugin for player managing."
 )
+@PluginSpringConfiguration(value = PlayerManagerSpringConfiguration.class, scanPluginPackage = false)
+@Component
 public final class PlayerManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(PlayerManagerPlugin.class);
-    private final PlayerRegistry<Player> players = new InMemoryPlayerRegistry();
-    private final PlayerRegistry<TempPlayer> connectingPlayers = new InMemoryConnectingPlayers();
+    @Autowired
+    @Qualifier("onlinePlayerRegistry")
+    private PlayerRegistry<Player> players;
+    @Autowired
+    @Qualifier("connectingPlayerRegistry")
+    private PlayerRegistry<TempPlayer> connectingPlayers;
     private final Map<String, StarryRole> rolesByName = new ConcurrentHashMap<>();
-    private final PermissionResolver permissionResolver = new PermissionResolver();
+    @Autowired
+    private DataSource dataSource;
+    @Autowired
     private PlayerAccessJdbcRepository playerAccessRepository;
+    @Autowired
     private PlayerJdbcRepository playerRepository;
+    @Autowired
     private SessionPermissionService sessionPermissionService;
+    @Autowired
     private RoleManager roleManager;
+    @Autowired
+    private PermissionResolver permissionResolver;
+    @Autowired
+    private PlayerDirectory playerDirectory;
+    @Autowired
     private DefaultPlayerManagerApi playerManagerApi;
 
     @SuppressWarnings("unused")
@@ -70,20 +85,15 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     public void handleLoad(PluginContext context) {
         log.info("Loading plugin '{}'", descriptor().id());
         context.publishService(PlayerManagerPlugin.class, this);
-        DataSource dataSource = context.requireService(DataSource.class);
-        this.sessionPermissionService = context.requireService(SessionPermissionService.class);
         LiquibaseRunner.runLiquibaseMigrations(dataSource);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        this.playerAccessRepository = new PlayerAccessJdbcRepository(jdbcTemplate);
-        this.playerRepository = new PlayerJdbcRepository(jdbcTemplate);
-        this.roleManager = new RoleManager();
         reloadConfiguredRoles();
 
-        this.playerManagerApi = new DefaultPlayerManagerApi(this);
         context.publishService(PlayerManagerApi.class, playerManagerApi);
         context.publishService(RoleManager.class, roleManager);
-        context.requireService(CommandHandlerPlugin.class)
-                .addContextResolver(new ExecutorPlayerContextResolver(playerManagerApi));
+        CommandHandlerPlugin commandHandler = context.requireService(CommandHandlerPlugin.class);
+        ExecutorPlayerContextResolver contextResolver = new ExecutorPlayerContextResolver(playerManagerApi);
+        commandHandler.addContextResolver(contextResolver);
+        context.onRemove(() -> commandHandler.removeContextResolver(contextResolver));
     }
 
     @OnStart
@@ -333,7 +343,7 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
     }
 
     private void refreshOnlinePermissions(String playerUuid) {
-        getPlayerByUuid(playerUuid, true).ifPresent(player -> {
+        playerDirectory.getPlayerByUuid(playerUuid, true).ifPresent(player -> {
             ResolvedUserAccess resolvedUserAccess = resolveUserAccess(playerUuid, player.account());
             bindSessionPermissions(
                     player.sessionContext().sessionId(),
@@ -504,127 +514,34 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
 
 
     public Optional<Player> findPlayer(String identifier, boolean loggedIn) {
-        var isStarUuid = identifier.matches("^[0-9a-fA-F]{32}$");
-        var isClientId = identifier.matches("^\\d+$");
-        Optional<Player> first = players.getAll().stream()
-                .filter(p -> p.name().equals(identifier) ||
-                        (isStarUuid && p.uuid().toString().equals(identifier)) ||
-                        (isClientId && Integer.toString(p.clientId()).equals(identifier)))
-                .findFirst();
-        if (first.isPresent()) {
-            return first;
-        }
-        if (!loggedIn) {
-            Optional<PlayerRecord> playerRecordOpt = playerRepository.findByName(identifier);
-            if (playerRecordOpt.isEmpty()) {
-                playerRecordOpt = playerRepository.findByUuid(identifier);
-            }
-            return playerRecordOpt.map(p -> Player.builder()
-                    .name(p.name())
-                    .uuid(StarUuid.fromHex(p.playerUuid()))
-                    .ipAddress(p.ipAddress())
-                    .build());
-        }
-        return Optional.empty();
+        return playerDirectory.findPlayer(identifier, loggedIn);
     }
 
-public List<Player> searchPlayers(String prefix, int limit, boolean loggedIn) {
-    String normalizedPrefix = prefix == null ? "" : prefix.trim().toLowerCase(Locale.ROOT);
-    int safeLimit = limit <= 0 ? Integer.MAX_VALUE : limit;
-
-    Stream<Player> source = loggedIn
-            ? players.getAll().stream()
-            : Stream.concat(
-                    players.getAll().stream(),
-                    playerRepository.findAll().stream()
-                            .map(record -> Player.builder()
-                                    .name(record.name())
-                                    .uuid(StarUuid.fromHex(record.playerUuid()))
-                                    .ipAddress(record.ipAddress())
-                                    .build())
-            );
-
-    Map<String, Player> uniquePlayers = source
-            .filter(Objects::nonNull)
-            .collect(java.util.stream.Collectors.toMap(
-                    player -> player.uuid().toString(),
-                    Function.identity(),
-                    this::preferOnlinePlayer,
-                    java.util.LinkedHashMap::new
-            ));
-
-    return uniquePlayers.values().stream()
-            .filter(player -> matchesPlayerSearch(player, normalizedPrefix))
-            .sorted(Comparator
-                    .comparingInt((Player player) -> playerSearchRank(player, normalizedPrefix))
-                    .thenComparing(Player::online, Comparator.reverseOrder())
-                    .thenComparing(Player::name, String.CASE_INSENSITIVE_ORDER))
-            .limit(safeLimit)
-            .toList();
-}
-
+    public List<Player> searchPlayers(String prefix, int limit, boolean loggedIn) {
+        return playerDirectory.searchPlayers(prefix, limit, loggedIn);
+    }
 
     public List<Player> findAllPlayersByIpAddress(String ipAddress) {
-        List<Player> onlinePlayers = players.getAll().stream()
-                .filter(p -> p.ipAddress().equals(ipAddress))
-                .toList();
-        List<Player> offlinePlayers = playerRepository.findByIpAddress(ipAddress).stream()
-                .map(p -> Player.builder()
-                        .name(p.name())
-                        .uuid(StarUuid.fromHex(p.playerUuid()))
-                        .ipAddress(p.ipAddress())
-                        .build())
-                .toList();
-        return Stream.concat(onlinePlayers.stream(), offlinePlayers.stream())
-                .distinct()
-                .toList();
+        return playerDirectory.findAllPlayersByIpAddress(ipAddress);
     }
 
 
     public Optional<Player> getPlayerByClientId(int clientId) {
-        return players.getAll().stream()
-                .filter(p -> p.clientId() == clientId)
-                .findFirst();
+        return playerDirectory.getPlayerByClientId(clientId);
     }
 
 
     public Optional<Player> getPlayerBySessionId(String sessionId) {
-        Player bySessionId = players.getBySessionId(sessionId);
-        if (bySessionId != null) {
-            return Optional.of(bySessionId);
-        }
-        return Optional.empty();
+        return playerDirectory.getPlayerBySessionId(sessionId);
     }
 
-    public Optional<Player> getPlayerByName(String name, boolean loogedIn) {
-        if (loogedIn) {
-            return players.getAll().stream()
-                    .filter(p -> p.name().equals(name))
-                    .findFirst();
-        } else {
-            Optional<PlayerRecord> playerRecordOpt = playerRepository.findByName(name);
-            return playerRecordOpt.map(playerRecord -> Player.builder()
-                    .name(playerRecord.name())
-                    .uuid(StarUuid.fromHex(playerRecord.playerUuid()))
-                    .ipAddress(playerRecord.ipAddress())
-                    .build());
-        }
+    public Optional<Player> getPlayerByName(String name, boolean loggedIn) {
+        return playerDirectory.getPlayerByName(name, loggedIn);
     }
 
 
-    public Optional<Player> getPlayerByUuid(String uuid, boolean loogedIn) {
-        if (loogedIn) {
-            return players.getAll().stream()
-                    .filter(p -> p.uuid().toString().equals(uuid))
-                    .findFirst();
-        } else {
-            Optional<PlayerRecord> playerRecordOpt = playerRepository.findByUuid(uuid);
-            return playerRecordOpt.map(p -> Player.builder()
-                    .name(p.name())
-                    .uuid(StarUuid.fromHex(p.playerUuid()))
-                    .ipAddress(p.ipAddress())
-                    .build());
-        }
+    public Optional<Player> getPlayerByUuid(String uuid, boolean loggedIn) {
+        return playerDirectory.getPlayerByUuid(uuid, loggedIn);
     }
 
     private List<String> listEffectivePermissionNames(Player player) {
@@ -634,56 +551,6 @@ public List<Player> searchPlayers(String prefix, int limit, boolean loggedIn) {
                 .filter(entry -> permissionView.has(entry.getValue()))
                 .map(Map.Entry::getKey)
                 .toList();
-    }
-
-    private Player preferOnlinePlayer(Player left, Player right) {
-        if (left.online() == right.online()) {
-            return left;
-        }
-
-        return left.online() ? left : right;
-    }
-
-    private boolean matchesPlayerSearch(Player player, String normalizedPrefix) {
-        if (normalizedPrefix.isBlank()) {
-            return true;
-        }
-
-        String playerName = player.name().toLowerCase(Locale.ROOT);
-        String playerUuid = player.uuid().toString().toLowerCase(Locale.ROOT);
-        String clientId = player.online() ? Integer.toString(player.clientId()) : "";
-
-        return playerName.contains(normalizedPrefix)
-                || playerUuid.startsWith(normalizedPrefix)
-                || clientId.startsWith(normalizedPrefix);
-    }
-
-    private int playerSearchRank(Player player, String normalizedPrefix) {
-        if (normalizedPrefix.isBlank()) {
-            return player.online() ? 0 : 1;
-        }
-
-        String playerName = player.name().toLowerCase(Locale.ROOT);
-        String playerUuid = player.uuid().toString().toLowerCase(Locale.ROOT);
-        String clientId = player.online() ? Integer.toString(player.clientId()) : "";
-
-        if (playerName.equals(normalizedPrefix)) {
-            return 0;
-        }
-        if (playerName.startsWith(normalizedPrefix)) {
-            return 1;
-        }
-        if (playerName.contains(normalizedPrefix)) {
-            return 2;
-        }
-        if (playerUuid.startsWith(normalizedPrefix)) {
-            return 3;
-        }
-        if (clientId.startsWith(normalizedPrefix)) {
-            return 4;
-        }
-
-        return 5;
     }
 
     private record ResolvedUserAccess(List<StarryRole> starryRoles, PermissionSet grantedPermissions,

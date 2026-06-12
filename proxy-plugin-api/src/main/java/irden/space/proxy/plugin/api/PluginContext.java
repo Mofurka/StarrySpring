@@ -22,5 +22,9 @@ public interface PluginContext {
                 ));
     }
 
+    default void onRemove(Runnable cleanup) {
+        // Optional lifecycle hook for managed plugin contexts.
+    }
+
     void removeService(Class<?> serviceType);
 }

@@ -72,6 +72,12 @@ public class CommandRegistry {
         return List.copyOf(uniqueCommands.values());
     }
 
+    public synchronized void unregisterByPluginId(String pluginId) {
+        Objects.requireNonNull(pluginId, "pluginId");
+        commandsByName.entrySet().removeIf(entry -> pluginId.equals(entry.getValue().ownerPluginId()));
+        uniqueCommands.entrySet().removeIf(entry -> pluginId.equals(entry.getValue().ownerPluginId()));
+    }
+
     synchronized void clear() {
         commandsByName.clear();
         uniqueCommands.clear();

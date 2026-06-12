@@ -5,11 +5,13 @@ import irden.space.proxy.plugin.command_handler.CommandContextResolver;
 import irden.space.proxy.plugin.player_manager.command.PlayerManagerCommandContextKeys;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Component
 public final class DiscordExecutorPlayerContextResolver implements CommandContextResolver {
 
     @Override

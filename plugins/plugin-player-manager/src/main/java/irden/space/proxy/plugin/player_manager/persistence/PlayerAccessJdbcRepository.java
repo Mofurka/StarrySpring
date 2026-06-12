@@ -3,9 +3,11 @@ package irden.space.proxy.plugin.player_manager.persistence;
 import irden.space.proxy.plugin.player_manager.persistence.model.PlayerPermissionOverrideRecord;
 import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRoleRecord;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class PlayerAccessJdbcRepository {
 
     private final JdbcTemplate jdbcTemplate;

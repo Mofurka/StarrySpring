@@ -17,6 +17,7 @@ import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessage;
 import irden.space.proxy.protocol.util.MapVariantUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
@@ -28,6 +29,7 @@ import java.util.UUID;
         author = "https://github.com/Mofurka",
         description = "A plugin for star custom chat logging and handle some sort of commands."
 )
+@Component
 public final class StarCustomChatHelperPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(StarCustomChatHelperPlugin.class);
     private static final String CUSTOM_CHAT_ENTITY_TYPE = "irdencustomchat";

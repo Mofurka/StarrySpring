@@ -1,7 +1,10 @@
 package irden.space.proxy.plugin.command_handler;
 
+import org.springframework.stereotype.Component;
+
 import java.util.*;
 
+@Component
 public final class CommandParser {
 
     public CommandParseResult parse(

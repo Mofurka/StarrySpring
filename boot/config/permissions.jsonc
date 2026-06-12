@@ -1,0 +1,11 @@
+{
+  "defaultAccount" : "Neofit",
+  "ownerUuid" : "58c329f6797ed81484c877727d2439c5",
+  "accounts" : [ {
+    "name" : "Neofit",
+    "colorPrefix" : "^blue;",
+    "priority" : 0,
+    "inherits" : [ ],
+    "permissions" : [ ]
+  } ]
+}

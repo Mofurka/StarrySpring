@@ -8,10 +8,11 @@ import irden.space.proxy.plugin.api.annotations.OnStart;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.command_handler.CommandContextResolver;
 import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
-import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
@@ -23,11 +24,15 @@ import java.util.Optional;
         author = "https://github.com/Mofurka",
         description = "A plugin for discord bot. WIP"
 )
+@Component
 public final class DiscordBotPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(DiscordBotPlugin.class);
     private DiscordBot bot;
     private CommandHandlerPlugin commandHandler;
     private RoleManager roleManager;
+    @Autowired
+    private DiscordBotFactory botFactory;
+    @Autowired
     private CommandContextResolver discordExecutorPlayerResolver;
 
     @OnLoad
@@ -35,15 +40,15 @@ public final class DiscordBotPlugin implements ProxyPlugin {
         log.info("Loading plugin '{}'", descriptor().id());
         this.commandHandler = context.requireService(CommandHandlerPlugin.class);
         this.roleManager = context.requireService(RoleManager.class);
-        this.discordExecutorPlayerResolver = new DiscordExecutorPlayerContextResolver();
         this.commandHandler.addContextResolver(discordExecutorPlayerResolver);
+        context.onRemove(() -> this.commandHandler.removeContextResolver(discordExecutorPlayerResolver));
     }
 
     @OnStart
     public void handleStart() {
         log.info("Starting plugin '{}'", descriptor().id());
         var token = Optional.ofNullable(System.getenv("DISCORD_BOT_TOKEN"));
-        token.ifPresent(s -> this.bot = new DiscordBot(s, commandHandler, roleManager));
+        token.ifPresent(s -> this.bot = botFactory.create(s, commandHandler, roleManager));
 
     }
 
@@ -53,9 +58,6 @@ public final class DiscordBotPlugin implements ProxyPlugin {
         log.info("Stopped plugin '{}'", descriptor().id());
         if (bot != null) {
             bot.shutdown();
-        }
-        if (commandHandler != null && discordExecutorPlayerResolver != null) {
-            commandHandler.removeContextResolver(discordExecutorPlayerResolver);
         }
     }
 
