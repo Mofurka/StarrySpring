@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.player_manager.command;
+package irden.space.proxy.plugin.ban_manager.command;
 
 import irden.space.proxy.plugin.player_manager.model.Player;
 

@@ -1,28 +1,32 @@
-package irden.space.proxy.plugin.player_manager;
+package irden.space.proxy.plugin.ban_manager;
 
 import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.ban_manager.persistence.LiquibaseRunner;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
 import irden.space.proxy.plugin.command_handler.StringArgumentType;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
-import irden.space.proxy.plugin.player_manager.command.BanTarget;
-import irden.space.proxy.plugin.player_manager.command.BanTargetArgumentType;
+import irden.space.proxy.plugin.ban_manager.command.BanTarget;
+import irden.space.proxy.plugin.ban_manager.command.BanTargetArgumentType;
 import irden.space.proxy.plugin.player_manager.command.PlayerOnlineTargetArgumentType;
 import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
-import irden.space.proxy.plugin.player_manager.model.BanOperationResult;
+import irden.space.proxy.plugin.ban_manager.model.BanOperationResult;
 import irden.space.proxy.plugin.player_manager.model.Player;
-import irden.space.proxy.plugin.player_manager.persistence.BanRecordJdbcRepository;
-import irden.space.proxy.plugin.player_manager.persistence.model.BanRecord;
+import irden.space.proxy.plugin.ban_manager.persistence.BanRecordJdbcRepository;
+import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecord;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -40,16 +44,18 @@ import static irden.space.proxy.plugin.command_handler.CommandSpec.literal;
 )
 @PluginSpringConfiguration(value = BanManagerSpringConfiguration.class, scanPluginPackage = false)
 @Component
+@RequiredArgsConstructor
 public class BanManagerPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(BanManagerPlugin.class);
     private final BanRecordJdbcRepository banRecordRepository;
     private final PlayerManagerApi playerManagerApi;
+    private final DataSource dataSource;
 
-    public BanManagerPlugin(BanRecordJdbcRepository banRecordRepository, PlayerManagerApi playerManagerApi) {
-        this.banRecordRepository = banRecordRepository;
-        this.playerManagerApi = playerManagerApi;
+    @OnLoad
+    public void handleLoad() {
+        log.info("Loading plugin '{}'", descriptor().id());
+        LiquibaseRunner.runLiquibaseMigrations(dataSource);
     }
-
 
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onClientConnect(PacketInterceptionContext context) {

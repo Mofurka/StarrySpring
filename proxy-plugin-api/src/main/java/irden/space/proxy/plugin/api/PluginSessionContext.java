@@ -21,6 +21,10 @@ public interface PluginSessionContext {
 
     boolean upstreamZstdEnabled();
 
+    default void close() {
+        // No-op by default, can be overridden by implementations that support closing the session
+    }
+
     default PermissionView permissions() {
         return PermissionView.EMPTY;
     }

@@ -42,45 +42,6 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
             String clientIp,
             boolean clientZstdEnabled,
             boolean upstreamZstdEnabled,
-            int openProtocolVersion
-    ) {
-        this(sessionId, clientIp, clientZstdEnabled, upstreamZstdEnabled, openProtocolVersion, null, PermissionView.EMPTY);
-    }
-
-    public DefaultPluginSessionContext(
-            String sessionId,
-            String clientIp,
-            boolean clientZstdEnabled,
-            boolean upstreamZstdEnabled,
-            BiConsumer<PacketDirection, PacketEnvelope> packetSender
-    ) {
-        this(
-                sessionId,
-                clientIp,
-                clientZstdEnabled,
-                upstreamZstdEnabled,
-                PacketParser.LEGACY_PROTOCOL_VERSION,
-                packetSender,
-                PermissionView.EMPTY
-        );
-    }
-
-    public DefaultPluginSessionContext(
-            String sessionId,
-            String clientIp,
-            boolean clientZstdEnabled,
-            boolean upstreamZstdEnabled,
-            int openProtocolVersion,
-            BiConsumer<PacketDirection, PacketEnvelope> packetSender
-    ) {
-        this(sessionId, clientIp, clientZstdEnabled, upstreamZstdEnabled, openProtocolVersion, packetSender, PermissionView.EMPTY);
-    }
-
-    public DefaultPluginSessionContext(
-            String sessionId,
-            String clientIp,
-            boolean clientZstdEnabled,
-            boolean upstreamZstdEnabled,
             int openProtocolVersion,
             BiConsumer<PacketDirection, PacketEnvelope> packetSender,
             PermissionView permissions

@@ -31,45 +31,6 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="player-manager-001-create-ban-records" author="Mofurka">
-        <createTable tableName="player_manager_ban_records">
-
-            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-
-            <column name="name" type="varchar(255)">
-                <constraints nullable="true"/>
-            </column>
-
-            <column name="player_uuid" type="varchar(32)">
-                <constraints nullable="true"/>
-            </column>
-
-            <column name="ip_address" type="varchar(45)">
-                <constraints nullable="true"/>
-            </column>
-
-            <column name="reason" type="varchar(255)">
-                <constraints nullable="false"/>
-            </column>
-
-            <column name="banned_by" type="varchar(255)">
-                <constraints nullable="false"/>
-            </column>
-
-            <column name="permanent" type="boolean">
-                <constraints nullable="false"/>
-            </column>
-
-            <column name="banned_at" type="java.sql.Types.TIMESTAMP">
-                <constraints nullable="false"/>
-            </column>
-
-            <column name="expires_at" type="java.sql.Types.TIMESTAMP"/>
-        </createTable>
-    </changeSet>
-
     <changeSet id="player-manager-002-create-player-roles" author="Mofurka">
         <createTable tableName="player_manager_player_roles">
             <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">

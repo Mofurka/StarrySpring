@@ -4,7 +4,7 @@ import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.SessionPermissionService;
 import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.command_handler.CommandParser;
-import irden.space.proxy.plugin.player_manager.BanManagerPlugin;
+import irden.space.proxy.plugin.ban_manager.BanManagerPlugin;
 import irden.space.proxy.plugin.player_manager.PlayerManagerPlugin;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;

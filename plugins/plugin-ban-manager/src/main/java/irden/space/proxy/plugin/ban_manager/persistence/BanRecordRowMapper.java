@@ -1,6 +1,6 @@
-package irden.space.proxy.plugin.player_manager.persistence;
+package irden.space.proxy.plugin.ban_manager.persistence;
 
-import irden.space.proxy.plugin.player_manager.persistence.model.BanRecord;
+import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecord;
 import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.RowMapper;
 
