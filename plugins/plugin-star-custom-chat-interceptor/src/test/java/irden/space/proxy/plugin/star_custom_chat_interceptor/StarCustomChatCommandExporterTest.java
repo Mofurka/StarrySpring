@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.star_custom_chat;
+package irden.space.proxy.plugin.star_custom_chat_interceptor;
 
 import irden.space.proxy.plugin.api.Permission;
 import irden.space.proxy.plugin.api.PermissionRegistry;

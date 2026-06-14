@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.star_custom_chat;
+package irden.space.proxy.plugin.star_custom_chat_interceptor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import irden.space.proxy.plugin.api.PacketDecision;
@@ -18,6 +18,8 @@ import irden.space.proxy.protocol.payload.packet.entity.type.StageHandEntity;
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityIdTarget;
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessage;
 import irden.space.proxy.protocol.util.MapVariantUtils;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -25,27 +27,24 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 @PluginDefinition(
-        id = "star-custom-chat",
-        name = "Star Custom Chat",
+        id = "star-custom-chat-interceptor",
+        name = "Star Custom Chat Interceptor",
         version = "1.0.0",
         dependsOn = {"command-handler", "player-manager"},
         author = "https://github.com/Mofurka",
-        description = "A plugin for star custom chat logging and handle some sort of commands."
+        description = "A star custom chat interceptor plugin that can handle star custom chat messages via stagehand entity spawnd and ems."
 )
 @Component
-public final class StarCustomChatHelperPlugin implements ProxyPlugin {
-    private static final Logger log = LoggerFactory.getLogger(StarCustomChatHelperPlugin.class);
+@RequiredArgsConstructor
+@Slf4j
+public final class StarCustomChatInterceptorPlugin implements ProxyPlugin {
     private static final String CUSTOM_CHAT_ENTITY_TYPE = "irdencustomchat";
     private static final String REQUEST_COMMANDS_MESSAGE = "requestCommands";
     private static final String COMMAND_LIST_MESSAGE = "scc_stagehand_commandlist";
     private static final String COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE = "irdenchat_command_autocomplete";
     private static final String SERVER_NAME = "IrdenServer";
-
     private final CommandHandlerPlugin commandHandlerPlugin;
 
-    public StarCustomChatHelperPlugin(CommandHandlerPlugin commandHandlerPlugin) {
-        this.commandHandlerPlugin = commandHandlerPlugin;
-    }
 
     @OnLoad
     public void handleLoad() {

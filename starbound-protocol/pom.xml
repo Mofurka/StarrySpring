@@ -4,7 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>irden.space</groupId>
+    <parent>
+        <groupId>irden.space</groupId>
+        <artifactId>main</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
     <version>1.0.0</version>
     <artifactId>starbound-protocol</artifactId>
 
@@ -31,7 +36,6 @@
         <java.version>25</java.version>
         <spring-boot.version>4.1.0</spring-boot.version>
         <lombok.version>1.18.44</lombok.version>
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
     </properties>
@@ -41,7 +45,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler-plugin.version}</version>
+                    <version>3.15.0</version>
                     <configuration>
                         <release>${java.version}</release>
                         <annotationProcessorPaths>
