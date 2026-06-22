@@ -2,12 +2,9 @@ package irden.space.boot;
 
 import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.SessionPermissionService;
-import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
-import irden.space.proxy.plugin.command_handler.CommandParser;
 import irden.space.proxy.plugin.ban_manager.BanManagerPlugin;
+import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
 import irden.space.proxy.plugin.player_manager.PlayerManagerPlugin;
-import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
-import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.runtime.DefaultPacketInterceptorRegistry;
 import irden.space.proxy.plugin.runtime.DefaultPluginContext;
 import irden.space.proxy.plugin.runtime.PluginCandidate;
@@ -21,7 +18,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
@@ -31,20 +27,21 @@ class PlayerManagerSpringWiringTest {
     void createsPlayerManagerAndBanManagerWithSpringManagedInfrastructure() {
         AnnotationConfigApplicationContext rootContext = rootContext();
         DefaultPluginContext pluginContext = new DefaultPluginContext(new DefaultPacketInterceptorRegistry());
-        pluginContext.forPlugin("command-handler").publishService(
-                CommandHandlerPlugin.class,
-                new CommandHandlerPlugin(new CommandParser())
+        SpringPluginContainerFactory containerFactory = new SpringPluginContainerFactory(rootContext);
+        PluginContainer commandHandlerContainer = containerFactory.create(
+                PluginCandidate.fromClass(CommandHandlerPlugin.class),
+                pluginContext.forPlugin("command-handler"),
+                List.of()
         );
-        pluginContext.forPlugin("player-manager").publishService(PlayerManagerApi.class, new EmptyPlayerManagerApi());
-
-        SpringPluginContainerFactory containerFactory = new SpringPluginContainerFactory(rootContext, pluginContext);
         PluginContainer playerManagerContainer = containerFactory.create(
                 PluginCandidate.fromClass(PlayerManagerPlugin.class),
-                pluginContext.forPlugin("player-manager")
+                pluginContext.forPlugin("player-manager"),
+                List.of(commandHandlerContainer)
         );
         PluginContainer banManagerContainer = containerFactory.create(
                 PluginCandidate.fromClass(BanManagerPlugin.class),
-                pluginContext.forPlugin("ban-manager")
+                pluginContext.forPlugin("ban-manager"),
+                List.of(playerManagerContainer)
         );
 
         assertInstanceOf(PlayerManagerPlugin.class, playerManagerContainer.plugin());
@@ -52,6 +49,7 @@ class PlayerManagerSpringWiringTest {
 
         banManagerContainer.close();
         playerManagerContainer.close();
+        commandHandlerContainer.close();
         rootContext.close();
     }
 
@@ -92,25 +90,4 @@ class PlayerManagerSpringWiringTest {
         }
     }
 
-    private static final class EmptyPlayerManagerApi implements PlayerManagerApi {
-        @Override
-        public Optional<Player> findPlayer(String identifier, boolean loggedIn) {
-            return Optional.empty();
-        }
-
-        @Override
-        public List<Player> searchPlayers(String prefix, int limit, boolean loggedIn) {
-            return List.of();
-        }
-
-        @Override
-        public List<Player> findAllPlayersByIpAddress(String ipAddress) {
-            return List.of();
-        }
-
-        @Override
-        public Optional<Player> getPlayerBySessionId(String sessionId) {
-            return Optional.empty();
-        }
-    }
 }

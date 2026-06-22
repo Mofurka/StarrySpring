@@ -8,10 +8,12 @@ import irden.space.proxy.plugin.runtime.PluginCandidate;
 import irden.space.proxy.plugin.runtime.PluginContainer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,7 +27,8 @@ class SpringPluginContainerFactoryTest {
         ComponentScannedPlugin descriptorSource = new ComponentScannedPlugin();
         PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
                 candidate(ComponentScannedPlugin.class, descriptorSource.descriptor()),
-                null
+                null,
+                List.of()
         );
         ComponentScannedPlugin plugin = (ComponentScannedPlugin) container.plugin();
 
@@ -44,7 +47,8 @@ class SpringPluginContainerFactoryTest {
 
         PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
                 candidate(SpringManagedPlugin.class, new SpringManagedPlugin().descriptor()),
-                null
+                null,
+                List.of()
         );
         SpringManagedPlugin plugin = (SpringManagedPlugin) container.plugin();
 
@@ -63,10 +67,14 @@ class SpringPluginContainerFactoryTest {
         rootContext.refresh();
         DefaultPluginContext pluginContext = new DefaultPluginContext(new DefaultPacketInterceptorRegistry());
         SharedPluginService service = new SharedPluginService();
-        pluginContext.forPlugin("provider").publishService(SharedPluginService.class, service);
-        PluginContainer container = new SpringPluginContainerFactory(rootContext, pluginContext).create(
+        PluginContainer provider = dependencyContainer(
+                "provider",
+                Map.of("sharedPluginService", service)
+        );
+        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
                 candidate(DependencyConsumerPlugin.class, new DependencyConsumerPlugin().descriptor()),
-                pluginContext.forPlugin("consumer")
+                pluginContext.forPlugin("consumer"),
+                List.of(provider)
         );
         DependencyConsumerPlugin plugin = (DependencyConsumerPlugin) container.plugin();
 
@@ -82,16 +90,16 @@ class SpringPluginContainerFactoryTest {
         AnnotationConfigApplicationContext rootContext = new AnnotationConfigApplicationContext();
         rootContext.refresh();
         DefaultPluginContext pluginContext = new DefaultPluginContext(new DefaultPacketInterceptorRegistry());
-        pluginContext.forPlugin("provider").publishService(SharedPluginService.class, new SharedPluginService());
 
         assertThrows(
                 RuntimeException.class,
-                () -> new SpringPluginContainerFactory(rootContext, pluginContext).create(
+                () -> new SpringPluginContainerFactory(rootContext).create(
                         candidate(
                                 UndeclaredDependencyConsumerPlugin.class,
                                 new UndeclaredDependencyConsumerPlugin().descriptor()
                         ),
-                        pluginContext.forPlugin("consumer")
+                        pluginContext.forPlugin("consumer"),
+                        List.of()
                 )
         );
 
@@ -108,7 +116,8 @@ class SpringPluginContainerFactoryTest {
         rootContext.refresh();
         PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
                 candidate(ScopedContextPlugin.class, new ScopedContextPlugin().descriptor()),
-                scopedContext
+                scopedContext,
+                List.of()
         );
         ScopedContextPlugin plugin = (ScopedContextPlugin) container.plugin();
 
@@ -127,6 +136,67 @@ class SpringPluginContainerFactoryTest {
             PluginDescriptor descriptor
     ) {
         return new PluginCandidate(pluginClass, descriptor);
+    }
+
+    @Test
+    void doesNotExposeSpringInfrastructureBeansFromDependencyContexts() {
+        AnnotationConfigApplicationContext rootContext = new AnnotationConfigApplicationContext();
+        rootContext.refresh();
+        DefaultPluginContext pluginContext = new DefaultPluginContext(new DefaultPacketInterceptorRegistry());
+        SpringPluginContainerFactory factory = new SpringPluginContainerFactory(rootContext);
+        PluginContainer provider = factory.create(
+                candidate(DependencyProviderPlugin.class, new DependencyProviderPlugin().descriptor()),
+                pluginContext.forPlugin("provider"),
+                List.of()
+        );
+        PluginContainer consumer = factory.create(
+                candidate(DependencyConsumerPlugin.class, new DependencyConsumerPlugin().descriptor()),
+                pluginContext.forPlugin("consumer"),
+                List.of(provider)
+        );
+
+        DependencyConsumerPlugin plugin = (DependencyConsumerPlugin) consumer.plugin();
+
+        SharedPluginService service = provider.beansOfType(SharedPluginService.class)
+                .values()
+                .stream()
+                .findFirst()
+                .orElseThrow();
+        assertSame(service, plugin.service);
+        assertTrue(provider.beansOfType(BeanFactoryPostProcessor.class).isEmpty());
+
+        consumer.close();
+        provider.close();
+        rootContext.close();
+    }
+
+    private static PluginContainer dependencyContainer(String pluginId, Map<String, Object> beans) {
+        ProxyPlugin plugin = new ProxyPlugin() {
+            @Override
+            public PluginDescriptor descriptor() {
+                return new PluginDescriptor(pluginId, pluginId, "1.0.0", List.of());
+            }
+        };
+        return new PluginContainer() {
+            @Override
+            public ProxyPlugin plugin() {
+                return plugin;
+            }
+
+            @Override
+            public <T> Map<String, T> beansOfType(Class<T> type) {
+                return beans.entrySet().stream()
+                        .filter(entry -> type.isInstance(entry.getValue()))
+                        .collect(java.util.stream.Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> type.cast(entry.getValue())
+                        ));
+            }
+
+            @Override
+            public void close() {
+            }
+        };
     }
 
     static final class PluginOwnedResource implements AutoCloseable {
@@ -169,6 +239,21 @@ class SpringPluginContainerFactoryTest {
 
         @Override
         public void onLoad(PluginContext context) {
+        }
+    }
+
+    static final class DependencyProviderConfiguration {
+        @Bean
+        SharedPluginService sharedPluginService() {
+            return new SharedPluginService();
+        }
+    }
+
+    @PluginSpringConfiguration(value = DependencyProviderConfiguration.class, scanPluginPackage = false)
+    static final class DependencyProviderPlugin implements ProxyPlugin {
+        @Override
+        public PluginDescriptor descriptor() {
+            return new PluginDescriptor("provider", "Provider", "1.0.0", List.of());
         }
     }
 

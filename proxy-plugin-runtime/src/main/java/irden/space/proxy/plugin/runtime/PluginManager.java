@@ -17,6 +17,7 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     private final PacketInterceptorRegistry interceptorRegistry;
     private final PluginContext pluginContext;
     private final PluginContainerFactory containerFactory;
+    private final SessionPermissionService sessionPermissionService;
 
     private final CopyOnWriteArrayList<PluginContainer> loadedPlugins = new CopyOnWriteArrayList<>();
 
@@ -28,11 +29,23 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
             PluginContext pluginContext,
             PluginContainerFactory containerFactory
     ) {
+        this(pluginLoader, dependencyResolver, interceptorRegistry, pluginContext, containerFactory, null);
+    }
+
+    public PluginManager(
+            PluginLoader pluginLoader,
+            PluginDependencyResolver dependencyResolver,
+            PacketInterceptorRegistry interceptorRegistry,
+            PluginContext pluginContext,
+            PluginContainerFactory containerFactory,
+            SessionPermissionService sessionPermissionService
+    ) {
         this.pluginLoader = pluginLoader;
         this.dependencyResolver = dependencyResolver;
         this.interceptorRegistry = interceptorRegistry;
         this.pluginContext = pluginContext;
         this.containerFactory = containerFactory;
+        this.sessionPermissionService = sessionPermissionService;
     }
 
     public synchronized void loadAndStart() {
@@ -214,8 +227,9 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
             invokeSessionLifecycle(plugin, "OnDisconnected", () -> plugin.onDisconnected(context), context);
         }
 
-        pluginContext.findService(SessionPermissionService.class)
-                .ifPresent(service -> service.clearPermissions(context.sessionId()));
+        if (sessionPermissionService != null) {
+            sessionPermissionService.clearPermissions(context.sessionId());
+        }
     }
 
     public List<ProxyPlugin> getLoadedPlugins() {
@@ -349,7 +363,11 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
             for (PluginCandidate candidate : plugins) {
                 log.info("Loading plugin {}", describePlugin(candidate));
                 PluginContext scopedContext = contextFor(candidate.descriptor().id());
-                PluginContainer container = containerFactory.create(candidate, scopedContext);
+                PluginContainer container = containerFactory.create(
+                        candidate,
+                        scopedContext,
+                        dependencyContainers(candidate)
+                );
                 try {
                     ProxyPlugin plugin = container.plugin();
                     if (!candidate.descriptor().equals(plugin.descriptor())) {
@@ -414,5 +432,20 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
                 }
             }
         }
+    }
+
+    private List<PluginContainer> dependencyContainers(PluginCandidate candidate) {
+        List<PluginContainer> result = new ArrayList<>();
+        for (String dependencyId : candidate.descriptor().dependsOn()) {
+            PluginContainer dependency = findLoadedPlugin(dependencyId);
+            if (dependency == null) {
+                throw new NoSuchElementException(
+                        "Plugin '%s' depends on unloaded plugin '%s'"
+                                .formatted(candidate.descriptor().id(), dependencyId)
+                );
+            }
+            result.add(dependency);
+        }
+        return List.copyOf(result);
     }
 }

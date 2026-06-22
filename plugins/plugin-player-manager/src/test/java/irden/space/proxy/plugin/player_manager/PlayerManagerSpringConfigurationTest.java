@@ -1,6 +1,5 @@
 package irden.space.proxy.plugin.player_manager;
 
-import irden.space.proxy.plugin.player_manager.persistence.BanRecordJdbcRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -13,22 +12,16 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PlayerManagerSpringConfigurationTest {
 
     @Test
-    void keepsPlayerManagerAndBanManagerBeanGraphsIsolated(@TempDir Path tempDir) {
+    void createsPlayerManagerBeanGraph(@TempDir Path tempDir) {
         AnnotationConfigApplicationContext playerManagerContext = context(PlayerManagerSpringConfiguration.class, tempDir);
-        AnnotationConfigApplicationContext banManagerContext = context(BanManagerSpringConfiguration.class, tempDir);
 
         assertTrue(playerManagerContext.getBeansOfType(PlayerDirectory.class).size() == 1);
-        assertTrue(playerManagerContext.getBeansOfType(BanRecordJdbcRepository.class).isEmpty());
-        assertTrue(banManagerContext.getBeansOfType(BanRecordJdbcRepository.class).size() == 1);
-        assertFalse(banManagerContext.containsBeanDefinition("playerDirectory"));
 
-        banManagerContext.close();
         playerManagerContext.close();
     }
 

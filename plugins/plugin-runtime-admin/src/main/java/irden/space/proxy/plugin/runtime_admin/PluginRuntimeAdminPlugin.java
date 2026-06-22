@@ -42,8 +42,7 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
     @ChatCommand(value = "plugin", description = "Manage runtime plugins")
     public CommandSpec pluginCommand() {
         return literal("plugin")
-                .then(literal("list")
-                        .permission(PluginRuntimeAdminPermissions.LIST.permission())
+                .then(literal("list").permission(PluginRuntimeAdminPermissions.LIST.permission())
                         .executes(context -> context.reply(formatPlugins(runtimeService.plugins()))))
                 .then(operation("start", PluginRuntimeAdminPermissions.START, runtimeService::startPlugin))
                 .then(operation("stop", PluginRuntimeAdminPermissions.STOP, runtimeService::stopPlugin))

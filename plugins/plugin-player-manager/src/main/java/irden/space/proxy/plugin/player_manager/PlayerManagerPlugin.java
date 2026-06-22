@@ -4,7 +4,6 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.*;
 import irden.space.proxy.plugin.command_handler.*;
 import irden.space.proxy.plugin.player_manager.api.DefaultPlayerManagerApi;
-import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.command.ExecutorPlayerContextResolver;
 import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
 import irden.space.proxy.plugin.player_manager.command.PlayerTargetArgumentType;
@@ -107,21 +106,6 @@ public final class PlayerManagerPlugin implements ProxyPlugin {
         ExecutorPlayerContextResolver contextResolver = new ExecutorPlayerContextResolver(playerManagerApi);
         commandHandler.addContextResolver(contextResolver);
         pluginContext.onRemove(() -> commandHandler.removeContextResolver(contextResolver));
-    }
-
-    @PublishService
-    public PlayerManagerPlugin publishPlayerManagerPlugin() {
-        return this;
-    }
-
-    @PublishService(PlayerManagerApi.class)
-    public DefaultPlayerManagerApi publishPlayerManagerApi() {
-        return playerManagerApi;
-    }
-
-    @PublishService
-    public RoleManager publishRoleManager() {
-        return roleManager;
     }
 
     @OnStart

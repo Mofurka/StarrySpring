@@ -160,14 +160,14 @@ class PluginManagerTest {
             }
         };
         DefaultPluginContext pluginContext = new DefaultPluginContext(registry);
-        pluginContext.publishService(SessionPermissionService.class, permissionService);
 
         PluginManager manager = new PluginManager(
                 pluginLoader,
                 new PluginDependencyResolver(),
                 registry,
                 pluginContext,
-                testContainers()
+                testContainers(),
+                permissionService
         );
 
         manager.loadAndStart();
@@ -220,7 +220,7 @@ class PluginManagerTest {
         };
 
         List<String> closedContainers = new ArrayList<>();
-        PluginContainerFactory containerFactory = (candidate, context) -> new PluginContainer() {
+        PluginContainerFactory containerFactory = (candidate, context, dependencies) -> new PluginContainer() {
             @Override
             public ProxyPlugin plugin() {
                 return pluginFor(candidate);
@@ -252,14 +252,9 @@ class PluginManagerTest {
     void removesPluginOwnedServicesAndInterceptorsWhenStopped() {
         DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
         DefaultPluginContext pluginContext = new DefaultPluginContext(registry);
-        Runnable applicationService = () -> {
-        };
-        pluginContext.publishService(Runnable.class, applicationService);
-
         ProxyPlugin plugin = new TestPlugin("core", List.of(), new ArrayList<>()) {
             @Override
             public void onLoad(PluginContext context) {
-                context.publishService(Comparable.class, new ComparableService());
                 context.packetInterceptorRegistry().register(PacketType.CHAT_SENT, packetContext -> PacketDecision.forward());
             }
         };
@@ -281,13 +276,10 @@ class PluginManagerTest {
 
         manager.loadAndStart();
 
-        assertTrue(pluginContext.findService(Comparable.class).isPresent());
         assertEquals(1, registry.getAll().size());
 
         manager.stopAll();
 
-        assertTrue(pluginContext.findService(Comparable.class).isEmpty());
-        assertSame(applicationService, pluginContext.requireService(Runnable.class));
         assertTrue(registry.getAll().isEmpty());
     }
 
@@ -566,7 +558,7 @@ class PluginManagerTest {
     }
 
     private static PluginContainerFactory testContainers() {
-        return (candidate, context) -> new PluginContainer() {
+        return (candidate, context, dependencies) -> new PluginContainer() {
             @Override
             public ProxyPlugin plugin() {
                 return pluginFor(candidate);
