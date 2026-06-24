@@ -2,7 +2,7 @@ package irden.space.proxy.plugin.api;
 
 public interface PluginAnnotationRegistrar {
 
-    boolean supports(Class<?> pluginType);
+    boolean supports(Class<?> beanType);
 
-    void register(ProxyPlugin plugin, PluginContext context);
+    void register(Object bean, PluginDescriptor owner, PluginContext context);
 }

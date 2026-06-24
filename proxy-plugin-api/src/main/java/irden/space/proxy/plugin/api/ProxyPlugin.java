@@ -9,36 +9,36 @@ public interface ProxyPlugin extends ExtensionPoint {
     }
 
     default void registerPluginPermissions(PluginContext context) {
-        ProxyPluginSupport.registerPluginPermissions(this, context);
+        // Optional runtime phase.
     }
 
     default void onLoad(PluginContext context) {
-        ProxyPluginSupport.onLoad(this, context);
+        // Optional runtime phase.
     }
 
     default void onStart() {
-        ProxyPluginSupport.onStart(this);
+        // Optional runtime phase.
     }
 
 
     // This method is called when a new connection is established. Plugins can override this to perform actions when a client connects. By default, it does nothing.
     default void onConnectionSuccess(PluginSessionContext context) {
-        ProxyPluginSupport.onConnectionSuccess(this, context);
+        // Optional runtime phase.
     }
 
 
     // For plugins that want to handle disconnection events, they can override these methods. By default, they do nothing.
     default void onDisconnecting(PluginSessionContext context) {
-        ProxyPluginSupport.onDisconnecting(this, context);
+        // Optional runtime phase.
     }
 
 
     // This method is called after the connection has been fully closed. Plugins can override this to perform cleanup tasks. By default, it does nothing.
     default void onDisconnected(PluginSessionContext context) {
-        ProxyPluginSupport.onDisconnected(this, context);
+        // Optional runtime phase.
     }
 
     default void onStop() {
-        ProxyPluginSupport.onStop(this);
+        // Optional runtime phase.
     }
 }

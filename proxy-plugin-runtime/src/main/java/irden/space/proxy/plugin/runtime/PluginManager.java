@@ -209,22 +209,27 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         for (PluginContainer container : loadedPlugins) {
             ProxyPlugin plugin = container.plugin();
             invokeSessionLifecycle(plugin, "OnConnectionSuccess", () -> plugin.onConnectionSuccess(context), context);
+            invokeSessionLifecycle(plugin, "OnConnectionSuccess", () -> container.onConnectionSuccess(context), context);
         }
     }
 
     @Override
     public void onDisconnecting(PluginSessionContext context) {
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
-            ProxyPlugin plugin = loadedPlugins.get(i).plugin();
+            PluginContainer container = loadedPlugins.get(i);
+            ProxyPlugin plugin = container.plugin();
             invokeSessionLifecycle(plugin, "OnDisconnecting", () -> plugin.onDisconnecting(context), context);
+            invokeSessionLifecycle(plugin, "OnDisconnecting", () -> container.onDisconnecting(context), context);
         }
     }
 
     @Override
     public void onDisconnected(PluginSessionContext context) {
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
-            ProxyPlugin plugin = loadedPlugins.get(i).plugin();
+            PluginContainer container = loadedPlugins.get(i);
+            ProxyPlugin plugin = container.plugin();
             invokeSessionLifecycle(plugin, "OnDisconnected", () -> plugin.onDisconnected(context), context);
+            invokeSessionLifecycle(plugin, "OnDisconnected", () -> container.onDisconnected(context), context);
         }
 
         if (sessionPermissionService != null) {
@@ -378,8 +383,11 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
                     }
                     log.info("Registering permissions for plugin {}", describePlugin(plugin));
                     plugin.registerPluginPermissions(scopedContext);
+                    container.registerPluginPermissions();
                     log.info("Registered permissions for plugin '{}'", plugin.descriptor().id());
+                    container.registerAnnotatedBeans();
                     container.plugin().onLoad(scopedContext);
+                    container.onLoad();
                     loadedPlugins.add(container);
                     startedContainers.add(container);
                     log.info("Loaded plugin '{}'", plugin.descriptor().id());
@@ -394,6 +402,7 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
                 ProxyPlugin plugin = container.plugin();
                 log.info("Starting plugin '{}'", plugin.descriptor().id());
                 plugin.onStart();
+                container.onStart();
                 log.info("Started plugin '{}'", plugin.descriptor().id());
             }
         } catch (RuntimeException | Error e) {
@@ -416,6 +425,7 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         log.info("Stopping plugin '{}'", plugin.descriptor().id());
         try {
             plugin.onStop();
+            container.onStop();
             log.info("Stopped plugin '{}'", plugin.descriptor().id());
         } catch (RuntimeException e) {
             log.warn("Plugin '{}' failed while stopping", plugin.descriptor().id(), e);

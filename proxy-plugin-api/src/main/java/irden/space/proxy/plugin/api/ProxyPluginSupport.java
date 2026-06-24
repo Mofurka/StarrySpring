@@ -9,7 +9,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.ServiceLoader;
 
 public final class ProxyPluginSupport {
 
@@ -35,11 +34,11 @@ public final class ProxyPluginSupport {
         );
     }
 
-    public static void registerPluginPermissions(ProxyPlugin plugin, PluginContext context) {
-        Objects.requireNonNull(plugin, "plugin");
+    public static void registerPluginPermissions(Object bean, PluginContext context) {
+        Objects.requireNonNull(bean, "bean");
         Objects.requireNonNull(context, "context");
 
-        Method lifecycleMethod = findLifecycleMethod(plugin.getClass(), RegisterPluginPermissions.class);
+        Method lifecycleMethod = findLifecycleMethod(bean.getClass(), RegisterPluginPermissions.class);
         if (lifecycleMethod == null) {
             return;
         }
@@ -48,68 +47,47 @@ public final class ProxyPluginSupport {
             throw new IllegalStateException("Cannot access lifecycle method " + lifecycleMethod);
         }
 
-        Object registrationResult = invokeMethod(plugin, lifecycleMethod, context);
+        Object registrationResult = invokeMethod(bean, lifecycleMethod, context);
         PermissionEnum.registerDefaults(resolveRegisteredPermissionTypes(lifecycleMethod, registrationResult));
     }
 
-    public static void onLoad(ProxyPlugin plugin, PluginContext context) {
-        Objects.requireNonNull(plugin, "plugin");
+    public static void onLoad(Object bean, PluginContext context) {
+        Objects.requireNonNull(bean, "bean");
         Objects.requireNonNull(context, "context");
 
-        if (hasPacketHandlers(plugin.getClass())) {
-            context.packetInterceptorRegistry().registerAnnotated(plugin);
-        }
-
-        registerAnnotatedExtensions(plugin, context);
-
-        invokeLifecycle(plugin, OnLoad.class, context);
+        invokeLifecycle(bean, OnLoad.class, context);
     }
 
-    public static void onStart(ProxyPlugin plugin) {
-        Objects.requireNonNull(plugin, "plugin");
-        invokeLifecycle(plugin, OnStart.class);
+    public static void onStart(Object bean) {
+        Objects.requireNonNull(bean, "bean");
+        invokeLifecycle(bean, OnStart.class);
     }
 
-    public static void onConnectionSuccess(ProxyPlugin plugin, PluginSessionContext context) {
-        Objects.requireNonNull(plugin, "plugin");
+    public static void onConnectionSuccess(Object bean, PluginSessionContext context) {
+        Objects.requireNonNull(bean, "bean");
         Objects.requireNonNull(context, "context");
-        invokeLifecycle(plugin, OnConnectionSuccess.class, context);
+        invokeLifecycle(bean, OnConnectionSuccess.class, context);
     }
 
-    public static void onDisconnecting(ProxyPlugin plugin, PluginSessionContext context) {
-        Objects.requireNonNull(plugin, "plugin");
+    public static void onDisconnecting(Object bean, PluginSessionContext context) {
+        Objects.requireNonNull(bean, "bean");
         Objects.requireNonNull(context, "context");
-        invokeLifecycle(plugin, OnDisconnecting.class, context);
+        invokeLifecycle(bean, OnDisconnecting.class, context);
     }
 
-    public static void onDisconnected(ProxyPlugin plugin, PluginSessionContext context) {
-        Objects.requireNonNull(plugin, "plugin");
+    public static void onDisconnected(Object bean, PluginSessionContext context) {
+        Objects.requireNonNull(bean, "bean");
         Objects.requireNonNull(context, "context");
-        invokeLifecycle(plugin, OnDisconnected.class, context);
+        invokeLifecycle(bean, OnDisconnected.class, context);
     }
 
-    public static void onStop(ProxyPlugin plugin) {
-        Objects.requireNonNull(plugin, "plugin");
-        invokeLifecycle(plugin, OnStop.class);
+    public static void onStop(Object bean) {
+        Objects.requireNonNull(bean, "bean");
+        invokeLifecycle(bean, OnStop.class);
     }
 
-
-    private static boolean hasPacketHandlers(Class<?> pluginType) {
-        return Arrays.stream(pluginType.getDeclaredMethods())
-                .anyMatch(method -> method.isAnnotationPresent(PacketHandler.class));
-    }
-
-
-    private static void registerAnnotatedExtensions(ProxyPlugin plugin, PluginContext context) {
-        for (PluginAnnotationRegistrar registrar : ServiceLoader.load(PluginAnnotationRegistrar.class)) {
-            if (registrar.supports(plugin.getClass())) {
-                registrar.register(plugin, context);
-            }
-        }
-    }
-
-    private static void invokeLifecycle(ProxyPlugin plugin, Class<? extends Annotation> annotationType, Object... arguments) {
-        Method lifecycleMethod = findLifecycleMethod(plugin.getClass(), annotationType);
+    private static void invokeLifecycle(Object bean, Class<? extends Annotation> annotationType, Object... arguments) {
+        Method lifecycleMethod = findLifecycleMethod(bean.getClass(), annotationType);
         if (lifecycleMethod == null) {
             return;
         }
@@ -118,16 +96,16 @@ public final class ProxyPluginSupport {
             throw new IllegalStateException("Cannot access lifecycle method " + lifecycleMethod);
         }
 
-        invokeMethod(plugin, lifecycleMethod, arguments);
+        invokeMethod(bean, lifecycleMethod, arguments);
     }
 
-    private static Object invokeMethod(ProxyPlugin plugin, Method lifecycleMethod, Object... arguments) {
+    private static Object invokeMethod(Object bean, Method lifecycleMethod, Object... arguments) {
         try {
             if (lifecycleMethod.getParameterCount() == 0) {
-                return lifecycleMethod.invoke(plugin);
+                return lifecycleMethod.invoke(bean);
             }
 
-            return lifecycleMethod.invoke(plugin, arguments);
+            return lifecycleMethod.invoke(bean, arguments);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException runtimeException) {

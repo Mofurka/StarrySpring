@@ -1,9 +1,7 @@
 package irden.space.boot;
 
-import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
-import irden.space.proxy.plugin.api.PluginContext;
-import irden.space.proxy.plugin.api.PluginSpringConfiguration;
-import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.api.*;
+import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.runtime.PluginCandidate;
 import irden.space.proxy.plugin.runtime.PluginContainer;
 import irden.space.proxy.plugin.runtime.PluginContainerFactory;
@@ -15,10 +13,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public final class SpringPluginContainerFactory implements PluginContainerFactory {
 
@@ -64,6 +59,50 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
                 @Override
                 public <T> Map<String, T> beansOfType(Class<T> type) {
                     return exportableBeansOfType(pluginContext, type);
+                }
+
+                @Override
+                public void registerAnnotatedBeans() {
+                    SpringPluginContainerFactory.this.registerAnnotatedBeans(
+                            pluginContext,
+                            candidate.descriptor(),
+                            scopedContext
+                    );
+                }
+
+                @Override
+                public void registerPluginPermissions() {
+                    SpringPluginContainerFactory.this.registerPluginPermissions(pluginContext, scopedContext);
+                }
+
+                @Override
+                public void onLoad() {
+                    SpringPluginContainerFactory.this.onLoad(pluginContext, scopedContext);
+                }
+
+                @Override
+                public void onStart() {
+                    SpringPluginContainerFactory.this.onStart(pluginContext);
+                }
+
+                @Override
+                public void onConnectionSuccess(PluginSessionContext context) {
+                    SpringPluginContainerFactory.this.onConnectionSuccess(pluginContext, context);
+                }
+
+                @Override
+                public void onDisconnecting(PluginSessionContext context) {
+                    SpringPluginContainerFactory.this.onDisconnecting(pluginContext, context);
+                }
+
+                @Override
+                public void onDisconnected(PluginSessionContext context) {
+                    SpringPluginContainerFactory.this.onDisconnected(pluginContext, context);
+                }
+
+                @Override
+                public void onStop() {
+                    SpringPluginContainerFactory.this.onStop(pluginContext);
                 }
 
                 @Override
@@ -134,6 +173,110 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         return Map.copyOf(exportableBeans);
     }
 
+    private void registerAnnotatedBeans(
+            AnnotationConfigApplicationContext context,
+            irden.space.proxy.plugin.api.PluginDescriptor owner,
+            PluginContext scopedContext
+    ) {
+        if (scopedContext == null) {
+            return;
+        }
+
+        List<PluginAnnotationRegistrar> registrars = ServiceLoader.load(
+                        PluginAnnotationRegistrar.class,
+                        context.getClassLoader()
+                )
+                .stream()
+                .map(ServiceLoader.Provider::get)
+                .toList();
+
+        localApplicationBeans(context).forEach((beanName, bean) -> {
+            if (hasPacketHandlers(bean.getClass())) {
+                scopedContext.packetInterceptorRegistry().registerAnnotated(bean);
+            }
+            for (PluginAnnotationRegistrar registrar : registrars) {
+                if (registrar.supports(bean.getClass())) {
+                    registrar.register(bean, owner, scopedContext);
+                }
+            }
+        });
+    }
+
+    private void registerPluginPermissions(
+            AnnotationConfigApplicationContext context,
+            PluginContext scopedContext
+    ) {
+        if (scopedContext == null) {
+            return;
+        }
+        localApplicationBeans(context).values()
+                .forEach(bean -> ProxyPluginSupport.registerPluginPermissions(bean, scopedContext));
+    }
+
+    private void onLoad(
+            AnnotationConfigApplicationContext context,
+            PluginContext scopedContext
+    ) {
+        if (scopedContext == null) {
+            return;
+        }
+        localApplicationBeans(context).values()
+                .forEach(bean -> ProxyPluginSupport.onLoad(bean, scopedContext));
+    }
+
+    private void onStart(AnnotationConfigApplicationContext context) {
+        localApplicationBeans(context).values()
+                .forEach(ProxyPluginSupport::onStart);
+    }
+
+    private void onConnectionSuccess(
+            AnnotationConfigApplicationContext context,
+            PluginSessionContext sessionContext
+    ) {
+        localApplicationBeans(context).values()
+                .forEach(bean -> ProxyPluginSupport.onConnectionSuccess(bean, sessionContext));
+    }
+
+    private void onDisconnecting(
+            AnnotationConfigApplicationContext context,
+            PluginSessionContext sessionContext
+    ) {
+        List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
+        java.util.Collections.reverse(beans);
+        beans.forEach(bean -> ProxyPluginSupport.onDisconnecting(bean, sessionContext));
+    }
+
+    private void onDisconnected(
+            AnnotationConfigApplicationContext context,
+            PluginSessionContext sessionContext
+    ) {
+        List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
+        java.util.Collections.reverse(beans);
+        beans.forEach(bean -> ProxyPluginSupport.onDisconnected(bean, sessionContext));
+    }
+
+    private void onStop(AnnotationConfigApplicationContext context) {
+        List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
+        java.util.Collections.reverse(beans);
+        beans.forEach(ProxyPluginSupport::onStop);
+    }
+
+    private Map<String, Object> localApplicationBeans(AnnotationConfigApplicationContext context) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        context.getBeansOfType(Object.class, false, false)
+                .forEach((beanName, bean) -> {
+                    if (isLocalApplicationBean(context, beanName, bean)) {
+                        result.put(beanName, bean);
+                    }
+                });
+        return Map.copyOf(result);
+    }
+
+    private boolean hasPacketHandlers(Class<?> beanType) {
+        return java.util.Arrays.stream(beanType.getDeclaredMethods())
+                .anyMatch(method -> method.isAnnotationPresent(PacketHandler.class));
+    }
+
     private boolean isExportableBean(
             AnnotationConfigApplicationContext context,
             String beanName,
@@ -151,6 +294,15 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             return false;
         }
         return context.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_APPLICATION;
+    }
+
+    private boolean isLocalApplicationBean(
+            AnnotationConfigApplicationContext context,
+            String beanName,
+            Object bean
+    ) {
+        return !beanName.startsWith("pluginDependency:")
+                && isExportableBean(context, beanName, bean);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

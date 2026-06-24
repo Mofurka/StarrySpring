@@ -12,6 +12,30 @@ public interface PluginContainer extends AutoCloseable {
         return Map.of();
     }
 
+    default void registerAnnotatedBeans() {
+    }
+
+    default void registerPluginPermissions() {
+    }
+
+    default void onLoad() {
+    }
+
+    default void onStart() {
+    }
+
+    default void onConnectionSuccess(irden.space.proxy.plugin.api.PluginSessionContext context) {
+    }
+
+    default void onDisconnecting(irden.space.proxy.plugin.api.PluginSessionContext context) {
+    }
+
+    default void onDisconnected(irden.space.proxy.plugin.api.PluginSessionContext context) {
+    }
+
+    default void onStop() {
+    }
+
     @Override
     void close();
 }
