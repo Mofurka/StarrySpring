@@ -2,9 +2,7 @@ package irden.space.boot;
 
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
-import irden.space.proxy.plugin.runtime.PluginCandidate;
-import irden.space.proxy.plugin.runtime.PluginContainer;
-import irden.space.proxy.plugin.runtime.PluginContainerFactory;
+import irden.space.proxy.plugin.runtime.*;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -210,7 +208,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             return;
         }
         localApplicationBeans(context).values()
-                .forEach(bean -> ProxyPluginSupport.registerPluginPermissions(bean, scopedContext));
+                .forEach(bean -> PluginPermissionRegistrar.register(bean, scopedContext));
     }
 
     private void onLoad(
@@ -221,12 +219,12 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             return;
         }
         localApplicationBeans(context).values()
-                .forEach(bean -> ProxyPluginSupport.onLoad(bean, scopedContext));
+                .forEach(bean -> PluginLifecycleInvoker.onLoad(bean, scopedContext));
     }
 
     private void onStart(AnnotationConfigApplicationContext context) {
         localApplicationBeans(context).values()
-                .forEach(ProxyPluginSupport::onStart);
+                .forEach(PluginLifecycleInvoker::onStart);
     }
 
     private void onConnectionSuccess(
@@ -234,7 +232,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             PluginSessionContext sessionContext
     ) {
         localApplicationBeans(context).values()
-                .forEach(bean -> ProxyPluginSupport.onConnectionSuccess(bean, sessionContext));
+                .forEach(bean -> PluginLifecycleInvoker.onConnectionSuccess(bean, sessionContext));
     }
 
     private void onDisconnecting(
@@ -243,7 +241,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     ) {
         List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
         java.util.Collections.reverse(beans);
-        beans.forEach(bean -> ProxyPluginSupport.onDisconnecting(bean, sessionContext));
+        beans.forEach(bean -> PluginLifecycleInvoker.onDisconnecting(bean, sessionContext));
     }
 
     private void onDisconnected(
@@ -252,13 +250,13 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     ) {
         List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
         java.util.Collections.reverse(beans);
-        beans.forEach(bean -> ProxyPluginSupport.onDisconnected(bean, sessionContext));
+        beans.forEach(bean -> PluginLifecycleInvoker.onDisconnected(bean, sessionContext));
     }
 
     private void onStop(AnnotationConfigApplicationContext context) {
         List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
         java.util.Collections.reverse(beans);
-        beans.forEach(ProxyPluginSupport::onStop);
+        beans.forEach(PluginLifecycleInvoker::onStop);
     }
 
     private Map<String, Object> localApplicationBeans(AnnotationConfigApplicationContext context) {
