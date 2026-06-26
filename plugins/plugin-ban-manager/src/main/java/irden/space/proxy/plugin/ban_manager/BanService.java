@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.ban_manager;
 import irden.space.proxy.plugin.ban_manager.model.BanOperationResult;
 import irden.space.proxy.plugin.ban_manager.persistence.BanRecordJdbcRepository;
 import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecord;
+import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class BanService {
 
     private final BanRecordJdbcRepository banRecordRepository;
     private final PlayerManagerApi playerManagerApi;
+    private final BanFormatUtils banFormatUtils;
 
     public Optional<BanRecord> findActiveBan(String name, String playerUuid, String ipAddress) {
         BanRecord probe = BanRecord.builder()
@@ -61,7 +63,7 @@ public class BanService {
 
         if (!permanent) {
             try {
-                expiresAt = parseExpiresAt(durationStr);
+                expiresAt = banFormatUtils.parseExpiresAt(durationStr);
             } catch (IllegalArgumentException ex) {
                 return new BanOperationResult(false, "Неверный формат длительности. Пример: 5d 30m");
             }
@@ -91,11 +93,14 @@ public class BanService {
                 .build();
 
         banRecordRepository.save(banRecord);
+        var message = banFormatUtils.formatBanMessage(reason, permanent, expiresAt);
         playerManagerApi.findAllPlayersByIpAddress(ipAddress)
-                .forEach(player -> player.kick("You have been banned from this server. \nReason: " + reason));
+                .forEach(player -> player.kick(message));
 
         return new BanOperationResult(true, "IP address " + ipAddress + " has been banned. Reason: " + reason);
     }
+
+
 
     private BanOperationResult banPlayer(
             String targetPlayer,
@@ -121,39 +126,12 @@ public class BanService {
                 .build();
 
         banRecordRepository.save(banRecord);
-        player.kick("You have been banned from this server. Reason: " + reason);
+        player.kick(banFormatUtils.formatBanMessage(reason, permanent, expiresAt));
 
         return new BanOperationResult(true, "Player " + player.name() + " has been banned. Reason: " + reason);
     }
 
-    private LocalDateTime parseExpiresAt(String durationStr) {
-        LocalDateTime expiresAt = LocalDateTime.now();
 
-        for (String part : durationStr.trim().split("\\s+")) {
-            if (part.length() < 2) {
-                throw new IllegalArgumentException("Invalid duration part: " + part);
-            }
-
-            long value;
-            try {
-                value = Long.parseLong(part.substring(0, part.length() - 1));
-            } catch (NumberFormatException ex) {
-                throw new IllegalArgumentException("Invalid duration value: " + part, ex);
-            }
-
-            char unit = Character.toLowerCase(part.charAt(part.length() - 1));
-            switch (unit) {
-                case 's' -> expiresAt = expiresAt.plusSeconds(value);
-                case 'm' -> expiresAt = expiresAt.plusMinutes(value);
-                case 'h' -> expiresAt = expiresAt.plusHours(value);
-                case 'd' -> expiresAt = expiresAt.plusDays(value);
-                case 'w' -> expiresAt = expiresAt.plusWeeks(value);
-                default -> throw new IllegalArgumentException("Unsupported duration unit: " + unit);
-            }
-        }
-
-        return expiresAt;
-    }
 
     private boolean isIpAddress(String target) {
         return target.matches(IP_ADDRESS_PATTERN);

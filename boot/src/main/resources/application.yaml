@@ -7,11 +7,15 @@ spring:
     password: postgres
   liquibase:
     enabled: false
+  messages:
+    encoding: UTF-8
+    basename: messages
+  web:
+    locale: ru
 
 starry:
   plugins:
     directory: runtime-plugins
-
 
 
 proxy:

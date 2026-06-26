@@ -5,6 +5,7 @@ import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecord;
+import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
@@ -13,9 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 
@@ -26,6 +24,8 @@ public class BanConnectionHandler {
     private static final Logger log = LoggerFactory.getLogger(BanConnectionHandler.class);
 
     private final BanService banService;
+    private final BanFormatUtils banFormatUtils;
+
 
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
@@ -37,13 +37,10 @@ public class BanConnectionHandler {
         );
         if (optionalBanRecord.isPresent()) {
             BanRecord activeBanRecord = optionalBanRecord.get();
-            String reason = activeBanRecord.reason() != null ? activeBanRecord.reason() : "No reason provided";
-            String expiresInfo = activeBanRecord.permanent() ? "This ban is permanent." :
-                    "This ban expires at " + activeBanRecord.expiresAt().toString() + "[UTC]" + " (in " + Duration.between(LocalDateTime.now(), activeBanRecord.expiresAt()).toMinutes() + " minutes)";
-            String message = "You are banned from this server. \nReason: " + reason + "\n" + expiresInfo;
+            var  message = banFormatUtils.formatBanMessage(activeBanRecord.reason(), activeBanRecord.permanent(), activeBanRecord.expiresAt());
 
             log.info("Blocked connection from {} (UUID: {}) due to active ban. Reason: {}",
-                    clientConnect.playerName(), clientConnect.playerUuid(), reason);
+                    clientConnect.playerName(), clientConnect.playerUuid(), activeBanRecord.reason());
             sendRejection(context.session(), message);
             return PacketDecision.cancel();
         }

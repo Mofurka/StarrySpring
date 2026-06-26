@@ -9,6 +9,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
 import java.util.*;
@@ -17,6 +18,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
 
     private static final String PLUGIN_CONTEXT_BEAN_NAME = "pluginContext";
     private static final String PLUGIN_PACKET_INTERCEPTOR_REGISTRY_BEAN_NAME = "pluginPacketInterceptorRegistry";
+    private static final String MESSAGE_SOURCE_BEAN_NAME = "messageSource";
 
     private final ApplicationContext rootContext;
 
@@ -36,6 +38,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             pluginContext.setClassLoader(candidate.pluginClass().getClassLoader());
             registerScopedRuntimeBeans(pluginContext, scopedContext);
             registerDependencyBeans(pluginContext, dependencyContainers);
+            registerPluginMessageSource(pluginContext, candidate);
 
             PluginSpringConfiguration configuration = candidate.pluginClass().getAnnotation(PluginSpringConfiguration.class);
             if (configuration == null || configuration.scanPluginPackage()) {
@@ -131,6 +134,27 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
                 PLUGIN_PACKET_INTERCEPTOR_REGISTRY_BEAN_NAME,
                 PacketInterceptorRegistry.class,
                 scopedContext::packetInterceptorRegistry,
+                beanDefinition -> beanDefinition.setPrimary(true)
+        );
+    }
+
+    private void registerPluginMessageSource(
+            AnnotationConfigApplicationContext context,
+            PluginCandidate candidate
+    ) {
+        String basename = "i18n/" + candidate.descriptor().id() + "/messages";
+        ClassLoader pluginClassLoader = candidate.pluginClass().getClassLoader();
+        context.registerBean(
+                MESSAGE_SOURCE_BEAN_NAME,
+                ResourceBundleMessageSource.class,
+                () -> {
+                    ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+                    messageSource.setBasename(basename);
+                    messageSource.setDefaultEncoding("UTF-8");
+                    messageSource.setBundleClassLoader(pluginClassLoader);
+                    messageSource.setFallbackToSystemLocale(false);
+                    return messageSource;
+                },
                 beanDefinition -> beanDefinition.setPrimary(true)
         );
     }
@@ -282,6 +306,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     ) {
         if (PLUGIN_CONTEXT_BEAN_NAME.equals(beanName)
                 || PLUGIN_PACKET_INTERCEPTOR_REGISTRY_BEAN_NAME.equals(beanName)
+                || MESSAGE_SOURCE_BEAN_NAME.equals(beanName)
                 || beanName.startsWith("org.springframework.")) {
             return false;
         }
