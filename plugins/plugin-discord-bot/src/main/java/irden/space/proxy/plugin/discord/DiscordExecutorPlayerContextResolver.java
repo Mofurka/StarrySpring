@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @Component
@@ -26,7 +27,7 @@ public final class DiscordExecutorPlayerContextResolver implements CommandContex
                 .account(session.userName())
                 .ipAddress(session.clientIp())
                 .sessionId(session.sessionId())
-                .lastSeen(LocalDateTime.now())
+                .lastSeen(LocalDateTime.now(ZoneId.systemDefault()))
                 .sessionContext(session)
                 .build();
 
