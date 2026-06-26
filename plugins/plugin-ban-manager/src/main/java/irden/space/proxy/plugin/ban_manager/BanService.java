@@ -65,7 +65,7 @@ public class BanService {
             try {
                 expiresAt = banFormatUtils.parseExpiresAt(durationStr);
             } catch (IllegalArgumentException ex) {
-                return new BanOperationResult(false, "Неверный формат длительности. Пример: 5d 30m");
+                return new BanOperationResult(false, banFormatUtils.get("ban.operation.failure.invalid_duration", "1y 2m 3d 5h 6s"));
             }
         }
 
@@ -97,7 +97,7 @@ public class BanService {
         playerManagerApi.findAllPlayersByIpAddress(ipAddress)
                 .forEach(player -> player.kick(message));
 
-        return new BanOperationResult(true, "IP address " + ipAddress + " has been banned. Reason: " + reason);
+        return new BanOperationResult(true, banFormatUtils.get("ban.operation.success.ip", ipAddress, reason));
     }
 
 
@@ -111,7 +111,7 @@ public class BanService {
     ) {
         Optional<Player> optionalPlayer = playerManagerApi.findPlayer(targetPlayer, false);
         if (optionalPlayer.isEmpty()) {
-            return new BanOperationResult(false, "Player not found: " + targetPlayer);
+            return new BanOperationResult(false, banFormatUtils.get("ban.operation.failure.player_not_found", targetPlayer));
         }
 
         Player player = optionalPlayer.get();
@@ -128,7 +128,7 @@ public class BanService {
         banRecordRepository.save(banRecord);
         player.kick(banFormatUtils.formatBanMessage(reason, permanent, expiresAt));
 
-        return new BanOperationResult(true, "Player " + player.name() + " has been banned. Reason: " + reason);
+        return new BanOperationResult(true, banFormatUtils.get("ban.operation.success.player",player.name(), reason));
     }
 
 

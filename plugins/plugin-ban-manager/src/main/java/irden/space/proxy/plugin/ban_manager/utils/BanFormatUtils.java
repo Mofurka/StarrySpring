@@ -108,7 +108,7 @@ public class BanFormatUtils {
         return expiresAt;
     }
 
-    private String get(String code, Object... args) {
+    public String get(String code, Object... args) {
         return msg.getMessage(code, args, Locale.getDefault());
     }
 }

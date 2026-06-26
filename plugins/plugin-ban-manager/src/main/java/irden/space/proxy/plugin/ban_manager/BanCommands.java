@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.ban_manager;
 import irden.space.proxy.plugin.ban_manager.command.BanTarget;
 import irden.space.proxy.plugin.ban_manager.command.BanTargetArgumentType;
 import irden.space.proxy.plugin.ban_manager.model.BanOperationResult;
+import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
@@ -24,6 +25,7 @@ public class BanCommands {
 
     private final BanService banService;
     private final PlayerManagerApi playerManagerApi;
+    private final BanFormatUtils banFormatUtils;
 
     @ChatCommand(
             value = "ban",
@@ -71,9 +73,9 @@ public class BanCommands {
                             BanTarget target = context.get("target", BanTarget.class);
                             boolean success = banService.unban(target.value());
                             if (success) {
-                                context.reply("Successfully unbanned " + target.value());
+                                context.reply(banFormatUtils.get("ban.message.unban.success", target.value()));
                             } else {
-                                context.reply("No active ban found for " + target.value());
+                                context.reply(banFormatUtils.get("ban.message.unban.not_found", target.value()));
                             }
                         }))
                 .build();
@@ -87,7 +89,7 @@ public class BanCommands {
                 target.value(),
                 executor == null ? null : executor.name(),
                 context.getOrDefault("duration", String.class, "permanent"),
-                context.getOrDefault("reason", String.class, "No reason provided")
+                context.getOrDefault("reason", String.class, banFormatUtils.get("ban.operation.default_reason"))
         );
 
         context.reply(result.message());
