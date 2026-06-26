@@ -19,7 +19,7 @@ public class BanRecordJdbcRepository {
 
 
     public void save(BanRecord banRecord) {
-        String sql = "INSERT INTO ban_manager_ban_records (name, player_uuid, ip_address, reason, banned_by, permanent, banned_at, expires_at) " +
+        String sql = "INSERT INTO ban_manager.ban_records (name, player_uuid, ip_address, reason, banned_by, permanent, banned_at, expires_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         jdbcTemplate.update(sql,
                 banRecord.name(),
@@ -34,7 +34,7 @@ public class BanRecordJdbcRepository {
 
     public Optional<BanRecord> findActiveBanByBanRecord(BanRecord banRecord) {
         String sql = "SELECT name, player_uuid, ip_address, reason, banned_by, permanent, banned_at, expires_at " +
-                "FROM ban_manager_ban_records " +
+                "FROM ban_manager.ban_records " +
                 "WHERE (player_uuid = ? OR ip_address = ? OR name = ?) " +
                 "AND (permanent = TRUE OR expires_at > NOW()) " +
                 "ORDER BY banned_at DESC LIMIT 1";
@@ -48,7 +48,7 @@ public class BanRecordJdbcRepository {
     }
 
     public int deactivateActiveBanByIpAddress(String ipAddress) {
-        String sql = "UPDATE ban_manager_ban_records " +
+        String sql = "UPDATE ban_manager.ban_records " +
                 "SET permanent = FALSE, expires_at = CURRENT_TIMESTAMP " +
                 "WHERE ip_address = ? " +
                 "AND (permanent = TRUE OR expires_at > CURRENT_TIMESTAMP)";
@@ -56,7 +56,7 @@ public class BanRecordJdbcRepository {
     }
 
     public int deactivateActiveBanByPlayer(String playerUuid, String name) {
-        String sql = "UPDATE ban_manager_ban_records " +
+        String sql = "UPDATE ban_manager.ban_records " +
                 "SET permanent = FALSE, expires_at = CURRENT_TIMESTAMP " +
                 "WHERE (player_uuid = ? OR name = ?) " +
                 "AND (permanent = TRUE OR expires_at > CURRENT_TIMESTAMP)";

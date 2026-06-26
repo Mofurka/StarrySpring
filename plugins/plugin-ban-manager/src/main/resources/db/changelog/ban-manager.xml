@@ -6,8 +6,18 @@
           http://www.liquibase.org/xml/ns/dbchangelog
           https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="ban-manager-001-create-ban-records" author="Mofurka">
-        <createTable tableName="ban_manager_ban_records">
+    <property name="banManagerSchema" value="ban_manager"/>
+
+    <changeSet id="ban-manager-001-create-schema" author="Mofurka">
+        <sql dbms="postgresql">
+            CREATE SCHEMA IF NOT EXISTS ${banManagerSchema};
+        </sql>
+    </changeSet>
+
+    <changeSet id="ban-manager-002-create-ban-records" author="Mofurka">
+        <createTable
+                tableName="ban_records"
+                schemaName="${banManagerSchema}">
 
             <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
                 <constraints primaryKey="true" nullable="false"/>

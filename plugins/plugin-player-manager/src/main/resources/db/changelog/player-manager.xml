@@ -6,8 +6,19 @@
           http://www.liquibase.org/xml/ns/dbchangelog
           https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="player-manager-001-create-players" author="Mofurka">
-        <createTable tableName="player_manager_players">
+    <property name="playerManagerSchema" value="player_manager"/>
+
+    <changeSet id="player-manager-001-create-schema" author="Mofurka">
+        <sql dbms="postgresql">
+            CREATE SCHEMA IF NOT EXISTS ${playerManagerSchema};
+        </sql>
+    </changeSet>
+
+
+    <changeSet id="player-manager-002-create-players" author="Mofurka">
+        <createTable
+                schemaName="${playerManagerSchema}"
+                tableName="players">
 
             <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
                 <constraints primaryKey="true" nullable="false"/>
@@ -31,8 +42,10 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="player-manager-002-create-player-roles" author="Mofurka">
-        <createTable tableName="player_manager_player_roles">
+    <changeSet id="player-manager-003-create-player-roles" author="Mofurka">
+        <createTable
+                schemaName="${playerManagerSchema}"
+                tableName="player_roles">
             <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -53,17 +66,23 @@
         </createTable>
 
         <addUniqueConstraint
-                tableName="player_manager_player_roles"
+                schemaName="${playerManagerSchema}"
+                tableName="player_roles"
                 columnNames="player_uuid, role_name"
                 constraintName="uk_player_manager_player_roles_uuid_role"/>
 
-        <createIndex tableName="player_manager_player_roles" indexName="idx_player_manager_player_roles_uuid">
+        <createIndex
+                schemaName="${playerManagerSchema}"
+                     tableName="player_roles"
+                     indexName="idx_player_manager_player_roles_uuid">
             <column name="player_uuid"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="player-manager-003-create-player-permission-overrides" author="Mofurka">
-        <createTable tableName="player_manager_player_permission_overrides">
+    <changeSet id="player-manager-004-create-player-permission-overrides" author="Mofurka">
+        <createTable
+                schemaName="${playerManagerSchema}"
+                tableName="player_permission_overrides">
             <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
@@ -88,11 +107,15 @@
         </createTable>
 
         <addUniqueConstraint
-                tableName="player_manager_player_permission_overrides"
+                schemaName="${playerManagerSchema}"
+                tableName="player_permission_overrides"
                 columnNames="player_uuid, permission_name"
                 constraintName="uk_player_manager_permission_overrides_uuid_permission"/>
 
-        <createIndex tableName="player_manager_player_permission_overrides" indexName="idx_player_manager_permission_overrides_uuid">
+        <createIndex
+                schemaName="${playerManagerSchema}"
+                tableName="player_permission_overrides"
+                indexName="idx_player_manager_permission_overrides_uuid">
             <column name="player_uuid"/>
         </createIndex>
     </changeSet>

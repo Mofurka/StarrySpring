@@ -19,7 +19,7 @@ public class PlayerJdbcRepository {
 
     public void save(PlayerRecord player) {
         jdbcTemplate.update("""
-                INSERT INTO player_manager_players (
+                INSERT INTO player_manager.players (
                     player_uuid,
                     name,
                     ip_address,
@@ -35,7 +35,7 @@ public class PlayerJdbcRepository {
 
     public void updatePlayerIpAddress(String uuid, String newIpAddress) {
         jdbcTemplate.update("""
-                UPDATE player_manager_players
+                UPDATE player_manager.players
                 SET ip_address = ?
                 WHERE player_uuid = ?
                 """,
@@ -47,7 +47,7 @@ public class PlayerJdbcRepository {
     public Optional<PlayerRecord> findByUuidOrName(String uuid, String name) {
         List<PlayerRecord> results = jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_players
+                FROM player_manager.players
                 WHERE player_uuid = ? OR name = ?
                 """,
                 rowMapper,
@@ -60,7 +60,7 @@ public class PlayerJdbcRepository {
     public Optional<PlayerRecord> findByName(String name) {
         List<PlayerRecord> results = jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_players
+                FROM player_manager.players
                 WHERE name = ?
                 """,
                 rowMapper,
@@ -73,7 +73,7 @@ public class PlayerJdbcRepository {
     public Optional<PlayerRecord> findByUuid(String uuid) {
         List<PlayerRecord> results = jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_players
+                FROM player_manager.players
                 WHERE player_uuid = ?
                 """,
                 rowMapper,
@@ -85,7 +85,7 @@ public class PlayerJdbcRepository {
     public List<PlayerRecord> findByIpAddress(String ipAddress) {
         return jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_players
+                FROM player_manager.players
                 WHERE ip_address = ?
                 """,
                 rowMapper,
@@ -96,7 +96,7 @@ public class PlayerJdbcRepository {
     public Optional<PlayerRecord> findById(String id) {
         List<PlayerRecord> results = jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_players
+                FROM player_manager.players
                 WHERE id = ?
                 """,
                 rowMapper,
@@ -108,7 +108,7 @@ public class PlayerJdbcRepository {
     public List<PlayerRecord> findAll() {
         return jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_players
+                FROM player_manager.players
                 """,
                 rowMapper
         );
@@ -116,7 +116,7 @@ public class PlayerJdbcRepository {
 
     public void deleteByUuid(String uuid) {
         jdbcTemplate.update("""
-                DELETE FROM player_manager_players
+                DELETE FROM player_manager.players
                 WHERE player_uuid = ?
                 """,
                 uuid
@@ -125,7 +125,7 @@ public class PlayerJdbcRepository {
 
     public void deleteById(String id) {
         jdbcTemplate.update("""
-                DELETE FROM player_manager_players
+                DELETE FROM player_manager.players
                 WHERE id = ?
                 """,
                 id
