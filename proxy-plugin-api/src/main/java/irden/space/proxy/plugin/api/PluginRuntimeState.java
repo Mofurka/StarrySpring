@@ -1,6 +1,10 @@
 package irden.space.proxy.plugin.api;
 
 public enum PluginRuntimeState {
+    STOPPED,
+    LOADING,
     LOADED,
-    STOPPED
+    STARTED,
+    STOPPING,
+    FAILED
 }

@@ -501,6 +501,86 @@ class PluginManagerTest {
     }
 
     @Test
+    void marksPluginFailedAndPreservesFailureWhenStartFails() {
+        FailingStartPlugin boom = new FailingStartPlugin("boom");
+        PluginLoader pluginLoader = new PluginLoader() {
+            @Override
+            public List<PluginCandidate> loadPluginCandidates() {
+                return candidates(boom);
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry),
+                testContainers()
+        );
+
+        assertThrows(IllegalStateException.class, manager::loadAndStart);
+
+        PluginRuntimeView view = pluginView(manager, "boom");
+        assertEquals(PluginRuntimeState.FAILED, view.state());
+        assertNotNull(view.failure());
+        assertEquals("START", view.failure().phase());
+        assertEquals("boom failed to start", view.failure().message());
+
+        manager.stopAll();
+    }
+
+    @Test
+    void rollsBackToPreviousVersionWhenReloadedPluginFailsToStart() {
+        List<String> lifecycleEvents = new ArrayList<>();
+        TestPlugin workingCore = new TestPlugin("core", List.of(), lifecycleEvents);
+        FailingStartPlugin brokenCore = new FailingStartPlugin("core");
+
+        List<PluginCandidate> workingCandidates = candidates(workingCore);
+        List<PluginCandidate> brokenCandidates = candidates(brokenCore);
+
+        PluginLoader pluginLoader = new PluginLoader() {
+            private List<PluginCandidate> current = workingCandidates;
+
+            @Override
+            public List<PluginCandidate> loadPluginCandidates() {
+                return current;
+            }
+
+            @Override
+            public void reloadPluginCandidates(List<PluginCandidate> plugins) {
+                current = brokenCandidates;
+            }
+        };
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PluginManager manager = new PluginManager(
+                pluginLoader,
+                new PluginDependencyResolver(),
+                registry,
+                new DefaultPluginContext(registry),
+                testContainers()
+        );
+
+        manager.loadAndStart();
+
+        assertThrows(IllegalStateException.class, () -> manager.reloadPlugin("core"));
+
+        assertEquals(List.of(workingCore), manager.getLoadedPlugins());
+        PluginRuntimeView view = pluginView(manager, "core");
+        assertEquals(PluginRuntimeState.STARTED, view.state());
+        assertNotNull(view.failure());
+        assertEquals("RELOAD", view.failure().phase());
+
+        manager.stopAll();
+    }
+
+    private static PluginRuntimeView pluginView(PluginManager manager, String pluginId) {
+        return manager.plugins().stream()
+                .filter(view -> view.descriptor().id().equals(pluginId))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    @Test
     void exposesLoadedAndStoppedPluginsThroughRuntimeApi() {
         TestPlugin core = new TestPlugin("core", List.of(), new ArrayList<>());
         TestPlugin feature = new TestPlugin("feature", List.of("core"), new ArrayList<>());
@@ -525,7 +605,7 @@ class PluginManagerTest {
         assertEquals(
                 List.of(
                         new PluginRuntimeView(feature.descriptor(), PluginRuntimeState.STOPPED),
-                        new PluginRuntimeView(core.descriptor(), PluginRuntimeState.LOADED)
+                        new PluginRuntimeView(core.descriptor(), PluginRuntimeState.STARTED)
                 ),
                 manager.plugins()
         );
@@ -598,6 +678,25 @@ class PluginManagerTest {
         @Override
         public void onStop() {
             lifecycleEvents.add("stop:" + descriptor.id());
+        }
+    }
+
+    private static final class FailingStartPlugin implements ProxyPlugin {
+
+        private final PluginDescriptor descriptor;
+
+        private FailingStartPlugin(String id) {
+            this.descriptor = new PluginDescriptor(id, id, "1.0.0", List.of());
+        }
+
+        @Override
+        public PluginDescriptor descriptor() {
+            return descriptor;
+        }
+
+        @Override
+        public void onStart() {
+            throw new IllegalStateException(descriptor.id() + " failed to start");
         }
     }
 
