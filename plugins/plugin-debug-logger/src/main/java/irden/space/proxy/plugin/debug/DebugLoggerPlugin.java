@@ -28,7 +28,7 @@ public final class DebugLoggerPlugin implements ProxyPlugin {
 
     @OnLoad
     public void handleLoad() {
-        log.info("Loading plugin '{}'", descriptor().id());
+        log.info("Loading plugin. Loading plugin after rebuild runtime'{}'", descriptor().id());
     }
 
 
