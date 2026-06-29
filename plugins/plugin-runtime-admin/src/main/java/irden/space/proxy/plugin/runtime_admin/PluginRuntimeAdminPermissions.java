@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.PermissionEnum;
 
 public enum PluginRuntimeAdminPermissions implements PermissionEnum {
     LIST("plugin.runtime.list"),
+    INFO("plugin.runtime.info"),
     START("plugin.runtime.start"),
     STOP("plugin.runtime.stop"),
     RELOAD("plugin.runtime.reload");

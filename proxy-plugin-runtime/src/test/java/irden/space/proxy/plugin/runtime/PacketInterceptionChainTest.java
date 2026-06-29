@@ -1,9 +1,6 @@
 package irden.space.proxy.plugin.runtime;
 
-import irden.space.proxy.plugin.api.ForwardPacketDecision;
-import irden.space.proxy.plugin.api.PacketDecision;
-import irden.space.proxy.plugin.api.PacketInterceptionContext;
-import irden.space.proxy.plugin.api.ReplacePacketDecision;
+import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketType;

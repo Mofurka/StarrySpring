@@ -32,11 +32,11 @@
             <artifactId>plugin-star-custom-chat-interceptor</artifactId>
             <version>1.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-debug-logger</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>irden.space.plugin</groupId>-->
+<!--            <artifactId>plugin-debug-logger</artifactId>-->
+<!--            <version>1.0.0</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>irden.space.plugin</groupId>
             <artifactId>plugin-runtime-admin</artifactId>

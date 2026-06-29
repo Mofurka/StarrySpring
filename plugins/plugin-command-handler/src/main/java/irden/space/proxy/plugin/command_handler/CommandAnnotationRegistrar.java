@@ -2,7 +2,7 @@ package irden.space.proxy.plugin.command_handler;
 
 import irden.space.proxy.plugin.api.PluginAnnotationRegistrar;
 import irden.space.proxy.plugin.api.PluginContext;
-import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.api.PluginDescriptor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -18,14 +18,14 @@ public class CommandAnnotationRegistrar implements PluginAnnotationRegistrar {
     }
 
     @Override
-    public void register(ProxyPlugin plugin, PluginContext context) {
-        context.onRemove(() -> CommandRegistry.global().unregisterByPluginId(plugin.descriptor().id()));
-        Arrays.stream(plugin.getClass().getDeclaredMethods())
+    public void register(Object bean, PluginDescriptor owner, PluginContext context) {
+        context.onRemove(() -> CommandRegistry.global().unregisterByPluginId(owner.id()));
+        Arrays.stream(bean.getClass().getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(ChatCommand.class))
-                .forEach(method -> register(plugin, method));
+                .forEach(method -> register(bean, owner, method));
     }
 
-    private void register(ProxyPlugin plugin, Method method) {
+    private void register(Object bean, PluginDescriptor owner, Method method) {
         validateMethod(method);
 
         if (!method.trySetAccessible()) {
@@ -33,14 +33,14 @@ public class CommandAnnotationRegistrar implements PluginAnnotationRegistrar {
         }
 
         ChatCommand annotation = method.getAnnotation(ChatCommand.class);
-        CommandSpec spec = invokeSpecFactory(plugin, method);
+        CommandSpec spec = invokeSpecFactory(bean, method);
 
-        CommandRegistry.global().register(plugin, method, annotation, spec);
+        CommandRegistry.global().register(owner.id(), method, annotation, spec);
     }
 
-    private CommandSpec invokeSpecFactory(ProxyPlugin plugin, Method method) {
+    private CommandSpec invokeSpecFactory(Object bean, Method method) {
         try {
-            Object result = method.invoke(plugin);
+            Object result = method.invoke(bean);
 
             if (!(result instanceof CommandSpec spec)) {
                 throw new IllegalStateException("@ChatCommand method must return CommandSpec: " + method);

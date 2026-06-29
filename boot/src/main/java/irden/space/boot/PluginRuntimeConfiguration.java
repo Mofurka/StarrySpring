@@ -10,7 +10,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.sql.DataSource;
 import java.nio.file.Path;
 
 @Configuration
@@ -22,15 +21,8 @@ public class PluginRuntimeConfiguration {
     }
 
     @Bean
-    public PluginContext pluginContext(
-            PacketInterceptorRegistry packetInterceptorRegistry,
-            DataSource dataSource,
-            SessionPermissionService sessionPermissionService
-    ) {
-        DefaultPluginContext context = new DefaultPluginContext(packetInterceptorRegistry);
-        context.publishService(DataSource.class, dataSource);
-        context.publishService(SessionPermissionService.class, sessionPermissionService);
-        return context;
+    public PluginContext pluginContext(PacketInterceptorRegistry packetInterceptorRegistry) {
+        return new DefaultPluginContext(packetInterceptorRegistry);
     }
 
     @Bean
@@ -51,27 +43,23 @@ public class PluginRuntimeConfiguration {
             PluginDependencyResolver pluginDependencyResolver,
             PacketInterceptorRegistry packetInterceptorRegistry,
             PluginContext pluginContext,
-            PluginContainerFactory pluginContainerFactory
+            PluginContainerFactory pluginContainerFactory,
+            SessionPermissionService sessionPermissionService
     ) {
         PluginManager manager = new PluginManager(
                 pluginLoader,
                 pluginDependencyResolver,
                 packetInterceptorRegistry,
                 pluginContext,
-                pluginContainerFactory
+                pluginContainerFactory,
+                sessionPermissionService
         );
         return manager;
     }
 
     @Bean
-    public PluginContainerFactory pluginContainerFactory(
-            ApplicationContext applicationContext,
-            PluginContext pluginContext
-    ) {
-        if (!(pluginContext instanceof PluginServiceProvider pluginServiceProvider)) {
-            throw new IllegalStateException("PluginContext must expose plugin services to Spring plugin containers");
-        }
-        return new SpringPluginContainerFactory(applicationContext, pluginServiceProvider);
+    public PluginContainerFactory pluginContainerFactory(ApplicationContext applicationContext) {
+        return new SpringPluginContainerFactory(applicationContext);
     }
 
     @Bean

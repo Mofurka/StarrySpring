@@ -26,6 +26,16 @@ public class CommandRegistry {
             CommandSpec spec
     ) {
         Objects.requireNonNull(plugin, "plugin");
+        return register(plugin.descriptor().id(), method, annotation, spec);
+    }
+
+    public synchronized RegisteredCommand register(
+            String ownerPluginId,
+            Method method,
+            ChatCommand annotation,
+            CommandSpec spec
+    ) {
+        Objects.requireNonNull(ownerPluginId, "ownerPluginId");
         Objects.requireNonNull(method, "method");
         Objects.requireNonNull(annotation, "annotation");
         Objects.requireNonNull(spec, "spec");
@@ -40,7 +50,7 @@ public class CommandRegistry {
         }
 
         RegisteredCommand command = new RegisteredCommand(
-                plugin.descriptor().id(),
+                ownerPluginId,
                 name,
                 aliases,
                 annotation.description().trim(),
@@ -58,7 +68,7 @@ public class CommandRegistry {
         log.info("Registered command '/{}' with aliases {} from plugin '{}'",
                 name,
                 aliases,
-                plugin.descriptor().id()
+                ownerPluginId
         );
 
         return command;

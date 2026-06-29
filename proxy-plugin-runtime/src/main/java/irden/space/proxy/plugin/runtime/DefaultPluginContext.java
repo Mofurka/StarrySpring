@@ -7,15 +7,13 @@ import irden.space.proxy.plugin.api.PluginContext;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class DefaultPluginContext implements PluginContextManager, PluginServiceProvider {
+public class DefaultPluginContext implements PluginContextManager {
 
     private final PacketInterceptorRegistry packetInterceptorRegistry;
-    private final Map<Class<?>, ServiceRegistration> services = new ConcurrentHashMap<>();
     private final Map<String, Set<PacketInterceptor>> interceptorsByPlugin = new ConcurrentHashMap<>();
     private final Map<String, ConcurrentLinkedDeque<Runnable>> cleanupByPlugin = new ConcurrentHashMap<>();
 
@@ -26,55 +24,6 @@ public class DefaultPluginContext implements PluginContextManager, PluginService
     @Override
     public PacketInterceptorRegistry packetInterceptorRegistry() {
         return packetInterceptorRegistry;
-    }
-
-    @Override
-    public <T> void publishService(Class<T> serviceType, T service) {
-        publishService(null, serviceType, service);
-    }
-
-    private <T> void publishService(String pluginId, Class<T> serviceType, T service) {
-        if (serviceType == null) {
-            throw new IllegalArgumentException("Service type must not be null");
-        }
-        if (service == null) {
-            throw new IllegalArgumentException("Service instance must not be null");
-        }
-        if (!serviceType.isInstance(service)) {
-            throw new IllegalArgumentException(
-                    "Service %s is not an instance of %s".formatted(service.getClass().getName(), serviceType.getName())
-            );
-        }
-        services.compute(serviceType, (ignored, existing) -> {
-            if (existing != null && !Objects.equals(existing.pluginId(), pluginId)) {
-                throw new IllegalStateException(
-                        "Service '%s' is already published by %s".formatted(
-                                serviceType.getName(),
-                                existing.pluginId() == null ? "the application" : "plugin '" + existing.pluginId() + "'"
-                        )
-                );
-            }
-            return new ServiceRegistration(pluginId, service);
-        });
-    }
-
-    @Override
-    public <T> Optional<T> findService(Class<T> serviceType) {
-        if (serviceType == null) {
-            return Optional.empty();
-        }
-        ServiceRegistration registration = services.get(serviceType);
-        if (registration == null) {
-            return Optional.empty();
-        }
-        return Optional.of(serviceType.cast(registration.service()));
-    }
-
-    @Override
-    public void removeService(Class<?> serviceType) {
-        if (serviceType != null) {
-            services.remove(serviceType);
-        }
     }
 
     @Override
@@ -114,30 +63,10 @@ public class DefaultPluginContext implements PluginContextManager, PluginService
             }
 
             @Override
-            public <T> void publishService(Class<T> serviceType, T service) {
-                DefaultPluginContext.this.publishService(pluginId, serviceType, service);
-            }
-
-            @Override
-            public <T> Optional<T> findService(Class<T> serviceType) {
-                return DefaultPluginContext.this.findService(serviceType);
-            }
-
-            @Override
             public void onRemove(Runnable cleanup) {
                 Objects.requireNonNull(cleanup, "cleanup");
                 cleanupByPlugin.computeIfAbsent(pluginId, ignored -> new ConcurrentLinkedDeque<>())
                         .addFirst(cleanup);
-            }
-
-            @Override
-            public void removeService(Class<?> serviceType) {
-                if (serviceType != null) {
-                    services.computeIfPresent(
-                            serviceType,
-                            (ignored, registration) -> pluginId.equals(registration.pluginId()) ? null : registration
-                    );
-                }
             }
         };
     }
@@ -153,27 +82,10 @@ public class DefaultPluginContext implements PluginContextManager, PluginService
         if (interceptors != null) {
             interceptors.forEach(packetInterceptorRegistry::unregister);
         }
-        services.entrySet().removeIf(entry -> pluginId.equals(entry.getValue().pluginId()));
 
         if (cleanupFailure != null) {
             throw cleanupFailure;
         }
-    }
-
-    @Override
-    public Map<Class<?>, Object> servicesPublishedBy(java.util.Collection<String> pluginIds) {
-        if (pluginIds == null || pluginIds.isEmpty()) {
-            return Map.of();
-        }
-
-        Set<String> requestedPluginIds = Set.copyOf(pluginIds);
-        Map<Class<?>, Object> result = new java.util.LinkedHashMap<>();
-        services.forEach((serviceType, registration) -> {
-            if (registration.pluginId() != null && requestedPluginIds.contains(registration.pluginId())) {
-                result.put(serviceType, registration.service());
-            }
-        });
-        return Map.copyOf(result);
     }
 
     private RuntimeException runCleanupCallbacks(String pluginId) {
@@ -195,8 +107,5 @@ public class DefaultPluginContext implements PluginContextManager, PluginService
             }
         }
         return firstFailure;
-    }
-
-    private record ServiceRegistration(String pluginId, Object service) {
     }
 }

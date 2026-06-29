@@ -1,9 +1,6 @@
 package irden.space.proxy.plugin.runtime_admin;
 
-import irden.space.proxy.plugin.api.PluginDefinition;
-import irden.space.proxy.plugin.api.PluginRuntimeService;
-import irden.space.proxy.plugin.api.PluginRuntimeView;
-import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
@@ -42,13 +39,41 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
     @ChatCommand(value = "plugin", description = "Manage runtime plugins")
     public CommandSpec pluginCommand() {
         return literal("plugin")
-                .then(literal("list")
-                        .permission(PluginRuntimeAdminPermissions.LIST.permission())
+                .then(literal("list").permission(PluginRuntimeAdminPermissions.LIST.permission())
                         .executes(context -> context.reply(formatPlugins(runtimeService.plugins()))))
+                .then(literal("info").permission(PluginRuntimeAdminPermissions.INFO.permission())
+                        .then(argument("pluginId", PluginArgumentType.pluginName(this))
+                                .executes(context -> context.reply(
+                                        formatPluginInfo(context.get("pluginId", String.class), runtimeService.plugins())))))
                 .then(operation("start", PluginRuntimeAdminPermissions.START, runtimeService::startPlugin))
                 .then(operation("stop", PluginRuntimeAdminPermissions.STOP, runtimeService::stopPlugin))
                 .then(operation("reload", PluginRuntimeAdminPermissions.RELOAD, runtimeService::reloadPlugin))
                 .build();
+    }
+
+    static String formatPluginInfo(String pluginId, List<PluginRuntimeView> plugins) {
+        PluginRuntimeView view = plugins.stream()
+                .filter(candidate -> candidate.descriptor().id().equals(pluginId))
+                .findFirst()
+                .orElse(null);
+        if (view == null) {
+            return "Plugin '" + pluginId + "' not found.";
+        }
+
+        PluginDescriptor descriptor = view.descriptor();
+        StringBuilder result = new StringBuilder("Plugin '").append(descriptor.id()).append("':")
+                .append(System.lineSeparator()).append("- name: ").append(descriptor.name())
+                .append(System.lineSeparator()).append("- version: ").append(descriptor.version())
+                .append(System.lineSeparator()).append("- state: ").append(view.state())
+                .append(System.lineSeparator()).append("- dependsOn: ")
+                .append(descriptor.dependsOn().isEmpty() ? "[]" : descriptor.dependsOn());
+
+        PluginFailure failure = view.failure();
+        if (failure != null) {
+            result.append(System.lineSeparator()).append("- last failure: [").append(failure.phase()).append("] ")
+                    .append(failure.message()).append(" (at ").append(failure.timestamp()).append(")");
+        }
+        return result.toString();
     }
 
     static String formatPlugins(List<PluginRuntimeView> plugins) {

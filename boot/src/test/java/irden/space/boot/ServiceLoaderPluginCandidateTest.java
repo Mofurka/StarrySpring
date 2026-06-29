@@ -5,6 +5,8 @@ import irden.space.proxy.plugin.runtime.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class ServiceLoaderPluginCandidateTest {
@@ -19,9 +21,10 @@ class ServiceLoaderPluginCandidateTest {
         AnnotationConfigApplicationContext rootContext = new AnnotationConfigApplicationContext();
         rootContext.refresh();
 
-        PluginContainer container = new SpringPluginContainerFactory(rootContext, pluginContext).create(
+        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
                 candidate,
-                pluginContext.forPlugin(candidate.descriptor().id())
+                pluginContext.forPlugin(candidate.descriptor().id()),
+                List.of()
         );
 
         assertInstanceOf(CommandHandlerPlugin.class, container.plugin());

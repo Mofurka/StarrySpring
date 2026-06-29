@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.runtime;
 
+import irden.space.proxy.plugin.api.DefaultPluginSessionContext;
 import irden.space.proxy.plugin.api.Permission;
 import irden.space.proxy.plugin.api.PermissionView;
 import org.junit.jupiter.api.Test;

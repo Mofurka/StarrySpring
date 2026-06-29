@@ -22,7 +22,7 @@ public class PlayerAccessJdbcRepository {
         //noinspection SqlResolve
         return jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_player_roles
+                FROM player_manager.player_roles
                 WHERE player_uuid = ?
                 ORDER BY assigned_at, role_name
                 """, playerRoleRowMapper, playerUuid);
@@ -31,7 +31,7 @@ public class PlayerAccessJdbcRepository {
     public void assignRole(String playerUuid, String roleName, String assignedBy) {
         //noinspection SqlResolve
         jdbcTemplate.update("""
-                INSERT INTO player_manager_player_roles (
+                INSERT INTO player_manager.player_roles (
                     player_uuid,
                     role_name,
                     assigned_by,
@@ -46,7 +46,7 @@ public class PlayerAccessJdbcRepository {
     public void removeRole(String playerUuid, String roleName) {
         //noinspection SqlResolve
         jdbcTemplate.update("""
-                DELETE FROM player_manager_player_roles
+                DELETE FROM player_manager.player_roles
                 WHERE player_uuid = ?
                   AND role_name = ?
                 """, playerUuid, roleName);
@@ -56,7 +56,7 @@ public class PlayerAccessJdbcRepository {
         //noinspection SqlResolve
         return jdbcTemplate.query("""
                 SELECT *
-                FROM player_manager_player_permission_overrides
+                FROM player_manager.player_permission_overrides
                 WHERE player_uuid = ?
                 ORDER BY changed_at, permission_name
                 """, playerPermissionOverrideRowMapper, playerUuid);
@@ -65,7 +65,7 @@ public class PlayerAccessJdbcRepository {
     public void savePermissionOverride(String playerUuid, String permissionName, boolean granted, String changedBy) {
         //noinspection SqlResolve
         jdbcTemplate.update("""
-                INSERT INTO player_manager_player_permission_overrides (
+                INSERT INTO player_manager.player_permission_overrides (
                     player_uuid,
                     permission_name,
                     granted,
@@ -82,7 +82,7 @@ public class PlayerAccessJdbcRepository {
     public void deletePermissionOverride(String playerUuid, String permissionName) {
         //noinspection SqlResolve
         jdbcTemplate.update("""
-                DELETE FROM player_manager_player_permission_overrides
+                DELETE FROM player_manager.player_permission_overrides
                 WHERE player_uuid = ?
                   AND permission_name = ?
                 """, playerUuid, permissionName);

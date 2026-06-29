@@ -17,8 +17,17 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     private final PacketInterceptorRegistry interceptorRegistry;
     private final PluginContext pluginContext;
     private final PluginContainerFactory containerFactory;
+    private final SessionPermissionService sessionPermissionService;
 
     private final CopyOnWriteArrayList<PluginContainer> loadedPlugins = new CopyOnWriteArrayList<>();
+    private final Map<String, PluginRuntimeState> pluginStates = new HashMap<>();
+    private final Map<String, PluginFailure> pluginFailures = new HashMap<>();
+    private final Map<String, PluginCandidate> loadedCandidates = new HashMap<>();
+
+    private static final String PHASE_LOAD = "LOAD";
+    private static final String PHASE_START = "START";
+    private static final String PHASE_STOP = "STOP";
+    private static final String PHASE_RELOAD = "RELOAD";
 
 
     public PluginManager(
@@ -28,11 +37,23 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
             PluginContext pluginContext,
             PluginContainerFactory containerFactory
     ) {
+        this(pluginLoader, dependencyResolver, interceptorRegistry, pluginContext, containerFactory, null);
+    }
+
+    public PluginManager(
+            PluginLoader pluginLoader,
+            PluginDependencyResolver dependencyResolver,
+            PacketInterceptorRegistry interceptorRegistry,
+            PluginContext pluginContext,
+            PluginContainerFactory containerFactory,
+            SessionPermissionService sessionPermissionService
+    ) {
         this.pluginLoader = pluginLoader;
         this.dependencyResolver = dependencyResolver;
         this.interceptorRegistry = interceptorRegistry;
         this.pluginContext = pluginContext;
         this.containerFactory = containerFactory;
+        this.sessionPermissionService = sessionPermissionService;
     }
 
     public synchronized void loadAndStart() {
@@ -126,37 +147,61 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         List<PluginCandidate> previousPluginCandidates = new ArrayList<>(pluginsToReload.size());
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
             ProxyPlugin plugin = loadedPlugins.get(i).plugin();
-            if (pluginsToReload.contains(plugin.descriptor().id())) {
-                previousPluginCandidates.add(new PluginCandidate(
-                        plugin.getClass().asSubclass(ProxyPlugin.class),
-                        plugin.descriptor()
-                ));
+            String loadedPluginId = plugin.descriptor().id();
+            if (pluginsToReload.contains(loadedPluginId)) {
+                PluginCandidate candidate = loadedCandidates.get(loadedPluginId);
+                previousPluginCandidates.add(candidate != null
+                        ? candidate
+                        : new PluginCandidate(plugin.getClass().asSubclass(ProxyPlugin.class), plugin.descriptor()));
             }
         }
 
         pluginLoader.validateReloadPluginCandidates(previousPluginCandidates);
         List<String> stoppedPluginIds = stopPlugin(pluginId);
         pluginLoader.reloadPluginCandidates(previousPluginCandidates);
-        return startPlugins(new LinkedHashSet<>(stoppedPluginIds));
+        try {
+            return startPlugins(new LinkedHashSet<>(stoppedPluginIds));
+        } catch (RuntimeException | Error e) {
+            failState(pluginId, PHASE_RELOAD, e);
+            rollbackReload(previousPluginCandidates);
+            throw e;
+        }
+    }
+
+    private void rollbackReload(List<PluginCandidate> previousPluginCandidates) {
+        if (previousPluginCandidates.isEmpty()) {
+            return;
+        }
+
+        // previousPluginCandidates is captured in reverse load order; reverse it back to load order.
+        List<PluginCandidate> orderedPrevious = new ArrayList<>(previousPluginCandidates);
+        Collections.reverse(orderedPrevious);
+        try {
+            startResolvedPlugins(orderedPrevious);
+            log.info("Rolled back reload; restored the previous version of {} plugin(s)", orderedPrevious.size());
+        } catch (RuntimeException | Error rollbackFailure) {
+            log.error("Failed to roll back reload to the previous plugin version(s)", rollbackFailure);
+        }
     }
 
     @Override
     public synchronized List<PluginRuntimeView> plugins() {
         Map<String, PluginRuntimeView> views = new LinkedHashMap<>();
         for (PluginCandidate plugin : pluginLoader.loadPluginCandidates()) {
-            views.put(
-                    plugin.descriptor().id(),
-                    new PluginRuntimeView(plugin.descriptor(), PluginRuntimeState.STOPPED)
-            );
+            String pluginId = plugin.descriptor().id();
+            views.put(pluginId, viewFor(plugin.descriptor(), PluginRuntimeState.STOPPED));
         }
         for (PluginContainer container : loadedPlugins) {
             ProxyPlugin plugin = container.plugin();
-            views.put(
-                    plugin.descriptor().id(),
-                    new PluginRuntimeView(plugin.descriptor(), PluginRuntimeState.LOADED)
-            );
+            views.put(plugin.descriptor().id(), viewFor(plugin.descriptor(), PluginRuntimeState.STARTED));
         }
         return List.copyOf(views.values());
+    }
+
+    private PluginRuntimeView viewFor(PluginDescriptor descriptor, PluginRuntimeState defaultState) {
+        String pluginId = descriptor.id();
+        PluginRuntimeState state = pluginStates.getOrDefault(pluginId, defaultState);
+        return new PluginRuntimeView(descriptor, state, pluginFailures.get(pluginId));
     }
 
     private List<String> startPlugins(Set<String> requestedPluginIds) {
@@ -196,26 +241,32 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         for (PluginContainer container : loadedPlugins) {
             ProxyPlugin plugin = container.plugin();
             invokeSessionLifecycle(plugin, "OnConnectionSuccess", () -> plugin.onConnectionSuccess(context), context);
+            invokeSessionLifecycle(plugin, "OnConnectionSuccess", () -> container.onConnectionSuccess(context), context);
         }
     }
 
     @Override
     public void onDisconnecting(PluginSessionContext context) {
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
-            ProxyPlugin plugin = loadedPlugins.get(i).plugin();
+            PluginContainer container = loadedPlugins.get(i);
+            ProxyPlugin plugin = container.plugin();
             invokeSessionLifecycle(plugin, "OnDisconnecting", () -> plugin.onDisconnecting(context), context);
+            invokeSessionLifecycle(plugin, "OnDisconnecting", () -> container.onDisconnecting(context), context);
         }
     }
 
     @Override
     public void onDisconnected(PluginSessionContext context) {
         for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
-            ProxyPlugin plugin = loadedPlugins.get(i).plugin();
+            PluginContainer container = loadedPlugins.get(i);
+            ProxyPlugin plugin = container.plugin();
             invokeSessionLifecycle(plugin, "OnDisconnected", () -> plugin.onDisconnected(context), context);
+            invokeSessionLifecycle(plugin, "OnDisconnected", () -> container.onDisconnected(context), context);
         }
 
-        pluginContext.findService(SessionPermissionService.class)
-                .ifPresent(service -> service.clearPermissions(context.sessionId()));
+        if (sessionPermissionService != null) {
+            sessionPermissionService.clearPermissions(context.sessionId());
+        }
     }
 
     public List<ProxyPlugin> getLoadedPlugins() {
@@ -285,6 +336,19 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         }
     }
 
+    private void setState(String pluginId, PluginRuntimeState state) {
+        pluginStates.put(pluginId, state);
+    }
+
+    private void rememberFailure(String pluginId, String phase, Throwable error) {
+        pluginFailures.put(pluginId, PluginFailure.of(pluginId, phase, error));
+    }
+
+    private void failState(String pluginId, String phase, Throwable error) {
+        rememberFailure(pluginId, phase, error);
+        setState(pluginId, PluginRuntimeState.FAILED);
+    }
+
     private PluginContainer findLoadedPlugin(String pluginId) {
         for (PluginContainer container : loadedPlugins) {
             if (pluginId.equals(container.plugin().descriptor().id())) {
@@ -345,11 +409,18 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
         }
 
         List<PluginContainer> startedContainers = new ArrayList<>(plugins.size());
+        String failedPluginId = null;
         try {
             for (PluginCandidate candidate : plugins) {
+                String pluginId = candidate.descriptor().id();
                 log.info("Loading plugin {}", describePlugin(candidate));
-                PluginContext scopedContext = contextFor(candidate.descriptor().id());
-                PluginContainer container = containerFactory.create(candidate, scopedContext);
+                setState(pluginId, PluginRuntimeState.LOADING);
+                PluginContext scopedContext = contextFor(pluginId);
+                PluginContainer container = containerFactory.create(
+                        candidate,
+                        scopedContext,
+                        dependencyContainers(candidate)
+                );
                 try {
                     ProxyPlugin plugin = container.plugin();
                     if (!candidate.descriptor().equals(plugin.descriptor())) {
@@ -360,13 +431,20 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
                     }
                     log.info("Registering permissions for plugin {}", describePlugin(plugin));
                     plugin.registerPluginPermissions(scopedContext);
+                    container.registerPluginPermissions();
                     log.info("Registered permissions for plugin '{}'", plugin.descriptor().id());
+                    container.registerAnnotatedBeans();
                     container.plugin().onLoad(scopedContext);
+                    container.onLoad();
                     loadedPlugins.add(container);
+                    loadedCandidates.put(pluginId, candidate);
                     startedContainers.add(container);
+                    setState(pluginId, PluginRuntimeState.LOADED);
                     log.info("Loaded plugin '{}'", plugin.descriptor().id());
                 } catch (RuntimeException | Error e) {
-                    removePluginRegistrations(candidate.descriptor().id());
+                    failedPluginId = pluginId;
+                    failState(pluginId, PHASE_LOAD, e);
+                    removePluginRegistrations(pluginId);
                     container.close();
                     throw e;
                 }
@@ -374,15 +452,27 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
 
             for (PluginContainer container : startedContainers) {
                 ProxyPlugin plugin = container.plugin();
-                log.info("Starting plugin '{}'", plugin.descriptor().id());
-                plugin.onStart();
-                log.info("Started plugin '{}'", plugin.descriptor().id());
+                String pluginId = plugin.descriptor().id();
+                log.info("Starting plugin '{}'", pluginId);
+                try {
+                    plugin.onStart();
+                    container.onStart();
+                    setState(pluginId, PluginRuntimeState.STARTED);
+                    log.info("Started plugin '{}'", pluginId);
+                } catch (RuntimeException | Error e) {
+                    failedPluginId = pluginId;
+                    failState(pluginId, PHASE_START, e);
+                    throw e;
+                }
             }
         } catch (RuntimeException | Error e) {
             for (int i = startedContainers.size() - 1; i >= 0; i--) {
                 PluginContainer container = startedContainers.get(i);
                 stopContainer(container);
                 loadedPlugins.remove(container);
+            }
+            if (failedPluginId != null) {
+                setState(failedPluginId, PluginRuntimeState.FAILED);
             }
             throw e;
         }
@@ -395,24 +485,48 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
 
     private void stopContainer(PluginContainer container) {
         ProxyPlugin plugin = container.plugin();
-        log.info("Stopping plugin '{}'", plugin.descriptor().id());
+        String pluginId = plugin.descriptor().id();
+        log.info("Stopping plugin '{}'", pluginId);
+        setState(pluginId, PluginRuntimeState.STOPPING);
         try {
             plugin.onStop();
-            log.info("Stopped plugin '{}'", plugin.descriptor().id());
+            container.onStop();
+            log.info("Stopped plugin '{}'", pluginId);
         } catch (RuntimeException e) {
-            log.warn("Plugin '{}' failed while stopping", plugin.descriptor().id(), e);
+            log.warn("Plugin '{}' failed while stopping", pluginId, e);
+            rememberFailure(pluginId, PHASE_STOP, e);
         } finally {
             try {
                 removePluginRegistrations(plugin);
             } catch (RuntimeException e) {
-                log.warn("Failed to remove registrations for plugin '{}'", plugin.descriptor().id(), e);
+                log.warn("Failed to remove registrations for plugin '{}'", pluginId, e);
+                rememberFailure(pluginId, PHASE_STOP, e);
             } finally {
                 try {
                     container.close();
                 } catch (RuntimeException e) {
-                    log.warn("Failed to close container for plugin '{}'", plugin.descriptor().id(), e);
+                    log.warn("Failed to close container for plugin '{}'", pluginId, e);
+                    rememberFailure(pluginId, PHASE_STOP, e);
+                } finally {
+                    loadedCandidates.remove(pluginId);
+                    setState(pluginId, PluginRuntimeState.STOPPED);
                 }
             }
         }
+    }
+
+    private List<PluginContainer> dependencyContainers(PluginCandidate candidate) {
+        List<PluginContainer> result = new ArrayList<>();
+        for (String dependencyId : candidate.descriptor().dependsOn()) {
+            PluginContainer dependency = findLoadedPlugin(dependencyId);
+            if (dependency == null) {
+                throw new NoSuchElementException(
+                        "Plugin '%s' depends on unloaded plugin '%s'"
+                                .formatted(candidate.descriptor().id(), dependencyId)
+                );
+            }
+            result.add(dependency);
+        }
+        return List.copyOf(result);
     }
 }

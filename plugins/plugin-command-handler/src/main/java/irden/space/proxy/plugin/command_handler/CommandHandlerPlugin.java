@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.command_handler;
 
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
-import irden.space.proxy.plugin.api.annotations.PublishService;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
@@ -31,11 +30,6 @@ public class CommandHandlerPlugin implements ProxyPlugin {
 
     public CommandHandlerPlugin(CommandParser commandParser) {
         this.commandParser = commandParser;
-    }
-
-    @PublishService
-    public CommandHandlerPlugin publishCommandHandler() {
-        return this;
     }
 
     public void addContextResolver(CommandContextResolver resolver) {

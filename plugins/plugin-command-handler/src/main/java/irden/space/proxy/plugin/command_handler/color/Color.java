@@ -50,6 +50,10 @@ public enum Color {
         return null;
     }
 
+    public String colorString(String text) {
+        return colorString(text, true);
+    }
+
     public String colorString(String text, boolean clear) {
         String formatted = "^".concat(color).concat(";").concat(text);
         if (clear) {

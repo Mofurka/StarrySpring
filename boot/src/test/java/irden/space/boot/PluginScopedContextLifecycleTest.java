@@ -35,7 +35,7 @@ class PluginScopedContextLifecycleTest {
                 new PluginDependencyResolver(),
                 registry,
                 pluginContext,
-                new SpringPluginContainerFactory(rootContext, pluginContext)
+                new SpringPluginContainerFactory(rootContext)
         );
 
         manager.loadAndStart();

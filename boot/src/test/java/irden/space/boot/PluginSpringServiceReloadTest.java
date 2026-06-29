@@ -3,7 +3,6 @@ package irden.space.boot;
 import irden.space.proxy.plugin.api.PluginDescriptor;
 import irden.space.proxy.plugin.api.PluginSpringConfiguration;
 import irden.space.proxy.plugin.api.ProxyPlugin;
-import irden.space.proxy.plugin.api.annotations.PublishService;
 import irden.space.proxy.plugin.runtime.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,24 +41,27 @@ class PluginSpringServiceReloadTest {
                 new PluginDependencyResolver(),
                 registry,
                 pluginContext,
-                new SpringPluginContainerFactory(rootContext, pluginContext)
+                new SpringPluginContainerFactory(rootContext)
         );
 
         manager.loadAndStart();
         ConsumerPlugin firstConsumer = loadedConsumer(manager);
-        assertSame(ProviderPlugin.SERVICE, firstConsumer.service);
+        ProviderPlugin firstProvider = loadedProvider(manager, ProviderPlugin.class);
+        assertSame(firstProvider, firstConsumer.service);
 
         manager.reloadPlugin("provider");
 
         ConsumerPlugin secondConsumer = loadedConsumer(manager);
-        assertSame(ReloadedProviderPlugin.SERVICE, secondConsumer.service);
+        ReloadedProviderPlugin secondProvider = loadedProvider(manager, ReloadedProviderPlugin.class);
+        assertSame(secondProvider, secondConsumer.service);
         assertNotSame(firstConsumer.service, secondConsumer.service);
 
         manager.stopAll();
         rootContext.close();
     }
 
-    record SharedService(String value) {
+    interface SharedService {
+        String value();
     }
 
     private static List<PluginCandidate> candidates(Class<? extends ProxyPlugin> providerClass) {
@@ -79,33 +81,37 @@ class PluginSpringServiceReloadTest {
                 .orElseThrow();
     }
 
-    @PluginSpringConfiguration(scanPluginPackage = false)
-    static final class ProviderPlugin implements ProxyPlugin {
-        private static final SharedService SERVICE = new SharedService("first");
+    private static <T extends ProxyPlugin> T loadedProvider(PluginManager manager, Class<T> type) {
+        return manager.getLoadedPlugins().stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .findFirst()
+                .orElseThrow();
+    }
 
+    @PluginSpringConfiguration(scanPluginPackage = false)
+    static final class ProviderPlugin implements ProxyPlugin, SharedService {
         @Override
         public PluginDescriptor descriptor() {
             return new PluginDescriptor("provider", "Provider", "1.0.0", List.of());
         }
 
-        @PublishService
-        public SharedService publishService() {
-            return SERVICE;
+        @Override
+        public String value() {
+            return "first";
         }
     }
 
     @PluginSpringConfiguration(scanPluginPackage = false)
-    static final class ReloadedProviderPlugin implements ProxyPlugin {
-        private static final SharedService SERVICE = new SharedService("second");
-
+    static final class ReloadedProviderPlugin implements ProxyPlugin, SharedService {
         @Override
         public PluginDescriptor descriptor() {
             return new PluginDescriptor("provider", "Provider", "1.0.0", List.of());
         }
 
-        @PublishService
-        public SharedService publishService() {
-            return SERVICE;
+        @Override
+        public String value() {
+            return "second";
         }
     }
 
