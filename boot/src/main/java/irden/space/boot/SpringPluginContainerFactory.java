@@ -21,9 +21,11 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     private static final String MESSAGE_SOURCE_BEAN_NAME = "messageSource";
 
     private final ApplicationContext rootContext;
+    private final PluginWebEndpointRegistrar webEndpointRegistrar;
 
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
+        this.webEndpointRegistrar = new PluginWebEndpointRegistrar(this.rootContext);
     }
 
     @Override
@@ -212,7 +214,8 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
                 .map(ServiceLoader.Provider::get)
                 .toList();
 
-        localApplicationBeans(context).forEach((beanName, bean) -> {
+        Map<String, Object> localBeans = localApplicationBeans(context);
+        localBeans.forEach((_, bean) -> {
             if (hasPacketHandlers(bean.getClass())) {
                 scopedContext.packetInterceptorRegistry().registerAnnotated(bean);
             }
@@ -222,6 +225,8 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
                 }
             }
         });
+
+        webEndpointRegistrar.registerControllers(owner.id(), localBeans.values(), scopedContext);
     }
 
     private void registerPluginPermissions(

@@ -13,6 +13,8 @@ spring:
   web:
     locale: ru
 
+
+
 starry:
   plugins:
     directory: runtime-plugins
