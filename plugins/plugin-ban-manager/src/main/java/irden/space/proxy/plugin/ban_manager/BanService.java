@@ -6,9 +6,9 @@ import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecord;
 import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -16,7 +16,6 @@ import java.util.Optional;
 
 
 @Component
-@RequiredArgsConstructor
 public class BanService {
 
     private static final Logger log = LoggerFactory.getLogger(BanService.class);
@@ -25,6 +24,12 @@ public class BanService {
     private final BanRecordJdbcRepository banRecordRepository;
     private final PlayerManagerApi playerManagerApi;
     private final BanFormatUtils banFormatUtils;
+
+    public BanService(BanRecordJdbcRepository banRecordRepository, @Lazy PlayerManagerApi playerManagerApi, BanFormatUtils banFormatUtils) {
+        this.banRecordRepository = banRecordRepository;
+        this.playerManagerApi = playerManagerApi;
+        this.banFormatUtils = banFormatUtils;
+    }
 
     public Optional<BanRecord> findActiveBan(String name, String playerUuid, String ipAddress) {
         BanRecord probe = BanRecord.builder()
