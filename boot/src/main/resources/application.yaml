@@ -14,7 +14,6 @@ spring:
     locale: ru
 
 
-
 starry:
   plugins:
     directory: runtime-plugins
@@ -39,3 +38,16 @@ logging:
   level:
     root: INFO
     irden.space.proxy.application: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - beans
+          - health
+          - mappings
+          - env
+  endpoint:
+    health:
+      show-details: always

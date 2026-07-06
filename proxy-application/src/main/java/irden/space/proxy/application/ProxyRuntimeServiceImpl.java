@@ -40,19 +40,78 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     private final SessionPermissionService sessionPermissionService;
     private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
 
+    private volatile boolean running;
+    private ServerSocket serverSocket;
+    private Thread acceptThread;
+
     @Override
-    public void start() {
+    public synchronized void start() {
+        if (running) {
+            return;
+        }
+
         log.info("Starting proxy runtime: {}", properties);
 
-        try (ServerSocket serverSocket = new ServerSocket(properties.getListenPort())) {
-            log.info("Proxy listening on {}:{}", properties.getListenHost(), properties.getListenPort());
+        try {
+            serverSocket = new ServerSocket(properties.getListenPort());
+            running = true;
 
-            while (true) {
+            acceptThread = new Thread(this::acceptLoop, "proxy-accept-loop");
+            acceptThread.setDaemon(false);
+            acceptThread.start();
+
+            log.info("Proxy listening on {}:{}", properties.getListenHost(), properties.getListenPort());
+        } catch (Exception e) {
+            running = false;
+            closeServerSocketQuietly();
+            throw new IllegalStateException("Failed to start proxy runtime", e);
+        }
+    }
+
+    private void acceptLoop() {
+        while (running) {
+            try {
                 Socket clientSocket = serverSocket.accept();
                 handleNewClient(clientSocket);
+            } catch (SocketException e) {
+                if (running) {
+                    log.warn("Proxy accept loop socket error", e);
+                }
+                break;
+            } catch (Exception e) {
+                if (running) {
+                    log.warn("Failed to accept client connection", e);
+                }
             }
+        }
+
+        log.info("Proxy accept loop stopped");
+    }
+
+    @Override
+    public synchronized void stop() {
+        if (!running) {
+            return;
+        }
+
+        log.info("Stopping proxy runtime...");
+        running = false;
+        closeServerSocketQuietly();
+
+        if (acceptThread != null) {
+            acceptThread.interrupt();
+        }
+    }
+
+    private void closeServerSocketQuietly() {
+        if (serverSocket == null) {
+            return;
+        }
+
+        try {
+            serverSocket.close();
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to start proxy runtime", e);
+            log.debug("Failed to close proxy server socket", e);
         }
     }
 

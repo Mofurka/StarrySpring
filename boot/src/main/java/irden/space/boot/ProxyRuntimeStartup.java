@@ -1,7 +1,7 @@
 package irden.space.boot;
 
 
-import irden.space.proxy.application.ProxyRuntimeService;
+import irden.space.proxy.application.ProxyRuntimeLifecycle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProxyRuntimeStartup implements CommandLineRunner {
 
-    private final ProxyRuntimeService proxyRuntimeService;
+    private final ProxyRuntimeLifecycle proxyRuntimeLifecycle;
 
     @Override
     public void run(String... args) {
-        proxyRuntimeService.start();
+        proxyRuntimeLifecycle.start();
     }
 }
