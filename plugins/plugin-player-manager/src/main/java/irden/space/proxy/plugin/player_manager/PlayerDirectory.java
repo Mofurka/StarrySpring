@@ -26,6 +26,9 @@ public final class PlayerDirectory {
         this.playerRepository = playerRepository;
     }
 
+    public List<Player> onlinePlayers() {
+        return players.getAll();
+    }
     public Optional<Player> findPlayer(String identifier, boolean loggedIn) {
         boolean isStarUuid = identifier.matches("^[0-9a-fA-F]{32}$");
         boolean isClientId = identifier.matches("^\\d+$");
@@ -168,4 +171,5 @@ public final class PlayerDirectory {
         }
         return 5;
     }
+
 }

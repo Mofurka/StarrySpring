@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface PlayerManagerApi {
 
+    List<Player> onlinePlayers();
+
     Optional<Player> findPlayer(String identifier, boolean loggedIn);
 
     List<Player> searchPlayers(String prefix, int limit, boolean loggedIn);

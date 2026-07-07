@@ -19,13 +19,13 @@ public record ChatReceive(
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ChatReceive other)) {
+        if (!(obj instanceof ChatReceive(ChatHeader header1, String name1, String message1, VariantValue[] data1))) {
             return false;
         }
-        return Objects.equals(header, other.header)
-                && Objects.equals(name, other.name)
-                && Objects.equals(message, other.message)
-                && Arrays.equals(data, other.data);
+        return Objects.equals(header, header1)
+                && Objects.equals(name, name1)
+                && Objects.equals(message, message1)
+                && Arrays.equals(data, data1);
     }
 
     @Override

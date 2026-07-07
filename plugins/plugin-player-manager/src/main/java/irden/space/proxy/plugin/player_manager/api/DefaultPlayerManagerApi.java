@@ -17,6 +17,11 @@ public final class DefaultPlayerManagerApi implements PlayerManagerApi {
     }
 
     @Override
+    public List<Player> onlinePlayers() {
+        return playerDirectory.onlinePlayers();
+    }
+
+    @Override
     public Optional<Player> findPlayer(String identifier, boolean loggedIn) {
         return playerDirectory.findPlayer(identifier, loggedIn);
     }
