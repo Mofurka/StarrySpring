@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
-import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.StarryRole;
 import irden.space.proxy.plugin.player_manager.model.UserPermissions;
@@ -28,12 +27,6 @@ public class PlayerAccessService {
     private final RoleManager roleManager;
     private final PermissionResolver permissionResolver;
     private final PlayerDirectory playerDirectory;
-
-    @SuppressWarnings("unused")
-    @RegisterPluginPermissions
-    public List<Class<? extends PermissionEnum>> registerPermissions() {
-        return List.of(PlayerManagerPermissions.class);
-    }
 
     @OnLoad
     public void reloadRolesOnLoad() {

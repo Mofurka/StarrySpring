@@ -9,6 +9,7 @@ import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.OnDisconnecting;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
+import irden.space.proxy.plugin.player_manager.events.PlayerDisconnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
@@ -150,6 +151,7 @@ public class PlayerConnectionHandler {
         }
         Player player = players.removeBySessionId(context.sessionId());
         if (player != null) {
+            eventPublisher.publishEvent(new PlayerDisconnectedEvent(context.sessionId(), player));
             log.info("Player disconnected: name='{}', uuid={}", player.name(), player.uuid());
         }
     }

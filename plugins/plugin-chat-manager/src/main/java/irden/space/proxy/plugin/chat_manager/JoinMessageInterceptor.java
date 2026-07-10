@@ -5,6 +5,7 @@ import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
+import irden.space.proxy.plugin.player_manager.events.PlayerDisconnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -49,12 +50,24 @@ public class JoinMessageInterceptor {
     }
 
     @EventListener
-    public void onPlayerJoin(PlayerConnectedEvent event) {
+    public void onPlayerConnectedEvent(PlayerConnectedEvent event) {
         Player player = event.player();
-        final String playerName = isBlank(player.nickname()) ? player.name() : player.nickname();
-        final String finalPlayerName = Color.colorString(player.namePrefix(), playerName, true);
+        String finalPlayerName = formatPlayerName(player);
         String joinMsg = messageSource.getMessage("chat.player.join", new Object[]{finalPlayerName}, Locale.getDefault());
         plugin.broadcastMessage(joinMsg);
     }
 
+    @EventListener
+    public void onPlayerDisconnectedEvent(PlayerDisconnectedEvent event) {
+        Player player = event.player();
+        String finalPlayerName = formatPlayerName(player);
+        String exitMsg = messageSource.getMessage("chat.player.exit", new Object[]{finalPlayerName}, Locale.getDefault());
+        plugin.broadcastMessage(exitMsg);
+    }
+
+
+    private String formatPlayerName(Player player) {
+        final String playerName = isBlank(player.nickname()) ? player.name() : player.nickname();
+        return Color.colorString(player.namePrefix(), playerName, true);
+    }
 }

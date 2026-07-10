@@ -1,15 +1,16 @@
-package irden.space.proxy.plugin.player_manager;
+package irden.space.proxy.plugin.chat_manager;
 
 import irden.space.proxy.plugin.api.PermissionEnum;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 
 @RegisterPluginPermissions
-public enum PlayerManagerPermissions implements PermissionEnum {
-    USER("player.user");
+public enum ChatPermissions implements PermissionEnum {
+    INVISIBLE_JOIN("chat.invisible_join"),
+    INVISIBLE_BYPASS("chat.invisible_bypass"),;
 
     private final String permissionNode;
 
-    PlayerManagerPermissions(String permissionNode) {
+    ChatPermissions(String permissionNode) {
         this.permissionNode = permissionNode;
     }
 

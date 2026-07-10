@@ -2,14 +2,19 @@ package irden.space.boot;
 
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 import irden.space.proxy.plugin.runtime.*;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
 import java.util.*;
@@ -78,7 +83,8 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
 
                 @Override
                 public void registerPluginPermissions() {
-                    SpringPluginContainerFactory.this.registerPluginPermissions(pluginContext, scopedContext);
+                    SpringPluginContainerFactory.this.registerPluginPermissions(
+                            candidate.pluginClass(), pluginContext, scopedContext);
                 }
 
                 @Override
@@ -234,6 +240,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     }
 
     private void registerPluginPermissions(
+            Class<? extends ProxyPlugin> pluginClass,
             AnnotationConfigApplicationContext context,
             PluginContext scopedContext
     ) {
@@ -242,6 +249,46 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         }
         localApplicationBeans(context).values()
                 .forEach(bean -> PluginPermissionRegistrar.register(bean, scopedContext));
+        registerAnnotatedPermissionEnums(pluginClass, context);
+    }
+
+    /**
+     * Scans the plugin package for {@link PermissionEnum} enums annotated with
+     * {@link RegisterPluginPermissions} and registers their default nodes. Enums are not Spring
+     * beans, so they cannot be discovered through the bean-iteration path above.
+     */
+    private void registerAnnotatedPermissionEnums(
+            Class<? extends ProxyPlugin> pluginClass,
+            AnnotationConfigApplicationContext context
+    ) {
+        ClassLoader classLoader = context.getClassLoader();
+        ClassPathScanningCandidateComponentProvider scanner =
+                new ClassPathScanningCandidateComponentProvider(false) {
+                    @Override
+                    protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+                        return beanDefinition.getMetadata().isIndependent();
+                    }
+                };
+        scanner.setResourceLoader(new PathMatchingResourcePatternResolver(classLoader));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(RegisterPluginPermissions.class));
+
+        for (BeanDefinition candidate : scanner.findCandidateComponents(pluginClass.getPackageName())) {
+            PermissionEnum.registerDefaults(loadPermissionEnum(candidate.getBeanClassName(), classLoader));
+        }
+    }
+
+    private Class<? extends PermissionEnum> loadPermissionEnum(String className, ClassLoader classLoader) {
+        Class<?> type;
+        try {
+            type = Class.forName(className, false, classLoader);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Failed to load @RegisterPluginPermissions type " + className, e);
+        }
+        if (!type.isEnum() || !PermissionEnum.class.isAssignableFrom(type)) {
+            throw new IllegalStateException(
+                    "@RegisterPluginPermissions on a type is only supported for PermissionEnum enums: " + className);
+        }
+        return type.asSubclass(PermissionEnum.class);
     }
 
     private void onLoad(
