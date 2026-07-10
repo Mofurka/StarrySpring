@@ -11,7 +11,8 @@ import irden.space.proxy.plugin.api.ProxyPlugin;
         name = "Ban Manager",
         version = "1.0.0",
         description = "An advanced ban system that allows banning players by name, UUID, or IP address, with support for temporary and permanent bans.",
-        author = "https://github.com/Mofurka"
+        author = "https://github.com/Mofurka",
+        dependsOn = {"command-handler", "player-manager"}
 )
 public final class BanManagerPlugin implements ProxyPlugin {
 }

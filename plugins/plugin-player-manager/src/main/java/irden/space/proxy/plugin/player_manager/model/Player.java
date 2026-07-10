@@ -21,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Player {
     private final StarUuid uuid;
     private String name;
+    private String nickname;
+    private String namePrefix;
     private final String account;
     @Builder.Default
     private final int clientId = 0;
@@ -62,6 +64,22 @@ public class Player {
 
     public String sessionId() {
         return sessionId;
+    }
+
+    public String nickname() {
+        return nickname;
+    }
+
+    public void nickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String namePrefix() {
+        return namePrefix;
+    }
+
+    public void namePrefix(String namePrefix) {
+        this.namePrefix = namePrefix;
     }
 
     public PluginSessionContext sessionContext() {
@@ -108,8 +126,8 @@ public class Player {
     public void sendMessage(@NotBlank String message) {
         if (!online()) return;
 
-        var header = ChatHeader.builder().mode(ChatReceiveMode.BROADCAST).channel("").clientId(this.clientId).build();
-        var chatReceive = ChatReceive.builder().header(header).name(this.name).message(message).build();
+        var header = ChatHeader.builder().mode(ChatReceiveMode.BROADCAST).channel("").clientId(0).build();
+        var chatReceive = ChatReceive.builder().header(header).name("Server").message(message).build();
 
         sessionContext.sendToClient(PacketType.CHAT_RECEIVE, chatReceive);
     }

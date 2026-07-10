@@ -127,7 +127,7 @@ public final class RoleManager {
     private Map<String, StarryRole> buildRoles(StarryRoles config) {
         Map<String, StarryRole> resolvedRoles = new LinkedHashMap<>();
 
-        StarryRole ownerStarryRole = new StarryRole(OWNER_ROLE_NAME);
+        StarryRole ownerStarryRole = new StarryRole(OWNER_ROLE_NAME, config.getDefaultColorPrefix());
         ownerStarryRole.permissions().grantAllAccess();
         resolvedRoles.put(OWNER_ROLE_NAME, ownerStarryRole);
 
@@ -137,7 +137,7 @@ public final class RoleManager {
             if (resolvedRoles.containsKey(roleName)) {
                 throw new IllegalStateException("Duplicate role name in permissions configuration: " + roleName);
             }
-            resolvedRoles.put(roleName, new StarryRole(roleName));
+            resolvedRoles.put(roleName, new StarryRole(roleName, configuredRole.getColorPrefix()));
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {

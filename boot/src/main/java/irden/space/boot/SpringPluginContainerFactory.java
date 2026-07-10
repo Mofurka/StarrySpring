@@ -22,10 +22,12 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
 
     private final ApplicationContext rootContext;
     private final PluginWebEndpointRegistrar webEndpointRegistrar;
+    private final PluginEventListenerRegistrar eventListenerRegistrar;
 
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
         this.webEndpointRegistrar = new PluginWebEndpointRegistrar(this.rootContext);
+        this.eventListenerRegistrar = new PluginEventListenerRegistrar(this.rootContext);
     }
 
     @Override
@@ -51,6 +53,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             }
 
             registerPluginBean(pluginContext, candidate);
+            disableNativeEventListenerProcessing(pluginContext);
             pluginContext.refresh();
 
             return new PluginContainer() {
@@ -227,6 +230,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         });
 
         webEndpointRegistrar.registerControllers(owner.id(), localBeans.values(), scopedContext);
+        eventListenerRegistrar.registerListeners(owner.id(), localBeans.values(), scopedContext);
     }
 
     private void registerPluginPermissions(
@@ -336,6 +340,21 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void registerPluginBean(AnnotationConfigApplicationContext context, PluginCandidate candidate) {
         context.registerBean("proxyPlugin", (Class) candidate.pluginClass());
+    }
+
+    /**
+     * Plugin {@code @EventListener} methods are bridged onto the root application event multicaster
+     * (see {@link PluginEventListenerRegistrar}) so events published from one plugin reach listeners
+     * in others. To keep delivery exactly-once, the child context must not <em>also</em> register the
+     * same listeners on its own multicaster — otherwise an intra-plugin event (published and observed
+     * within the same plugin) would fire twice: once locally and once after bubbling up to the root.
+     */
+    private void disableNativeEventListenerProcessing(AnnotationConfigApplicationContext context) {
+        String processorBeanName = org.springframework.context.annotation.AnnotationConfigUtils
+                .EVENT_LISTENER_PROCESSOR_BEAN_NAME;
+        if (context.getBeanFactory().containsBeanDefinition(processorBeanName)) {
+            context.getDefaultListableBeanFactory().removeBeanDefinition(processorBeanName);
+        }
     }
 
     private void scanPluginComponents(

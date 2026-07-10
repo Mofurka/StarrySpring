@@ -2,9 +2,13 @@ package irden.space.proxy.plugin.chat_manager;
 
 import irden.space.proxy.plugin.api.PluginDefinition;
 import irden.space.proxy.plugin.api.ProxyPlugin;
+import irden.space.proxy.plugin.command_handler.ChatCommand;
+import irden.space.proxy.plugin.command_handler.CommandSpec;
+import irden.space.proxy.plugin.command_handler.StringArgumentType;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +20,7 @@ import org.springframework.stereotype.Component;
         version = "1.0.0",
         dependsOn = {"command-handler", "player-manager"},
         author = "https://github.com/Mofurka",
-        description = "A plugin for managing chat functionality."
+        description = "A plugin for enhance chat functionality and it manage."
 )
 @Component
 @RequiredArgsConstructor
@@ -28,8 +32,25 @@ public final class ChatManagerPlugin implements ProxyPlugin {
     public void broadcastMessage(@NotBlank String message) {
         playerManagerApi.onlinePlayers().forEach(player -> player.sendMessage(message));
     }
-    public void broadcastMessage(@NotBlank ChatReceive message) {
+
+    public void broadcastMessage(@NotNull ChatReceive message) {
         playerManagerApi.onlinePlayers().forEach(player -> player.sendMessage(message));
+    }
+
+    @ChatCommand(
+            value = "broadcast",
+            description = "Broadcast a message to all players."
+    )
+    @SuppressWarnings("unused")
+    public CommandSpec broadcastCommand() {
+        return CommandSpec.literal("broadcast")
+                .then(CommandSpec.argument("message", StringArgumentType.greedyString())
+                        .description("The message to broadcast.")
+                        .executes(context -> {
+                            String message = context.get("message", String.class);
+                            broadcastMessage(message);
+                            context.reply("Broadcasted message: " + message);
+                        })).build();
     }
 
 }

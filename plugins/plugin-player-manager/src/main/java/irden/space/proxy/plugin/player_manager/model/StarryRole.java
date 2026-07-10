@@ -7,15 +7,21 @@ import java.util.*;
 public final class StarryRole {
 
     private final String name;
+    private final String colorPrefix;
     private final PermissionSet permissions = new PermissionSet();
     private final List<StarryRole> parents = new ArrayList<>();
 
-    public StarryRole(String name) {
+    public StarryRole(String name, String colorPrefix) {
         this.name = name;
+        this.colorPrefix = colorPrefix;
     }
 
     public String name() {
         return name;
+    }
+
+    public String colorPrefix() {
+        return colorPrefix;
     }
 
     public PermissionSet effectivePermissions() {

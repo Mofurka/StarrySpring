@@ -61,6 +61,7 @@ public class PlayerAccessService {
         );
     }
 
+
     public void bindSessionPermissionsByRoleNames(String sessionId, List<String> roleNames, List<String> extraPermissionRules) {
         bindSessionPermissions(sessionId, resolveRoles(roleNames), extraPermissionRules);
     }

@@ -14,6 +14,7 @@ import java.util.List;
 public class StarryRoles {
     private String defaultAccount = "Neofit";
     private String ownerUuid = "58c329f6797ed81484c877727d2439c5";
+    private String defaultColorPrefix = "^blue;";
     private List<StarryRole> accounts = List.of(new StarryRole());
 
 

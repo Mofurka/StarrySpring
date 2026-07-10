@@ -29,8 +29,7 @@ public class BanCommands {
 
     @ChatCommand(
             value = "ban",
-            description = "Ban a player from the server.",
-            usage = "/ban <player> [duration] [reason]"
+            description = "Ban a player from the server."
     )
     public CommandSpec handleBanCommand() {
         return literal("ban")
@@ -63,8 +62,7 @@ public class BanCommands {
 
     @ChatCommand(
             value = "unban",
-            description = "Unban a player from the server.",
-            usage = "/unban <player>"
+            description = "Unban a player from the server."
     )
     public CommandSpec handleUnbanCommand() {
         return literal("unban")

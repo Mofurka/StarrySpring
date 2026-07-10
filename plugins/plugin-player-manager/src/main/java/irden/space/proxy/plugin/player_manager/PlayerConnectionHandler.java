@@ -8,10 +8,12 @@ import irden.space.proxy.plugin.api.annotations.OnConnectionSuccess;
 import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.OnDisconnecting;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
 import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
+import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
@@ -20,9 +22,11 @@ import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 
 
 @Component
@@ -35,22 +39,27 @@ public class PlayerConnectionHandler {
     private final PlayerJdbcRepository playerRepository;
     private final PlayerAccessService playerAccessService;
     private final SessionPermissionService sessionPermissionService;
+    private final RoleManager roleManager;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PlayerConnectionHandler(
             @Qualifier("onlinePlayerRegistry") PlayerRegistry<Player> players,
             @Qualifier("connectingPlayerRegistry") PlayerRegistry<TempPlayer> connectingPlayers,
             PlayerJdbcRepository playerRepository,
             PlayerAccessService playerAccessService,
-            SessionPermissionService sessionPermissionService
+            SessionPermissionService sessionPermissionService, RoleManager roleManager, ApplicationEventPublisher eventPublisher
     ) {
         this.players = players;
         this.connectingPlayers = connectingPlayers;
         this.playerRepository = playerRepository;
         this.playerAccessService = playerAccessService;
         this.sessionPermissionService = sessionPermissionService;
+        this.roleManager = roleManager;
+        this.eventPublisher = eventPublisher;
     }
 
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
+    @SuppressWarnings("unused")
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
         ClientConnect clientConnect = (ClientConnect) context.parsedPayload();
         if (playerRepository.findByUuid(clientConnect.playerUuid().toString()).isEmpty()) {
@@ -78,6 +87,7 @@ public class PlayerConnectionHandler {
 
     // This packet is sent by the server when the client successfully connects. We can use it to confirm player connections and log additional info.
     @PacketHandler(value = PacketType.CONNECT_SUCCESS, direction = PacketDirection.TO_CLIENT)
+    @SuppressWarnings("unused")
     public PacketDecision onConnectSuccess(PacketInterceptionContext context) {
         ConnectSuccess connectSuccess = (ConnectSuccess) context.parsedPayload();
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.session().sessionId());
@@ -96,6 +106,7 @@ public class PlayerConnectionHandler {
                     tempPlayer.uuid().toString(),
                     tempPlayer.account()
             );
+            roleManager.findRole(player.account()).ifPresent(s -> player.namePrefix(s.colorPrefix()));
             log.info(
                     "Player connected: name='{}', uuid={}, clientId={}, entityId={}",
                     player.name(),
@@ -105,7 +116,10 @@ public class PlayerConnectionHandler {
             );
             players.add(context.session().sessionId(), player);
             context.session().attributes().putIfAbsent("player", player);
+            CompletableFuture.runAsync(() -> eventPublisher.publishEvent(new PlayerConnectedEvent(context.session().sessionId(), player)));
             return PacketDecision.forward();
+
+
         }
         ConnectFailure connectFailure = new ConnectFailure("Player connection state not found. Please try again.");
         context.session().sendToClient(PacketType.CONNECT_FAILURE, connectFailure);
@@ -113,16 +127,19 @@ public class PlayerConnectionHandler {
     }
 
     @OnConnectionSuccess
+    @SuppressWarnings("unused")
     public void onConnectionSuccess(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} connected successfully.", context.sessionId());
     }
 
     @OnDisconnecting
+    @SuppressWarnings("unused")
     public void onDisconnecting(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} is disconnecting.", context.sessionId());
     }
 
     @OnDisconnected
+    @SuppressWarnings("unused")
     public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
         sessionPermissionService.clearPermissions(context.sessionId());

@@ -1,10 +1,8 @@
 package irden.space.proxy.plugin.api;
 
-
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketEnvelopes;
-
 
 public record PacketInterceptionContext(
         PluginSessionContext session,
@@ -13,8 +11,16 @@ public record PacketInterceptionContext(
         PacketDirection direction
 ) {
 
+    public <T> T parsedPayload(Class<T> clazz) {
+        return clazz.cast(parsedPayload);
+    }
+
     public PacketEnvelope envelopeWithPayload(Object payload) {
-        return PacketEnvelopes.rewrite(envelope, payload, session.openProtocolVersion());
+        return PacketEnvelopes.rewrite(
+                envelope,
+                payload,
+                session.openProtocolVersion()
+        );
     }
 
     public PacketEnvelope envelopeWithRawPayload(byte[] payload) {

@@ -69,6 +69,14 @@ public enum Color {
         return color.colorString(text, clear);
     }
 
+    public static String colorString(String color, String text, boolean clear) {
+        String formatted =  "^".concat(color).concat(";").concat(text);
+        if  (clear) {
+            formatted = formatted.concat("^reset;");
+        }
+        return formatted;
+    }
+
     public static String stripColorCodes(String text) {
         return text.replaceAll("\\^[a-zA-Z]+;", "");
     }
