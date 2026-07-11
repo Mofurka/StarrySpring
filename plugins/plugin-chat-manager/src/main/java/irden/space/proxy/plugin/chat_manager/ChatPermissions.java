@@ -5,8 +5,9 @@ import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 
 @RegisterPluginPermissions
 public enum ChatPermissions implements PermissionEnum {
-    INVISIBLE_JOIN("chat.invisible_join"),
-    INVISIBLE_BYPASS("chat.invisible_bypass"),;
+    INVISIBLE_BYPASS("chat.invisible_bypass"),
+    JOIN_ANNOUNCE("chat.join_announce"),
+    UNIVERSE_CHAT("chat.universe");
 
     private final String permissionNode;
 

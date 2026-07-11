@@ -141,19 +141,14 @@ public final class RoleManager {
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
-            for (String permissionRule : safeList(configuredRole.getPermissions())) {
-                if (permissionRule != null
-                        && !permissionRule.isBlank()
-                        && !permissionRule.endsWith("*")
-                        && !PermissionRegistry.contains(permissionRule)) {
-                    PermissionRegistry.registerIfAbsent(permissionRule);
-                }
-            }
+            registerReferencedPermissions(safeList(configuredRole.getPermissions()));
+            registerReferencedPermissions(safeList(configuredRole.getRevokedPermissions()));
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
             StarryRole starryRole = requireRole(resolvedRoles, configuredRole.getName());
             starryRole.permissions().merge(permissionResolver.resolveRules(safeList(configuredRole.getPermissions())));
+            starryRole.revokedPermissions().merge(permissionResolver.resolveRules(safeList(configuredRole.getRevokedPermissions())));
         }
 
         for (StarryRoles.StarryRole configuredRole : configuredRoles) {
@@ -181,6 +176,17 @@ public final class RoleManager {
             throw new IllegalStateException("Unknown role in permissions configuration: " + normalizedRoleName);
         }
         return starryRole;
+    }
+
+    private void registerReferencedPermissions(List<String> permissionRules) {
+        for (String permissionRule : permissionRules) {
+            if (permissionRule != null
+                    && !permissionRule.isBlank()
+                    && !permissionRule.endsWith("*")
+                    && !PermissionRegistry.contains(permissionRule)) {
+                PermissionRegistry.registerIfAbsent(permissionRule);
+            }
+        }
     }
 
     private static List<String> safeList(List<String> values) {

@@ -1,5 +1,7 @@
 package irden.space.proxy.plugin.player_manager;
 
+import irden.space.proxy.plugin.api.Permission;
+import irden.space.proxy.plugin.api.PermissionRegistry;
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.command_handler.*;
@@ -39,8 +41,8 @@ public class PlayerCommands {
             description = "use for manage players")
     public CommandSpec userCommand() {
         return literal("user").permission(PlayerManagerPermissions.USER.permission())
-                        .then(literal("info")
-                                .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
+                .then(literal("info")
+                        .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
                                 .executes(context -> {
                                     PlayerTarget identifier = context.get("identifier", PlayerTarget.class);
                                     Player player = identifier.player();
@@ -57,8 +59,8 @@ public class PlayerCommands {
                                     }
                                     context.reply(sb.toString());
                                 })))
-                        .then(literal("permissions")
-                                .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
+                .then(literal("permissions")
+                        .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
                                 .executes(context -> {
                                     PlayerTarget identifier = context.get("identifier", PlayerTarget.class);
                                     Player player = identifier.player();
@@ -75,18 +77,22 @@ public class PlayerCommands {
                                     }
 
                                     sb.append("- Effective permissions (").append(permissionNames.size()).append("):").append(System.lineSeparator());
-                                    for (String permissionName : permissionNames) {
-                                        sb.append("  - ").append(permissionName).append(System.lineSeparator());
+                                    if (player.permissions().has(PermissionRegistry.ALL.id())) {
+                                        sb.append("  - ").append(PermissionRegistry.ALL.name()).append(System.lineSeparator());
+                                    } else {
+                                        for (String permissionName : permissionNames) {
+                                            sb.append("  - ").append(permissionName).append(System.lineSeparator());
+                                        }
                                     }
                                     context.reply(sb.toString());
                                 })
                         ))
-                        .then(literal("role")
-                                .then(argument("action", EnumArgumentType.of(RoleActionType.class))
-                                        .then(argument("roles", StringArgumentType.word()).description("Role names separated by comma without spaces!")
-                                                .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
+                .then(literal("role")
+                        .then(argument("action", EnumArgumentType.of(RoleActionType.class))
+                                .then(argument("roles", StringArgumentType.word()).description("Role names separated by comma without spaces!")
+                                        .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
                                                 .executes(this::handlePlayerRoleUpdate))))
-                        )
+                )
                 .build();
     }
 

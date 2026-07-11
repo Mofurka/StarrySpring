@@ -52,6 +52,7 @@
             <artifactId>plugin-chat-manager</artifactId>
             <version>1.0.0</version>
         </dependency>
+
     </dependencies>
 
     <modules>

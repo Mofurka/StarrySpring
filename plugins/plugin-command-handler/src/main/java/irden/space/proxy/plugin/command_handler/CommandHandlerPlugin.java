@@ -22,7 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component
 public class CommandHandlerPlugin implements ProxyPlugin {
 
-    private static final String COMMAND_PREFIX = "/";
+    public static final String COMMAND_PREFIX = "/";
     private static final Logger log = LoggerFactory.getLogger(CommandHandlerPlugin.class);
 
     private final CommandParser commandParser;

@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static io.micrometer.common.util.StringUtils.isBlank;
+
 @Builder
 public class Player {
     private final StarUuid uuid;
@@ -41,6 +43,7 @@ public class Player {
     public void name(String name) {
         this.name = name;
     }
+
 
     public StarUuid uuid() {
         return uuid;
@@ -67,7 +70,7 @@ public class Player {
     }
 
     public String nickname() {
-        return nickname;
+        return isBlank(nickname) ? name : nickname;
     }
 
     public void nickname(String nickname) {

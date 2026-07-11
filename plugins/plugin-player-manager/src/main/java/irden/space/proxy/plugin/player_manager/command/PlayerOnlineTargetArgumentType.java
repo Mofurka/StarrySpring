@@ -46,7 +46,7 @@ public final class PlayerOnlineTargetArgumentType implements ArgumentType<Player
 
         String normalizedInput = input.trim();
         Player player = playerManagerApi.findPlayer(normalizedInput, true)
-                .orElseThrow(() -> new ArgumentParseException("Player not found: " + normalizedInput));
+                .orElseThrow(() -> new ArgumentParseException("Player not found or offline: " + normalizedInput));
 
         return new PlayerTarget(normalizedInput, player);
     }

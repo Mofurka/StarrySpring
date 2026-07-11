@@ -5,7 +5,7 @@ import java.util.Collection;
 @FunctionalInterface
 public interface PermissionView {
 
-    PermissionView EMPTY = permissionId -> false;
+    PermissionView EMPTY = _ -> false;
 
     boolean has(int permissionId);
 

@@ -5,6 +5,7 @@ import irden.space.proxy.plugin.api.Permission;
 import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketType;
+import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 
 import java.util.*;
 
@@ -141,6 +142,10 @@ public record CommandContext(PacketInterceptionContext packetContext, String com
 
     public void reply(String message) {
         session().sendToClient(PacketType.CHAT_RECEIVE, CommandMessages.systemMessage(message));
+    }
+
+    public void reply(ChatReceive  message) {
+        session().sendToClient(PacketType.CHAT_RECEIVE, message);
     }
 
     public static final class Builder {

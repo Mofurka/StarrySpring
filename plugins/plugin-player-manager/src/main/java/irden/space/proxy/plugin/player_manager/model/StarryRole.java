@@ -9,6 +9,7 @@ public final class StarryRole {
     private final String name;
     private final String colorPrefix;
     private final PermissionSet permissions = new PermissionSet();
+    private final PermissionSet revokedPermissions = new PermissionSet();
     private final List<StarryRole> parents = new ArrayList<>();
 
     public StarryRole(String name, String colorPrefix) {
@@ -44,6 +45,26 @@ public final class StarryRole {
         return result;
     }
 
+    public PermissionSet effectiveRevokedPermissions() {
+        return effectiveRevokedPermissions(Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    private PermissionSet effectiveRevokedPermissions(Set<StarryRole> visitedStarryRoles) {
+        if (!visitedStarryRoles.add(this)) {
+            throw new IllegalStateException("Cyclic role inheritance detected for role: " + name);
+        }
+
+        PermissionSet result = revokedPermissions.copy();
+
+        for (StarryRole parent : parents) {
+            result.merge(parent.effectiveRevokedPermissions(visitedStarryRoles));
+        }
+
+        visitedStarryRoles.remove(this);
+
+        return result;
+    }
+
     public void inherit(StarryRole parent) {
         if (parent == null) {
             throw new IllegalArgumentException("Parent role must not be null");
@@ -60,5 +81,9 @@ public final class StarryRole {
 
     public PermissionSet permissions() {
         return permissions;
+    }
+
+    public PermissionSet revokedPermissions() {
+        return revokedPermissions;
     }
 }

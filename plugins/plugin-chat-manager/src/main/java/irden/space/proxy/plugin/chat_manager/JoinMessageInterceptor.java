@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.color.Color;
+import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
 import irden.space.proxy.plugin.player_manager.events.PlayerDisconnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
@@ -13,6 +14,7 @@ import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
@@ -27,7 +29,8 @@ public class JoinMessageInterceptor {
     private static final Pattern JOIN_PATTERN =
             Pattern.compile("^Player '([^']+)' (dis)?connected$");
     private final ChatManagerPlugin plugin;
-    private final MessageSource  messageSource;
+    private final MessageSource messageSource;
+    private final PlayerManagerApi playerManagerApi;
 
     @PacketHandler(
             value = PacketType.CHAT_RECEIVE,
@@ -49,20 +52,31 @@ public class JoinMessageInterceptor {
         return PacketDecision.cancel();
     }
 
+    @Async
     @EventListener
     public void onPlayerConnectedEvent(PlayerConnectedEvent event) {
         Player player = event.player();
         String finalPlayerName = formatPlayerName(player);
         String joinMsg = messageSource.getMessage("chat.player.join", new Object[]{finalPlayerName}, Locale.getDefault());
-        plugin.broadcastMessage(joinMsg);
+        this.notifyPlayers(player, joinMsg);
     }
 
+    @Async
     @EventListener
     public void onPlayerDisconnectedEvent(PlayerDisconnectedEvent event) {
         Player player = event.player();
         String finalPlayerName = formatPlayerName(player);
         String exitMsg = messageSource.getMessage("chat.player.exit", new Object[]{finalPlayerName}, Locale.getDefault());
-        plugin.broadcastMessage(exitMsg);
+        this.notifyPlayers(player, exitMsg);
+    }
+
+    private void notifyPlayers(Player player, String message) {
+        boolean invisible = !player.permissions().has(ChatPermissions.JOIN_ANNOUNCE.permission());
+        playerManagerApi.onlinePlayers().forEach(p -> {
+            if (!invisible || p.permissions().has(ChatPermissions.INVISIBLE_BYPASS.permission())) {
+                p.sendMessage(message);
+            }
+        });
     }
 
 

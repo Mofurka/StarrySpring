@@ -16,22 +16,28 @@ public final class UserPermissions implements PermissionView {
 
     public UserPermissions(Collection<StarryRole> starryRoles, PermissionSet extraPermissions, PermissionSet revokedPermissions) {
 
-        PermissionSet result = new PermissionSet();
+        PermissionSet grantedResult = new PermissionSet();
+        PermissionSet revokedResult = new PermissionSet();
 
         if (starryRoles != null) {
             for (StarryRole starryRole : starryRoles) {
                 if (starryRole != null) {
-                    result.merge(starryRole.effectivePermissions());
+                    grantedResult.merge(starryRole.effectivePermissions());
+                    revokedResult.merge(starryRole.effectiveRevokedPermissions());
                 }
             }
         }
 
         if (extraPermissions != null) {
-            result.merge(extraPermissions);
+            grantedResult.merge(extraPermissions);
         }
 
-        this.grantedPermissions = result;
-        this.revokedPermissions = revokedPermissions == null ? new PermissionSet() : revokedPermissions.copy();
+        if (revokedPermissions != null) {
+            revokedResult.merge(revokedPermissions);
+        }
+
+        this.grantedPermissions = grantedResult;
+        this.revokedPermissions = revokedResult;
     }
 
     public PermissionSet effectivePermissions() {

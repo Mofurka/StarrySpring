@@ -18,15 +18,15 @@ public final class CommandParser {
 
         MatchResult result = match(root, commandContext, tokens, 0, new LinkedHashMap<>(), List.of(root));
 
-        if (result.success != null) {
+        if (result.success() != null) {
             return new CommandParseResult.Success(
-                    result.success.executor(),
-                    result.success.arguments(),
-                    result.success.matchedNodes()
+                    result.success().executor(),
+                    result.success().arguments(),
+                    result.success().matchedNodes()
             );
         }
 
-        return new CommandParseResult.Error(result.errorMessage());
+        return new CommandParseResult.Error(result.failureMessage());
     }
 
     private MatchResult match(
@@ -137,7 +137,7 @@ public final class CommandParser {
 
             MatchResult result = tryArgument(argumentNode, commandContext, tokens, index, arguments, matchedNodes);
 
-            if (result.success != null) {
+            if (result.success() != null) {
                 return result;
             }
 
@@ -159,7 +159,8 @@ public final class CommandParser {
             if (argumentNode.required()) {
                 return MatchResult.failure(
                         index,
-                        "Missing required argument <" + argumentNode.name() + ">"
+                        "Missing required argument <" + argumentNode.name() + ">",
+                        true
                 );
             }
 
@@ -186,12 +187,14 @@ public final class CommandParser {
         } catch (ArgumentParseException e) {
             return MatchResult.failure(
                     index,
-                    "Invalid argument <" + argumentNode.name() + ">: " + e.getMessage()
+                    "Invalid argument <" + argumentNode.name() + ">: " + e.getMessage(),
+                    true
             );
         } catch (RuntimeException e) {
             return MatchResult.failure(
                     index,
-                    "Invalid argument <" + argumentNode.name() + ">: " + rawValue
+                    "Invalid argument <" + argumentNode.name() + ">: " + rawValue,
+                    true
             );
         }
 
@@ -241,11 +244,18 @@ public final class CommandParser {
             return right;
         }
 
-        if (right.failureIndex > left.failureIndex) {
-            return right;
+        if (right.failureIndex != left.failureIndex) {
+            return right.failureIndex > left.failureIndex ? right : left;
         }
 
-        if (right.failureIndex == left.failureIndex && right.failureMessage.length() > left.failureMessage.length()) {
+        // На одной и той же позиции конкретная ошибка парсинга аргумента
+        // ("Player not found: ...") важнее общего "Unexpected argument ...",
+        // иначе осмысленная причина теряется из-за тай-брейка по длине строки.
+        if (right.specific != left.specific) {
+            return right.specific ? right : left;
+        }
+
+        if (right.failureMessage.length() > left.failureMessage.length()) {
             return right;
         }
 
@@ -305,7 +315,7 @@ public final class CommandParser {
     ) {
     }
 
-    private record MatchResult(int failureIndex, String failureMessage, Success success) {
+    private record MatchResult(int failureIndex, String failureMessage, Success success, boolean specific) {
 
         static MatchResult success(
                 int index,
@@ -316,12 +326,17 @@ public final class CommandParser {
             return new MatchResult(
                     index,
                     "",
-                    new Success(executor, arguments, matchedNodes)
+                    new Success(executor, arguments, matchedNodes),
+                    false
             );
         }
 
         static MatchResult failure(int index, String message) {
-            return new MatchResult(index, message, null);
+            return failure(index, message, false);
+        }
+
+        static MatchResult failure(int index, String message, boolean specific) {
+            return new MatchResult(index, message, null, specific);
         }
 
         String errorMessage() {

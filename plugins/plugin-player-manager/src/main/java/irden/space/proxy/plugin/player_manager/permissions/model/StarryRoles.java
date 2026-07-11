@@ -28,5 +28,6 @@ public class StarryRoles {
         private int priority = 0;
         private List<String> inherits = List.of();
         private List<String> permissions = List.of();
+        private List<String> revokedPermissions = List.of();
     }
 }

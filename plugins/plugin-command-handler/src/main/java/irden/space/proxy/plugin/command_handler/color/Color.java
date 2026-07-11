@@ -70,11 +70,16 @@ public enum Color {
     }
 
     public static String colorString(String color, String text, boolean clear) {
-        String formatted =  "^".concat(color).concat(";").concat(text);
-        if  (clear) {
+        String resolved = resolveColor(color);
+        String formatted = "^".concat(resolved).concat(";").concat(text);
+        if (clear) {
             formatted = formatted.concat("^reset;");
         }
         return formatted;
+    }
+
+    private static String resolveColor(String color) {
+        return color == null ? null : color.trim().replaceAll("^\\^|;$", "");
     }
 
     public static String stripColorCodes(String text) {
