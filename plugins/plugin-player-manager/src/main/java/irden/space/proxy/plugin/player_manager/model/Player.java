@@ -117,6 +117,7 @@ public class Player {
         ServerDisconnect serverDisconnect = new ServerDisconnect(reason);
         sessionContext.sendToClient(PacketType.WORLD_STOP, worldStop);
         sessionContext.sendToClient(PacketType.SERVER_DISCONNECT, serverDisconnect);
+        this.sessionContext.close();
     }
 
     public void sendMessage(@NotNull ChatReceive message) {

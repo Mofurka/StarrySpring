@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-chat-manager</artifactId>
+            <artifactId>plugin-general</artifactId>
             <version>1.0.0</version>
         </dependency>
 
@@ -63,7 +63,7 @@
         <module>plugin-star-custom-chat-interceptor</module>
         <module>plugin-runtime-admin</module>
         <module>plugin-ban-manager</module>
-        <module>plugin-chat-manager</module>
+        <module>plugin-general</module>
     </modules>
 
 </project>

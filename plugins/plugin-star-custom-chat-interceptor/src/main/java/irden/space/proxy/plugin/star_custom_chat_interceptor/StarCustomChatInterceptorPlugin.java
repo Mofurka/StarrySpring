@@ -28,7 +28,7 @@ import java.util.UUID;
         id = "star-custom-chat-interceptor",
         name = "Star Custom Chat Interceptor",
         version = "1.0.0",
-        dependsOn = {"command-handler", "player-manager", "chat-manager"},
+        dependsOn = {"command-handler", "player-manager", "general"},
         author = "https://github.com/Mofurka",
         description = "A star custom chat interceptor plugin that can handle star custom chat messages via stagehand entity spawnd and ems."
 )

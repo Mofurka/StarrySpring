@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 
 @Component
 @RequiredArgsConstructor
+@SuppressWarnings("unused")
 public class BanManagerSchemaInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(BanManagerSchemaInitializer.class);
