@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static irden.space.proxy.plugin.command_handler.CommandSpec.argument;
@@ -56,6 +57,11 @@ public class PlayerCommands {
                                         sb.append("- Client ID: ").append(player.clientId()).append(System.lineSeparator());
                                         sb.append("- Entity ID: ").append(player.entityId()).append(System.lineSeparator());
                                         sb.append("- IP Address: ").append(player.ipAddress()).append(System.lineSeparator());
+                                        Map<String, Object> metadata = player.metadata();
+                                        if (!metadata.isEmpty()) {
+                                            sb.append("- Metadata: ").append(System.lineSeparator());
+                                            metadata.forEach((k, v) -> sb.append("  - ").append(k).append(": ").append(v).append(System.lineSeparator()));
+                                        }
                                     }
                                     context.reply(sb.toString());
                                 })))

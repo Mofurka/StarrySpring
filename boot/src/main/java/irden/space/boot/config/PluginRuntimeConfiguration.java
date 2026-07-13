@@ -1,5 +1,6 @@
-package irden.space.boot;
+package irden.space.boot.config;
 
+import irden.space.boot.SpringPluginContainerFactory;
 import irden.space.proxy.plugin.api.PacketInterceptionService;
 import irden.space.proxy.plugin.api.PacketInterceptorRegistry;
 import irden.space.proxy.plugin.api.PluginContext;

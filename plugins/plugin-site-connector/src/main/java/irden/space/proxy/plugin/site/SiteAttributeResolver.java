@@ -23,13 +23,13 @@ public class SiteAttributeResolver {
     public void onPlayerConnectedEvent(PlayerConnectedEvent event) {
         Player player = event.player();
         repository.findByPlayerUuid(player.uuid().toString()).ifPresentOrElse(
-                record -> {
+                r -> {
                     Map<String, Object> metadata = player.metadata();
-                    metadata.put("appId", record.appId());
-                    metadata.put("discordId", record.discordId());
+
+                    // i dunno how to better keep this contract between services
+                    metadata.put("appId", r.appId());
+                    metadata.put("discordId", r.discordId());
                 },
-                () -> log.info("{} does not have the connection record",  player.uuid()));
+                () -> log.info("{} does not have the connection record", player.uuid()));
     }
-
-
 }
