@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <property name="siteConnectorSchema" value="site_connector"/>
+
+    <changeSet id="site-connector-001-create-schema" author="Mofurka">
+        <sql dbms="postgresql">
+            CREATE SCHEMA IF NOT EXISTS ${siteConnectorSchema};
+        </sql>
+    </changeSet>
+
+    <changeSet id="site-connector-002-create-record" author="Mofurka">
+        <createTable
+                tableName="player_attributes"
+                schemaName="${siteConnectorSchema}">
+
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="player_uuid" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="app_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="discord_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+
+</databaseChangeLog>

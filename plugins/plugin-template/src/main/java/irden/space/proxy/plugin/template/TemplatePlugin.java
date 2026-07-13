@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.template;
+package irden.space.proxy.plugin.site;
 
 import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;

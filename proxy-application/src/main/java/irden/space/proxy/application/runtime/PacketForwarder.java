@@ -117,7 +117,18 @@ public class PacketForwarder implements Runnable {
                     envelopeToWrite = envelope1;
                 }
 
-                writePacket(packetDirection, envelopeToWrite, envelopeToWrite == envelope ? inspection : null);
+                Runnable afterWrite = null;
+
+                if (decision instanceof ForwardPacketDecision(Runnable afterForward)) {
+                    afterWrite = afterForward;
+                }
+
+                writePacket(
+                        packetDirection,
+                        envelopeToWrite,
+                        envelopeToWrite == envelope ? inspection : null,
+                        afterWrite
+                );
             }
         } catch (SocketException e) {
             log.info("[{}] socket exception for session {}: {}", packetDirection, session.getId(), e.getMessage());
@@ -160,20 +171,42 @@ public class PacketForwarder implements Runnable {
     private void writePacket(
             PacketDirection direction,
             PacketEnvelope envelope,
-            PacketInspectionResult inspection
+            PacketInspectionResult inspection,
+            Runnable afterWrite
     ) throws IOException {
-        SwitchableSessionTransport resolvedTransport = resolveTransport(direction);
-        OutputStream resolvedTarget = resolveTarget(direction);
+        SwitchableSessionTransport resolvedTransport =
+                resolveTransport(direction);
+
+        OutputStream resolvedTarget =
+                resolveTarget(direction);
 
         synchronized (resolveWriteLock(direction)) {
             PacketInspectionResult resolvedInspection = inspection;
+
             if (resolvedInspection == null) {
-                resolvedInspection = inspectPacket(envelope, direction, session.resolveOpenProtocolVersion());
+                resolvedInspection = inspectPacket(
+                        envelope,
+                        direction,
+                        session.resolveOpenProtocolVersion()
+                );
             }
 
             applyNegotiatedSessionState(resolvedInspection);
 
             resolvedTransport.write(resolvedTarget, envelope);
+
+            if (afterWrite != null) {
+                try {
+                    afterWrite.run();
+                } catch (Exception e) {
+                    log.warn(
+                            "[{}] after-forward callback failed for session {}",
+                            direction,
+                            session.getId(),
+                            e
+                    );
+                }
+            }
         }
     }
 

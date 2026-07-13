@@ -27,7 +27,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
 
 
 @Component
@@ -60,7 +59,6 @@ public class PlayerConnectionHandler {
     }
 
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
-    @SuppressWarnings("unused")
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
         ClientConnect clientConnect = (ClientConnect) context.parsedPayload();
         if (playerRepository.findByUuid(clientConnect.playerUuid().toString()).isEmpty()) {
@@ -88,7 +86,6 @@ public class PlayerConnectionHandler {
 
     // This packet is sent by the server when the client successfully connects. We can use it to confirm player connections and log additional info.
     @PacketHandler(value = PacketType.CONNECT_SUCCESS, direction = PacketDirection.TO_CLIENT)
-    @SuppressWarnings("unused")
     public PacketDecision onConnectSuccess(PacketInterceptionContext context) {
         ConnectSuccess connectSuccess = (ConnectSuccess) context.parsedPayload();
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.session().sessionId());
@@ -117,9 +114,13 @@ public class PlayerConnectionHandler {
             );
             players.add(context.session().sessionId(), player);
             context.session().attributes().putIfAbsent("player", player);
-            CompletableFuture.runAsync(() -> eventPublisher.publishEvent(new PlayerConnectedEvent(context.session().sessionId(), player)));
-            return PacketDecision.forward();
 
+
+            return PacketDecision.forward(
+                    () -> eventPublisher.publishEvent(
+                            new PlayerConnectedEvent(context.session().sessionId(), player)
+                    )
+            );
 
         }
         ConnectFailure connectFailure = new ConnectFailure("Player connection state not found. Please try again.");
@@ -128,19 +129,16 @@ public class PlayerConnectionHandler {
     }
 
     @OnConnectionSuccess
-    @SuppressWarnings("unused")
     public void onConnectionSuccess(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} connected successfully.", context.sessionId());
     }
 
     @OnDisconnecting
-    @SuppressWarnings("unused")
     public void onDisconnecting(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} is disconnecting.", context.sessionId());
     }
 
     @OnDisconnected
-    @SuppressWarnings("unused")
     public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
         sessionPermissionService.clearPermissions(context.sessionId());

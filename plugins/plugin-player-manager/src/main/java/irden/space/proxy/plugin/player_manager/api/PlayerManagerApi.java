@@ -11,6 +11,8 @@ public interface PlayerManagerApi {
 
     Optional<Player> findPlayer(String identifier, boolean loggedIn);
 
+    Optional<Player> findPlayerByUuid(String uuid, boolean loggedIn);
+
     List<Player> searchPlayers(String prefix, int limit, boolean loggedIn);
 
     List<Player> findAllPlayersByIpAddress(String ipAddress);
