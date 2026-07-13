@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -22,6 +23,8 @@ public final class RoleManager {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
+    private static final String DEFAULT_CONFIG_RESOURCE = "config/permissions.jsonc";
+
     private final Path configPath;
     private final PermissionResolver permissionResolver;
     private StarryRoles rolesConfig;
@@ -29,7 +32,7 @@ public final class RoleManager {
 
     @Autowired
     public RoleManager(
-            @Value("${starry.player-manager.permissions-path:config/permissions.jsonc}") String configPath,
+            @Value("${starry.player-manager.permissions-path:config/plugins/player-manager/permissions.jsonc}") String configPath,
             PermissionResolver permissionResolver
     ) {
         this(Path.of(configPath), permissionResolver);
@@ -116,11 +119,25 @@ public final class RoleManager {
                 return OBJECT_MAPPER.readValue(configPath.toFile(), StarryRoles.class);
             }
 
+            if (copyBundledDefault(configPath)) {
+                return OBJECT_MAPPER.readValue(configPath.toFile(), StarryRoles.class);
+            }
+
             StarryRoles defaultRoles = new StarryRoles();
             OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValue(configPath.toFile(), defaultRoles);
             return defaultRoles;
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to load permissions configuration: " + configPath, ex);
+        }
+    }
+
+    private boolean copyBundledDefault(Path target) throws IOException {
+        try (InputStream bundled = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_RESOURCE)) {
+            if (bundled == null) {
+                return false;
+            }
+            Files.copy(bundled, target);
+            return true;
         }
     }
 

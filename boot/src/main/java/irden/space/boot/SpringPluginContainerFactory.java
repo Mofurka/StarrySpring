@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 import irden.space.proxy.plugin.runtime.*;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -28,11 +29,13 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     private final ApplicationContext rootContext;
     private final PluginWebEndpointRegistrar webEndpointRegistrar;
     private final PluginEventListenerRegistrar eventListenerRegistrar;
+    private final PluginConfigInitializer configInitializer;
 
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
         this.webEndpointRegistrar = new PluginWebEndpointRegistrar(this.rootContext);
         this.eventListenerRegistrar = new PluginEventListenerRegistrar(this.rootContext);
+        this.configInitializer = new PluginConfigInitializer(this.rootContext);
     }
 
     @Override
@@ -45,6 +48,8 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         try {
             pluginContext.setParent(rootContext);
             pluginContext.setClassLoader(candidate.pluginClass().getClassLoader());
+            configInitializer.apply(pluginContext, candidate);
+            ConfigurationPropertiesBindingPostProcessor.register(pluginContext);
             registerScopedRuntimeBeans(pluginContext, scopedContext);
             registerDependencyBeans(pluginContext, dependencyContainers);
             registerPluginMessageSource(pluginContext, candidate);

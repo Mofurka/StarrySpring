@@ -17,6 +17,9 @@ spring:
 starry:
   plugins:
     directory: runtime-plugins
+    # Папка с внешними конфигами плагинов: <config-directory>/<plugin-id>.yaml
+    # её нужно случайно не снести
+    config-directory: config/plugins
 
 
 proxy:

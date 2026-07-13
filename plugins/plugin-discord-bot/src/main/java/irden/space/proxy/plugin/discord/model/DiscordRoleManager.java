@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -20,11 +21,13 @@ public final class DiscordRoleManager {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
+    private static final String DEFAULT_CONFIG_RESOURCE = "config/discord-ranks.jsonc";
+
     private final Path path;
     private final List<DiscordRankRoles> ranks;
 
     public DiscordRoleManager() {
-        this(Path.of("config/discord-ranks.jsonc"));
+        this(Path.of("config/plugins/discord-bot/discord-ranks.jsonc"));
     }
 
     public DiscordRoleManager(Path path) {
@@ -68,6 +71,10 @@ public final class DiscordRoleManager {
                 Files.createDirectories(parent);
             }
 
+            if (!Files.exists(path)) {
+                copyBundledDefault(path);
+            }
+
             if (Files.exists(path)) {
                 List<DiscordRankRoles> configuredRanks = OBJECT_MAPPER.readValue(
                         path.toFile(),
@@ -81,6 +88,14 @@ public final class DiscordRoleManager {
             return List.of();
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to load Discord rank mapping configuration: " + path, ex);
+        }
+    }
+
+    private void copyBundledDefault(Path target) throws IOException {
+        try (InputStream bundled = getClass().getClassLoader().getResourceAsStream(DEFAULT_CONFIG_RESOURCE)) {
+            if (bundled != null) {
+                Files.copy(bundled, target);
+            }
         }
     }
 }
