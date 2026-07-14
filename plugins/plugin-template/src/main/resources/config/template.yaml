@@ -1,0 +1,6 @@
+# Дефолтный конфиг плагина template.
+# Имя ресурса = config/<plugin-id>.yaml (уникально
+template:
+  greeting: "Hello from the template plugin"
+  feature-enabled: true
+  max-items: 10
