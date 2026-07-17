@@ -1,17 +1,22 @@
 package irden.space.boot;
 
 import irden.space.boot.pluginfixture.ComponentScannedPlugin;
+import irden.space.boot.pluginfixture.ConfigScanPlugin;
+import irden.space.boot.pluginfixture.ScannedConfigProperties;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.runtime.DefaultPacketInterceptorRegistry;
 import irden.space.proxy.plugin.runtime.DefaultPluginContext;
 import irden.space.proxy.plugin.runtime.PluginCandidate;
 import irden.space.proxy.plugin.runtime.PluginContainer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.MapPropertySource;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -123,6 +128,29 @@ class SpringPluginContainerFactoryTest {
 
         assertSame(scopedContext, plugin.pluginContext);
         assertSame(scopedContext.packetInterceptorRegistry(), plugin.interceptorRegistry);
+
+        container.close();
+        rootContext.close();
+    }
+
+    @Test
+    void bindsConfigurationPropertiesScannedFromPluginPackage(@TempDir Path configDir) {
+        AnnotationConfigApplicationContext rootContext = new AnnotationConfigApplicationContext();
+        rootContext.getEnvironment().getPropertySources().addFirst(new MapPropertySource(
+                "test-config-dir",
+                Map.of("starry.plugins.config-directory", configDir.toString())
+        ));
+        rootContext.refresh();
+
+        PluginContainer container = new SpringPluginContainerFactory(rootContext).create(
+                candidate(ConfigScanPlugin.class, new ConfigScanPlugin().descriptor()),
+                null,
+                List.of()
+        );
+
+        Map<String, ScannedConfigProperties> beans = container.beansOfType(ScannedConfigProperties.class);
+        assertEquals(1, beans.size());
+        assertEquals("bound-from-yaml", beans.values().iterator().next().getValue());
 
         container.close();
         rootContext.close();

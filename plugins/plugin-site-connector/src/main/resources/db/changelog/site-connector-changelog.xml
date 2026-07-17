@@ -27,7 +27,7 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="app_id" type="bigint">
+            <column name="application_id" type="bigint">
                 <constraints nullable="false"/>
             </column>
 

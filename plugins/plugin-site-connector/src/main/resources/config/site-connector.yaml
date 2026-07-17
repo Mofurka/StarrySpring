@@ -1,3 +1,6 @@
 site-connector:
   api-key: ""
-  site-url: ""
+  base-url: ""
+  connect-timeout: 3
+  read-timeout: 3
+

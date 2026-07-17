@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
         description = "Integration plugin between app.irden.space and the game server"
 )
 @Component
+
 @Slf4j
 @RequiredArgsConstructor
 public final class SiteConnectorPlugin implements ProxyPlugin {

@@ -27,7 +27,7 @@ public class SiteAttributeResolver {
                     Map<String, Object> metadata = player.metadata();
 
                     // i dunno how to better keep this contract between services
-                    metadata.put("appId", r.appId());
+                    metadata.put("applicationId", r.applicationId());
                     metadata.put("discordId", r.discordId());
                 },
                 () -> log.info("{} does not have the connection record", player.uuid()));
