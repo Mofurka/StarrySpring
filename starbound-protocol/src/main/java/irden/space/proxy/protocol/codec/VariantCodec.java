@@ -28,6 +28,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
     @Override
     public void write(BinaryWriter writer, VariantValue value) {
         switch (value) {
+            case null -> writer.writeByte(1);
             case NullVariantValue _ -> writer.writeByte(1);
             case DoubleVariantValue(double value1) -> {
                 writer.writeByte(2);
@@ -53,7 +54,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
                 writer.writeByte(7);
                 writeMap(writer, value1);
             }
-            case null, default -> throw new IllegalStateException("Unsupported variant value: " + value);
+            default -> throw new IllegalStateException("Unsupported variant value: " + value);
         }
     }
 

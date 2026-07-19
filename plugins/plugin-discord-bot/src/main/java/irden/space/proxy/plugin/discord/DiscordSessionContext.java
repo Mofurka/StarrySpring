@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.discord;
 
 import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
+import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -62,10 +63,11 @@ public record DiscordSessionContext(
 
         if (event instanceof SlashCommandInteractionEvent slashEvent) {
             String response = chatReceive.message();
+            var finalResponse = Color.stripColorCodes(response);
             if (slashEvent.isAcknowledged()) {
-                slashEvent.getHook().sendMessage(response).queue();
+                slashEvent.getHook().sendMessage(finalResponse).queue();
             } else {
-                slashEvent.reply(response).queue();
+                slashEvent.reply(finalResponse).queue();
             }
         }
     }

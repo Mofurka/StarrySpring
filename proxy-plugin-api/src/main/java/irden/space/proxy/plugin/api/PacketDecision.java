@@ -34,6 +34,14 @@ public sealed interface PacketDecision
         );
     }
 
+    static DropPacketDecision cancel(
+            @NotNull Runnable afterDrop
+    ) {
+        return new DropPacketDecision(
+                Objects.requireNonNull(afterDrop)
+        );
+    }
+
     static DropPacketDecision cancel() {
         return DropPacketDecision.INSTANCE;
     }

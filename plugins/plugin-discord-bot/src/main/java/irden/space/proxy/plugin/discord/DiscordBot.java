@@ -29,6 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 public final class DiscordBot extends ListenerAdapter {
     private final Logger log = LoggerFactory.getLogger(DiscordBot.class);
@@ -36,6 +39,7 @@ public final class DiscordBot extends ListenerAdapter {
     private final CommandHandlerPlugin commandHandler;
     private final RoleManager roleManager;
     private final DiscordRoleManager discordRoleManager;
+    private final ExecutorService commandExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public DiscordBot(
             String token,
@@ -93,8 +97,54 @@ public final class DiscordBot extends ListenerAdapter {
                         .map(OptionMapping::getName)
                         .toList()
         );
-        commandHandler.onChatSent(
-                createDiscordPacketContext(event)
+
+        event.deferReply().queue(
+                ignored -> submitCommand(event),
+                error -> log.error(
+                        "Failed to defer Discord slash command interaction: {}",
+                        commandName,
+                        error
+                )
+        );
+    }
+
+    private void submitCommand(SlashCommandInteractionEvent event) {
+        try {
+            commandExecutor.execute(() -> executeCommand(event));
+        } catch (RejectedExecutionException exception) {
+            log.error(
+                    "Discord command executor rejected command: {}",
+                    event.getName(),
+                    exception
+            );
+            sendCommandError(event, "Бот завершает работу. Попробуйте выполнить команду позднее.");
+        }
+    }
+
+    private void executeCommand(SlashCommandInteractionEvent event) {
+        try {
+            commandHandler.onChatSent(
+                    createDiscordPacketContext(event)
+            );
+        } catch (Exception exception) {
+            log.error(
+                    "Failed to execute Discord slash command: {}",
+                    event.getName(),
+                    exception
+            );
+            sendCommandError(event, "При выполнении команды произошла ошибка.");
+        }
+    }
+
+    private void sendCommandError(SlashCommandInteractionEvent event, String message) {
+        event.getHook().sendMessage(message).queue(
+                ignored -> {
+                },
+                error -> log.error(
+                        "Failed to send Discord command error response: {}",
+                        event.getName(),
+                        error
+                )
         );
     }
 
@@ -244,6 +294,8 @@ public final class DiscordBot extends ListenerAdapter {
 
 
     public void shutdown() {
+        commandExecutor.shutdown();
+
         if (jda != null) {
             jda.shutdown();
         }

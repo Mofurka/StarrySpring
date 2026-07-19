@@ -1,0 +1,15 @@
+planet-backup:
+  enabled: true
+  # language=CronExp
+  backup-cron: "0 0 3 * * *"        # каждый день в 03:00 (сек мин час день месяц день-недели)
+  # Планеты, которые НЕ включать в архив (совпадение по началу имени файла: покроет .world/.tempworld и т.п.)
+  files-to-exclude:
+    - 537136952_-793857255_-151358226_8
+    - 605973028_-744798230_-213530769_8
+  # Источник: папка universe нативного сервера.
+  # Относительный путь резолвится от game-directory (из native-server-lifespan), абсолютный - как есть.
+  storage-path: ./storage/universe
+  # Куда складывать zip-архивы (так же: относительный - от game-directory).
+  archive-path: ./storage/backups
+  # Сколько последних архивов хранить (0 = не удалять)
+  keep-last: 7

@@ -23,20 +23,6 @@ import org.springframework.stereotype.Component;
         description = "A plugin for enhance chat functionality and it manage and other things."
 )
 @Component
-@RequiredArgsConstructor
 public final class GeneralPlugin implements ProxyPlugin {
-    private static final Logger log = LoggerFactory.getLogger(GeneralPlugin.class);
-    private final PlayerManagerApi playerManagerApi;
-
-
-    public void broadcastMessage(@NotBlank String message) {
-        playerManagerApi.onlinePlayers().forEach(player -> player.sendMessage(message));
-    }
-
-    public void broadcastMessage(@NotNull ChatReceive message) {
-        playerManagerApi.onlinePlayers().forEach(player -> player.sendMessage(message));
-    }
-
-
 
 }

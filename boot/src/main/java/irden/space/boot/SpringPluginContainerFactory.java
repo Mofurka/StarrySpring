@@ -398,7 +398,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
      * Plugin {@code @EventListener} methods are bridged onto the root application event multicaster
      * (see {@link PluginEventListenerRegistrar}) so events published from one plugin reach listeners
      * in others. To keep delivery exactly-once, the child context must not <em>also</em> register the
-     * same listeners on its own multicaster — otherwise an intra-plugin event (published and observed
+     * same listeners on its own multicaster - otherwise an intra-plugin event (published and observed
      * within the same plugin) would fire twice: once locally and once after bubbling up to the root.
      */
     private void disableNativeEventListenerProcessing(AnnotationConfigApplicationContext context) {

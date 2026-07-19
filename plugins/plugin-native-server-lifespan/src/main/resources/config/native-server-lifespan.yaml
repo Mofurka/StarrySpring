@@ -1,0 +1,11 @@
+native-server-lifespan:
+  enabled: true
+  game-directory-path: "/path/to/game"
+  rcon:
+    enabled: true # if u want to disable. Who im a talking to?
+    host: localhost
+    port: 21026 # standart port
+    password: yourStrongPasswordOrEmpty!
+    connectTimeout: 5000 #ms
+    readTimeout: 5000 #ms
+    shutdownTimeout: 10000 #ms

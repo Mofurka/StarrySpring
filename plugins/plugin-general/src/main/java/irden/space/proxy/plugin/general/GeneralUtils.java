@@ -4,6 +4,9 @@ import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +34,7 @@ public class GeneralUtils {
             time = 5;
         }
         String code = "chat.shutdown";
-        generalPlugin.broadcastMessage(messageUtils.get(code, time));
+        broadcastMessage(messageUtils.get(code, time));
         sleep(1_000);
         if (time != 0) {
             time = time - 1;
@@ -39,17 +42,29 @@ public class GeneralUtils {
         for (int i = time; i > 0; i--) {
             if (i < 10) {
                 String message = messageUtils.get(code, i);
-                generalPlugin.broadcastMessage(message);
+                broadcastMessage(message);
             } else if (i % 10 == 0) {
                 String message = messageUtils.get(code, i);
-                generalPlugin.broadcastMessage(message);
+                broadcastMessage(message);
             }
             sleep(1_000);
         }
         String message = messageUtils.get("chat.shutdown_notify");
-        playerManagerApi.onlinePlayers().forEach(p -> p.kick(message));
+        kickAll(message);
         sleep(1_000);
         System.exit(0);
+    }
+
+    public void broadcastMessage(@NotBlank String message) {
+        playerManagerApi.onlinePlayers().forEach(player -> player.sendMessage(message));
+    }
+
+    public void broadcastMessage(@NotNull ChatReceive message) {
+        playerManagerApi.onlinePlayers().forEach(player -> player.sendMessage(message));
+    }
+
+    public void kickAll(String message) {
+        playerManagerApi.onlinePlayers().forEach(p -> p.kick(message));
     }
 
     public void handleWhoCommand(CommandContext ctx) {

@@ -108,7 +108,8 @@ public class PacketForwarder implements Runnable {
 
                 PacketDecision decision = packetInterceptionService.apply(interceptionContext);
 
-                if (decision instanceof DropPacketDecision) {
+                if (decision instanceof DropPacketDecision(Runnable afterDrop)) {
+                    runAfterAction(packetDirection, "after-drop", afterDrop);
                     continue;
                 }
 
@@ -195,18 +196,18 @@ public class PacketForwarder implements Runnable {
 
             resolvedTransport.write(resolvedTarget, envelope);
 
-            if (afterWrite != null) {
-                try {
-                    afterWrite.run();
-                } catch (Exception e) {
-                    log.warn(
-                            "[{}] after-forward callback failed for session {}",
-                            direction,
-                            session.getId(),
-                            e
-                    );
-                }
-            }
+            runAfterAction(direction, "after-forward", afterWrite);
+        }
+    }
+
+    private void runAfterAction(PacketDirection direction, String kind, Runnable afterAction) {
+        if (afterAction == null) {
+            return;
+        }
+        try {
+            afterAction.run();
+        } catch (Exception e) {
+            log.warn("[{}] {} callback failed for session {}", direction, kind, session.getId(), e);
         }
     }
 

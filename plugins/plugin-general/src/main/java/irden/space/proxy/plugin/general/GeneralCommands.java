@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 public class GeneralCommands {
-    private final GeneralPlugin generalPlugin;
     private final GeneralUtils generalUtils;
 
 
@@ -34,7 +33,7 @@ public class GeneralCommands {
                         .description("The message to broadcast.")
                         .executes(context -> {
                             String message = context.get("message", String.class);
-                            generalPlugin.broadcastMessage(message);
+                            generalUtils.broadcastMessage(message);
                             context.reply("Broadcasted message: " + message);
                         })).build();
     }
@@ -59,6 +58,7 @@ public class GeneralCommands {
                                         name = sender.get().name();
                                     } else name = "Unknown";
                                     var timer = ctx.getOrDefault("timer", Integer.class, 5);
+                                    ctx.reply("Server shutdown initiated in %s seconds".formatted(timer));
                                     generalUtils.shutdownServer(name, timer);
                                 }
                         )

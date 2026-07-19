@@ -2,6 +2,8 @@ package irden.space.proxy.plugin.command_handler.color;
 
 import irden.space.proxy.protocol.payload.common.rgba.Rgba;
 
+import java.util.regex.Pattern;
+
 
 public enum Color {
     RED("red", new Rgba(255, 73, 66, 255)),
@@ -25,16 +27,19 @@ public enum Color {
     PINK("pink", new Rgba(255, 162, 187, 255)),
     CLEAR("clear", new Rgba(0, 0, 0, 0));
 
-    private final String color;
+    private final String colorCode;
     private final Rgba rgba;
+    // Заранее компилирую чтобы не мучать сервер
+    private static final Pattern COLOR_STRIP_PATTERN = Pattern.compile("\\^[^;]*;");
+    private static final Pattern COLOR_PATTERN = Pattern.compile("^\\^|;$");
 
-    Color(String color, Rgba rgba) {
-        this.color = color;
+    Color(String colorCode, Rgba rgba) {
+        this.colorCode = colorCode;
         this.rgba = rgba;
     }
 
     public String color() {
-        return color;
+        return colorCode;
     }
 
     public Rgba rgba() {
@@ -43,7 +48,7 @@ public enum Color {
 
     public static Color fromString(String color) {
         for (Color c : Color.values()) {
-            if (c.color.equalsIgnoreCase(color)) {
+            if (c.colorCode.equalsIgnoreCase(color)) {
                 return c;
             }
         }
@@ -55,7 +60,7 @@ public enum Color {
     }
 
     public String colorString(String text, boolean clear) {
-        String formatted = "^".concat(color).concat(";").concat(text);
+        String formatted = "^".concat(colorCode).concat(";").concat(text);
         if (clear) {
             formatted = formatted.concat("^reset;");
         }
@@ -79,11 +84,12 @@ public enum Color {
     }
 
     private static String resolveColor(String color) {
-        return color == null ? null : color.trim().replaceAll("^\\^|;$", "");
+        return color == null ? null : COLOR_PATTERN.matcher(color.trim()).replaceAll("");
     }
 
     public static String stripColorCodes(String text) {
-        return text.replaceAll("\\^[a-zA-Z]+;", "");
+        if (text == null) return null;
+        return COLOR_STRIP_PATTERN.matcher(text).replaceAll("");
     }
 
 }

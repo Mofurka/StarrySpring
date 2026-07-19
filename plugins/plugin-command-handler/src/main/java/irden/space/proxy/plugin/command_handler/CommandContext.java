@@ -139,7 +139,6 @@ public record CommandContext(PacketInterceptionContext packetContext, String com
 
         return Optional.empty();
     }
-
     public void reply(String message) {
         session().sendToClient(PacketType.CHAT_RECEIVE, CommandMessages.systemMessage(message));
     }
