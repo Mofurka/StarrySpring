@@ -3,6 +3,7 @@ package irden.space.boot;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
+import irden.space.boot.persistence.PluginJpaInitializer;
 import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.runtime.*;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
@@ -31,12 +32,14 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     private final PluginWebEndpointRegistrar webEndpointRegistrar;
     private final PluginEventListenerRegistrar eventListenerRegistrar;
     private final PluginConfigInitializer configInitializer;
+    private final PluginJpaInitializer jpaInitializer;
 
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
         this.webEndpointRegistrar = new PluginWebEndpointRegistrar(this.rootContext);
         this.eventListenerRegistrar = new PluginEventListenerRegistrar(this.rootContext);
         this.configInitializer = new PluginConfigInitializer(this.rootContext);
+        this.jpaInitializer = new PluginJpaInitializer(this.rootContext);
     }
 
     @Override
@@ -52,6 +55,8 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             configInitializer.apply(pluginContext, candidate);
             ConfigurationPropertiesBindingPostProcessor.register(pluginContext);
             pluginContext.register(PluginMethodSecurityConfiguration.class);
+            // Поднять per-plugin JPA (EMF/tx/repositories), если у плагина есть @Entity.
+            jpaInitializer.apply(pluginContext, candidate);
             registerScopedRuntimeBeans(pluginContext, scopedContext);
             registerDependencyBeans(pluginContext, dependencyContainers);
             registerPluginMessageSource(pluginContext, candidate);

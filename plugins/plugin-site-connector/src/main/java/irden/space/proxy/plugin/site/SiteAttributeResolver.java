@@ -2,7 +2,7 @@ package irden.space.proxy.plugin.site;
 
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
-import irden.space.proxy.plugin.site.persistence.repository.PlayerAttributesRecordJdbcRepository;
+import irden.space.proxy.plugin.site.persistence.repository.PlayerAttributesRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -15,7 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class SiteAttributeResolver {
-    private final PlayerAttributesRecordJdbcRepository repository;
+    private final PlayerAttributesRepository repository;
 
 
     @Async
@@ -27,8 +27,8 @@ public class SiteAttributeResolver {
                     Map<String, Object> metadata = player.metadata();
 
                     // i dunno how to better keep this contract between services
-                    metadata.put("applicationId", r.applicationId());
-                    metadata.put("discordId", r.discordId());
+                    metadata.put("applicationId", r.getApplicationId());
+                    metadata.put("discordId", r.getDiscordId());
                 },
                 () -> log.info("{} does not have the connection record", player.uuid()));
     }
