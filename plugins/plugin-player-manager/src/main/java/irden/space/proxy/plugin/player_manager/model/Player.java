@@ -12,6 +12,7 @@ import irden.space.proxy.protocol.payload.packet.world_stop.WorldStop;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -32,7 +33,8 @@ public class Player {
     private final int entityId = 0;
     private final String ipAddress;
     private final String sessionId;
-    private final LocalDateTime lastSeen;
+    @Builder.Default
+    private final LocalDateTime lastSeen = LocalDateTime.now();
     private final PluginSessionContext sessionContext;
     private final Map<String, Object> metadata = new ConcurrentHashMap<>();
 

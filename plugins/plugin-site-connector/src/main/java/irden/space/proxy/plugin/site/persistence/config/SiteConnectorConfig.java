@@ -10,6 +10,7 @@ public record SiteConnectorConfig(
         String apiKey,
         String baseUrl,
         Duration connectTimeout,
-        Duration readTimeout
+        Duration readTimeout,
+        String inboundApiKey
 ) {
 }

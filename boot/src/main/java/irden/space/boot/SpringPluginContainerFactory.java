@@ -3,6 +3,7 @@ package irden.space.boot;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
+import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.runtime.*;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
@@ -50,6 +51,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             pluginContext.setClassLoader(candidate.pluginClass().getClassLoader());
             configInitializer.apply(pluginContext, candidate);
             ConfigurationPropertiesBindingPostProcessor.register(pluginContext);
+            pluginContext.register(PluginMethodSecurityConfiguration.class);
             registerScopedRuntimeBeans(pluginContext, scopedContext);
             registerDependencyBeans(pluginContext, dependencyContainers);
             registerPluginMessageSource(pluginContext, candidate);

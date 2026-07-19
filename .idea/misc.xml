@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="EntryPointsManager">
-    <list size="6">
+    <list size="7">
       <item index="0" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnConnectionSuccess" />
       <item index="1" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnDisconnected" />
       <item index="2" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnDisconnecting" />
       <item index="3" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnLoad" />
-      <item index="4" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.PacketHandler" />
-      <item index="5" class="java.lang.String" itemvalue="irden.space.proxy.plugin.command_handler.ChatCommand" />
+      <item index="4" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnStop" />
+      <item index="5" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.PacketHandler" />
+      <item index="6" class="java.lang.String" itemvalue="irden.space.proxy.plugin.command_handler.ChatCommand" />
     </list>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />

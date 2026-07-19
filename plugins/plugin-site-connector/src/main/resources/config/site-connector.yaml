@@ -3,4 +3,4 @@ site-connector:
   base-url: ""
   connect-timeout: 3
   read-timeout: 3
-
+  inbound-api-key: ""
