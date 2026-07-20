@@ -6,8 +6,9 @@ import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.StarryRole;
 import irden.space.proxy.plugin.player_manager.model.UserPermissions;
 import irden.space.proxy.plugin.player_manager.permissions.PermissionResolver;
-import irden.space.proxy.plugin.player_manager.persistence.PlayerAccessJdbcRepository;
-import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRoleRecord;
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRoleEntity;
+import irden.space.proxy.plugin.player_manager.persistence.repository.PlayerPermissionOverrideRepository;
+import irden.space.proxy.plugin.player_manager.persistence.repository.PlayerRoleRepository;
 import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,7 +23,8 @@ public class PlayerAccessService {
 
     private final Map<String, StarryRole> rolesByName = new ConcurrentHashMap<>();
 
-    private final PlayerAccessJdbcRepository playerAccessRepository;
+    private final PlayerRoleRepository playerRoleRepository;
+    private final PlayerPermissionOverrideRepository playerPermissionOverrideRepository;
     private final SessionPermissionService sessionPermissionService;
     private final RoleManager roleManager;
     private final PermissionResolver permissionResolver;
@@ -83,7 +85,7 @@ public class PlayerAccessService {
         }
 
         requireRole(roleName);
-        playerAccessRepository.assignRole(playerUuid, roleName, assignedBy);
+        playerRoleRepository.assignRole(playerUuid, roleName, assignedBy);
         refreshOnlinePermissions(playerUuid);
     }
 
@@ -94,25 +96,25 @@ public class PlayerAccessService {
             throw new IllegalArgumentException("Owner role cannot be removed manually");
         }
 
-        playerAccessRepository.removeRole(playerUuid, roleName);
+        playerRoleRepository.removeRole(playerUuid, roleName);
         refreshOnlinePermissions(playerUuid);
     }
 
     public void grantPermissionToPlayer(String playerUuid, String permissionRule, String changedBy) {
         ensurePlayerAccessMutable(playerUuid);
-        playerAccessRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), true, changedBy);
+        playerPermissionOverrideRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), true, changedBy);
         refreshOnlinePermissions(playerUuid);
     }
 
     public void revokePermissionFromPlayer(String playerUuid, String permissionRule, String changedBy) {
         ensurePlayerAccessMutable(playerUuid);
-        playerAccessRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), false, changedBy);
+        playerPermissionOverrideRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), false, changedBy);
         refreshOnlinePermissions(playerUuid);
     }
 
     public void clearPermissionOverride(String playerUuid, String permissionRule) {
         ensurePlayerAccessMutable(playerUuid);
-        playerAccessRepository.deletePermissionOverride(playerUuid, normalizePermissionRule(permissionRule));
+        playerPermissionOverrideRepository.deletePermissionOverride(playerUuid, normalizePermissionRule(permissionRule));
         refreshOnlinePermissions(playerUuid);
     }
 
@@ -153,18 +155,18 @@ public class PlayerAccessService {
             return new ResolvedUserAccess(resolveRoles(List.of(RoleManager.OWNER_ROLE_NAME)), Permissions.none(), Permissions.none());
         }
 
-        List<String> storedRoleNames = playerAccessRepository.findRolesByPlayerUuid(playerUuid).stream()
-                .map(PlayerRoleRecord::roleName)
+        List<String> storedRoleNames = playerRoleRepository.findByPlayerUuidOrderByAssignedAtAscRoleNameAsc(playerUuid).stream()
+                .map(PlayerRoleEntity::getRoleName)
                 .toList();
 
         List<StarryRole> resolvedStarryRoles = resolveRoles(roleManager.resolveRoleNamesForPlayer(playerUuid, accountName, storedRoleNames));
 
         PermissionSet grantedPermissions = new PermissionSet();
         PermissionSet revokedPermissions = new PermissionSet();
-        for (var permissionOverride : playerAccessRepository.findPermissionOverridesByPlayerUuid(playerUuid)) {
+        for (var permissionOverride : playerPermissionOverrideRepository.findByPlayerUuidOrderByChangedAtAscPermissionNameAsc(playerUuid)) {
             mergePermissionRule(
-                    permissionOverride.permissionName(),
-                    permissionOverride.granted() ? grantedPermissions : revokedPermissions
+                    permissionOverride.getPermissionName(),
+                    permissionOverride.isGranted() ? grantedPermissions : revokedPermissions
             );
         }
 
