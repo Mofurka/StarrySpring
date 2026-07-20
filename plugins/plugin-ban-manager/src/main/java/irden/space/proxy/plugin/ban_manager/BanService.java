@@ -1,14 +1,15 @@
 package irden.space.proxy.plugin.ban_manager;
 
 import irden.space.proxy.plugin.ban_manager.model.BanOperationResult;
-import irden.space.proxy.plugin.ban_manager.persistence.BanRecordJdbcRepository;
-import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecord;
+import irden.space.proxy.plugin.ban_manager.persistence.model.BanRecordEntity;
+import irden.space.proxy.plugin.ban_manager.persistence.repository.BanRecordRepository;
 import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -21,23 +22,18 @@ public class BanService {
     private static final Logger log = LoggerFactory.getLogger(BanService.class);
     private static final String IP_ADDRESS_PATTERN = "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b";
 
-    private final BanRecordJdbcRepository banRecordRepository;
+    private final BanRecordRepository banRecordRepository;
     private final PlayerManagerApi playerManagerApi;
     private final BanFormatUtils banFormatUtils;
 
-    public BanService(BanRecordJdbcRepository banRecordRepository, @Lazy PlayerManagerApi playerManagerApi, BanFormatUtils banFormatUtils) {
+    public BanService(BanRecordRepository banRecordRepository, @Lazy PlayerManagerApi playerManagerApi, BanFormatUtils banFormatUtils) {
         this.banRecordRepository = banRecordRepository;
         this.playerManagerApi = playerManagerApi;
         this.banFormatUtils = banFormatUtils;
     }
 
-    public Optional<BanRecord> findActiveBan(String name, String playerUuid, String ipAddress) {
-        BanRecord probe = BanRecord.builder()
-                .name(name)
-                .playerUuid(playerUuid)
-                .ipAddress(ipAddress)
-                .build();
-        return banRecordRepository.findActiveBanByBanRecord(probe);
+    public Optional<BanRecordEntity> findActiveBan(String name, String playerUuid, String ipAddress) {
+        return banRecordRepository.findActiveBan(name, playerUuid, ipAddress, Limit.of(1));
     }
 
     public boolean unban(String targetPlayer) {
@@ -88,7 +84,7 @@ public class BanService {
             LocalDateTime expiresAt,
             String reason
     ) {
-        BanRecord banRecord = BanRecord.builder()
+        BanRecordEntity banRecord = BanRecordEntity.builder()
                 .ipAddress(ipAddress)
                 .reason(reason)
                 .bannedBy(bannedBy)
@@ -120,7 +116,7 @@ public class BanService {
         }
 
         Player player = optionalPlayer.get();
-        BanRecord banRecord = BanRecord.builder()
+        BanRecordEntity banRecord = BanRecordEntity.builder()
                 .name(player.name())
                 .playerUuid(player.uuid().toString())
                 .reason(reason)
