@@ -49,7 +49,7 @@ public class EntityMessageService {
 
     /** Отправить сообщение на unique entity uuid (от имени сервера, с таймаутом по умолчанию). */
     public CompletableFuture<VariantValue> sendToUuid(
-            PluginSessionContext session, StarUuid entityUuid, String message, VariantValue... args) {
+            PluginSessionContext session, String entityUuid, String message, VariantValue... args) {
         return send(session, new UniqueEntityIdTarget(entityUuid), message, args);
     }
 
