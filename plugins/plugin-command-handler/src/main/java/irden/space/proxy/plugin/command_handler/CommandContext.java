@@ -6,6 +6,8 @@ import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
+import org.intellij.lang.annotations.PrintFormat;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -139,6 +141,11 @@ public record CommandContext(PacketInterceptionContext packetContext, String com
 
         return Optional.empty();
     }
+
+    public void reply(@PrintFormat String formatMessage, @NotNull Object... args){
+        reply(String.format(formatMessage, args));
+    }
+
     public void reply(String message) {
         session().sendToClient(PacketType.CHAT_RECEIVE, CommandMessages.systemMessage(message));
     }

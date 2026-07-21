@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationBeanNameGenerator;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -56,6 +57,7 @@ public final class PluginJpaInitializer {
 
         registerEntityManagerFactory(pluginContext, basePackage, schema, dataSource, pluginId);
         registerTransactionManager(pluginContext);
+        pluginContext.register(PluginTransactionConfiguration.class);
         registerRepositories(pluginContext, basePackage);
 
         log.info("Configured JPA for plugin '{}' (schema '{}', entities in '{}')", pluginId, schema, basePackage);
@@ -96,7 +98,8 @@ public final class PluginJpaInitializer {
                     properties.put("hibernate.default_schema", schema);
                     emf.setJpaPropertyMap(properties);
                     return emf;
-                }
+                },
+                PluginJpaInitializer::markAsInfrastructure
         );
     }
 
@@ -109,8 +112,14 @@ public final class PluginJpaInitializer {
                     transactionManager.setEntityManagerFactory(
                             pluginContext.getBean(ENTITY_MANAGER_FACTORY_BEAN, EntityManagerFactory.class));
                     return transactionManager;
-                }
+                },
+                PluginJpaInitializer::markAsInfrastructure
         );
+    }
+
+
+    private static void markAsInfrastructure(BeanDefinition beanDefinition) {
+        beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
     }
 
     private void registerRepositories(AnnotationConfigApplicationContext pluginContext, String basePackage) {

@@ -12,6 +12,7 @@ import irden.space.proxy.protocol.payload.packet.world_stop.WorldStop;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
+import org.intellij.lang.annotations.PrintFormat;
 import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
@@ -136,5 +137,9 @@ public class Player {
         var chatReceive = ChatReceive.builder().header(header).name("Server").message(message).build();
 
         sessionContext.sendToClient(PacketType.CHAT_RECEIVE, chatReceive);
+    }
+
+    public void sendMessage(@PrintFormat String formatMessage, Object... args) {
+        sendMessage(String.format(formatMessage, args));
     }
 }
