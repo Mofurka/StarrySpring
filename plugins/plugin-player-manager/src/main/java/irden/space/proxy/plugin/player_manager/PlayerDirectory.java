@@ -1,8 +1,8 @@
 package irden.space.proxy.plugin.player_manager;
 
 import irden.space.proxy.plugin.player_manager.model.Player;
-import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
-import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerEntity;
+import irden.space.proxy.plugin.player_manager.persistence.repository.PlayerRepository;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -16,11 +16,11 @@ import java.util.stream.Stream;
 public final class PlayerDirectory {
 
     private final PlayerRegistry<Player> players;
-    private final PlayerJdbcRepository playerRepository;
+    private final PlayerRepository playerRepository;
 
     public PlayerDirectory(
             @Qualifier("onlinePlayerRegistry") PlayerRegistry<Player> players,
-            PlayerJdbcRepository playerRepository
+            PlayerRepository playerRepository
     ) {
         this.players = players;
         this.playerRepository = playerRepository;
@@ -41,9 +41,9 @@ public final class PlayerDirectory {
             return onlinePlayer;
         }
 
-        Optional<PlayerRecord> playerRecord = playerRepository.findByName(identifier);
+        Optional<PlayerEntity> playerRecord = playerRepository.findFirstByName(identifier);
         if (playerRecord.isEmpty()) {
-            playerRecord = playerRepository.findByUuid(identifier);
+            playerRecord = playerRepository.findByPlayerUuid(identifier);
         }
         return playerRecord.map(this::toOfflinePlayer);
     }
@@ -106,7 +106,7 @@ public final class PlayerDirectory {
                     .filter(player -> player.name().equals(name))
                     .findFirst();
         }
-        return playerRepository.findByName(name).map(this::toOfflinePlayer);
+        return playerRepository.findFirstByName(name).map(this::toOfflinePlayer);
     }
 
     public Optional<Player> getPlayerByUuid(String uuid, boolean loggedIn) {
@@ -115,14 +115,14 @@ public final class PlayerDirectory {
                     .filter(player -> player.uuid().toString().equals(uuid))
                     .findFirst();
         }
-        return playerRepository.findByUuid(uuid).map(this::toOfflinePlayer);
+        return playerRepository.findByPlayerUuid(uuid).map(this::toOfflinePlayer);
     }
 
-    private Player toOfflinePlayer(PlayerRecord record) {
+    private Player toOfflinePlayer(PlayerEntity record) {
         return Player.builder()
-                .name(record.name())
-                .uuid(StarUuid.fromHex(record.playerUuid()))
-                .ipAddress(record.ipAddress())
+                .name(record.getName())
+                .uuid(StarUuid.fromHex(record.getPlayerUuid()))
+                .ipAddress(record.getIpAddress())
                 .build();
     }
 

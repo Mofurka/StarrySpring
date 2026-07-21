@@ -12,8 +12,8 @@ import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
 import irden.space.proxy.plugin.player_manager.events.PlayerDisconnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
-import irden.space.proxy.plugin.player_manager.persistence.PlayerJdbcRepository;
-import irden.space.proxy.plugin.player_manager.persistence.model.PlayerRecord;
+import irden.space.proxy.plugin.player_manager.persistence.model.PlayerEntity;
+import irden.space.proxy.plugin.player_manager.persistence.repository.PlayerRepository;
 import irden.space.proxy.plugin.player_manager.roles.RoleManager;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -36,7 +36,7 @@ public class PlayerConnectionHandler {
 
     private final PlayerRegistry<Player> players;
     private final PlayerRegistry<TempPlayer> connectingPlayers;
-    private final PlayerJdbcRepository playerRepository;
+    private final PlayerRepository playerRepository;
     private final PlayerAccessService playerAccessService;
     private final SessionPermissionService sessionPermissionService;
     private final RoleManager roleManager;
@@ -45,7 +45,7 @@ public class PlayerConnectionHandler {
     public PlayerConnectionHandler(
             @Qualifier("onlinePlayerRegistry") PlayerRegistry<Player> players,
             @Qualifier("connectingPlayerRegistry") PlayerRegistry<TempPlayer> connectingPlayers,
-            PlayerJdbcRepository playerRepository,
+            PlayerRepository playerRepository,
             PlayerAccessService playerAccessService,
             SessionPermissionService sessionPermissionService, RoleManager roleManager, ApplicationEventPublisher eventPublisher
     ) {
@@ -61,10 +61,10 @@ public class PlayerConnectionHandler {
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
     public PacketDecision onClientConnect(PacketInterceptionContext context) {
         ClientConnect clientConnect = (ClientConnect) context.parsedPayload();
-        if (playerRepository.findByUuid(clientConnect.playerUuid().toString()).isEmpty()) {
+        if (playerRepository.findByPlayerUuid(clientConnect.playerUuid().toString()).isEmpty()) {
             if (log.isInfoEnabled())
                 log.info("New player detected: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
-            playerRepository.save(PlayerRecord.builder()
+            playerRepository.save(PlayerEntity.builder()
                     .playerUuid(clientConnect.playerUuid().toString())
                     .name(clientConnect.playerName())
                     .ipAddress(context.session().clientIp())
@@ -73,7 +73,7 @@ public class PlayerConnectionHandler {
         } else {
             if (log.isInfoEnabled())
                 log.info("Existing player connecting: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
-            playerRepository.updatePlayerIpAddress(clientConnect.playerUuid().toString(), context.session().clientIp());
+            playerRepository.updateIpAddress(clientConnect.playerUuid().toString(), context.session().clientIp());
         }
         TempPlayer player = TempPlayer.builder()
                 .name(clientConnect.playerName())

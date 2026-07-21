@@ -4,7 +4,6 @@ import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
 import irden.space.proxy.plugin.command_handler.StringArgumentType;
 import irden.space.proxy.plugin.player_manager.model.Player;
-import irden.space.proxy.plugin.site.persistence.repository.PlayerAttributesRecordJdbcRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +13,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SiteConnectorCommands {
     private final SiteLinker siteLinker;
-    private final PlayerAttributesRecordJdbcRepository jdbcRepository;
 
 
     @ChatCommand(value = "link", description = "Links the player to Irden Application Site")
