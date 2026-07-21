@@ -9,6 +9,9 @@ import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
+import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
+import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
+import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageService;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
@@ -42,6 +45,7 @@ public final class StarCustomChatInterceptorPlugin implements ProxyPlugin {
     private static final String COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE = "irdenchat_command_autocomplete";
     private static final String SERVER_NAME = "IrdenServer";
     private final CommandHandlerPlugin commandHandlerPlugin;
+    private final EntityMessageService entityMessages;
 
 
     @OnLoad
@@ -55,15 +59,9 @@ public final class StarCustomChatInterceptorPlugin implements ProxyPlugin {
         log.info("Stopped plugin '{}'", descriptor().id());
     }
 
-    @PacketHandler(value = PacketType.ENTITY_MESSAGE, direction = PacketDirection.TO_SERVER)
-    public PacketDecision autocompleteRequest(PacketInterceptionContext context) {
-        var em = (EntityMessage) context.parsedPayload();
-        if (!COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE.equals(em.message())) {
-            return PacketDecision.forward();
-        }
-        log.info("Received command autocomplete request: {}", em);
-        // log for now
-        return PacketDecision.cancel();
+    @EntityMessageHandler(COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE)
+    public void autocompleteRequest(EntityMessageContext context) {
+        log.info("Received command autocomplete request: {}", context.message());
     }
 
 
@@ -103,16 +101,7 @@ public final class StarCustomChatInterceptorPlugin implements ProxyPlugin {
         };
         log.info("Received command list request from playerId={}, sending command list response with {} commands", playerId, commandListPayload.length);
 
-        EntityMessage sccStagehandCommandlist = EntityMessage.builder()
-                .entityId(new EntityIdTarget(playerId))
-                .message(COMMAND_LIST_MESSAGE)
-                .args(commandListPayload)
-                .uuid(StarUuid.fromJavaUuid(UUID.randomUUID()))
-                .fromConnection(0)
-                .build();
-
-        context.session().sendToClient(PacketType.ENTITY_MESSAGE, sccStagehandCommandlist);
-        return PacketDecision.cancel();
+        return PacketDecision.cancel(() -> entityMessages.sendToEntity(context.session(), playerId, COMMAND_LIST_MESSAGE, commandListPayload));
     }
 
     @PacketHandler(value = PacketType.PROTOCOL_REQUEST, direction = PacketDirection.TO_SERVER)

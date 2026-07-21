@@ -1,2 +1,2 @@
 irden.space.proxy.plugin.command_handler.CommandAnnotationRegistrar
-
+irden.space.proxy.plugin.command_handler.entity_message.EntityMessageAnnotationRegistrar
