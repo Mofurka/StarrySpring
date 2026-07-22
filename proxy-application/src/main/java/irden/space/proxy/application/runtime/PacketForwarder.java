@@ -85,17 +85,6 @@ public class PacketForwarder implements Runnable {
                         ? inspection.negotiatedOpenProtocolVersion()
                         : openProtocolVersion;
 
-/*                log.debug(
-                        "[{}] session={} rawType={} type={} size={} compressed={} parsed={}",
-                        packetDirection,
-                        session.getId(),
-                        envelope.rawPacketTypeId(),
-                        envelope.packetType(),
-                        envelope.payloadSize(),
-                        envelope.compressed(),
-                        inspection.parsed()
-                );*/
-
                 PluginSessionContext pluginSessionContext = createPluginSessionContext(resolvedOpenProtocolVersion);
 
                 PacketInterceptionContext interceptionContext =

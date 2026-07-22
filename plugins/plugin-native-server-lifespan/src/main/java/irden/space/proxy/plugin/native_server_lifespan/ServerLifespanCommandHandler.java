@@ -43,7 +43,7 @@ public class ServerLifespanCommandHandler {
                 sb.append("- PID: %s".formatted(serverStartResult.pid()));
             }
             case RESTART -> {
-                ServerRestartResult serverRestartResult = serverLifespan.restartServer();
+                ServerRestartResult serverRestartResult = serverLifespan.restartServer("Server restart. Reconnect in one minute");
                 sb.append("- restarted: %s".formatted(serverRestartResult.started()));
                 sb.append(System.lineSeparator());
                 sb.append("- previous PID: %s".formatted(serverRestartResult.previousPid()));

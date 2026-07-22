@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
         id = "native-server-lifespan",
         name = "Native Server Lifespan",
         version = "1.0.0",
-        dependsOn = {"command-handler"},
+        dependsOn = {"command-handler", "general"},
         author = "https://github.com/Mofurka",
         description = "A plugin that is intended for actual starbound game server control."
 )

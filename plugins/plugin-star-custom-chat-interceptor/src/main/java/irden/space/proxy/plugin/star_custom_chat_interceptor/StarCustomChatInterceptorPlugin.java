@@ -104,14 +104,4 @@ public final class StarCustomChatInterceptorPlugin implements ProxyPlugin {
         return PacketDecision.cancel(() -> entityMessages.sendToEntity(context.session(), playerId, COMMAND_LIST_MESSAGE, commandListPayload));
     }
 
-    @PacketHandler(value = PacketType.PROTOCOL_REQUEST, direction = PacketDirection.TO_SERVER)
-    public PacketDecision onProtocolRequest(PacketInterceptionContext context) {
-        return PacketDecision.forward();
-    }
-
-    @PacketHandler(value = PacketType.PROTOCOL_RESPONSE, direction = PacketDirection.TO_CLIENT)
-    public PacketDecision onProtocolResponse(PacketInterceptionContext context) {
-        return PacketDecision.forward();
-    }
-
 }

@@ -42,13 +42,20 @@ public class PlayerBalanceCommands {
                                 .then(
                                         CommandSpec.argument("player", PlayerOnlineTargetArgumentType.playerTarget(playerManagerApi))
                                                 .then(
-                                                        CommandSpec.argument("amount", IntegerArgumentType.integer()).executes(playerBalanceCommandsHandler::handleMoneyGiveCommand)
+                                                        CommandSpec.argument("amount", IntegerArgumentType.integer())
+                                                                .then(
+                                                                        CommandSpec.argument("description", StringArgumentType.greedyString()).description("Описание транзакции.").optional().executes(playerBalanceCommandsHandler::handleMoneyGiveCommand)
+                                                                )
                                                 )
                                 )
                 )
                 .then(
                         CommandSpec.literal("drop")
-                                .then(CommandSpec.argument("amount", IntegerArgumentType.integer()).executes(playerBalanceCommandsHandler::handleMoneyGiveCommand)
+                                .then(
+                                        CommandSpec.argument("amount", IntegerArgumentType.integer())
+                                                .then(
+                                                        CommandSpec.argument("description", StringArgumentType.greedyString()).description("Описание транзакции.").optional().executes(playerBalanceCommandsHandler::handleMoneyDropCommand)
+                                                )
                                 )
                 )
                 .build();

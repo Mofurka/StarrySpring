@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.native_server_lifespan;
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStop;
+import irden.space.proxy.plugin.general.GeneralUtils;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.NativeServerInfo;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.ServerRestartResult;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.ServerStopResult;
@@ -36,13 +37,17 @@ import java.util.concurrent.TimeUnit;
         matchIfMissing = true
 )
 public class ServerLifespan {
+    private static final String READY_LOG_MARKER = "UniverseServer: listening for incoming TCP connections";
+
     private final NativeServerLifespanConfig config;
     // RCON-клиент опционален: при native-server-lifespan.rcon.enabled=false бин не создаётся.
     private final ObjectProvider<StarboundRconClient> rconClientProvider;
+    private final GeneralUtils generalUtils;
     private Path gameDirectoryPath;
     private Path gameExecutablePath;
 
     private volatile Process serverProcess;
+    private volatile boolean serverReady;
 
     @OnLoad
     public void onLoad(PluginContext context) {
@@ -103,6 +108,8 @@ public class ServerLifespan {
 
         processBuilder.redirectErrorStream(true);
 
+        serverReady = false; // новый процесс ещё не слушает TCP — эмулируем, пока не увидим маркер
+
         try {
             serverProcess = processBuilder.start();
 
@@ -116,10 +123,12 @@ public class ServerLifespan {
         }
 
     }
-
     public synchronized ServerStopResult stopServer() {
+        return stopServer("");
+    }
+    public synchronized ServerStopResult stopServer(String message) {
         Process process = serverProcess;
-
+        serverReady = false;
         if (process == null || !process.isAlive()) {
             log.info("Game server is not running");
             serverProcess = null;
@@ -130,7 +139,7 @@ public class ServerLifespan {
                 "Stopping game server gracefully, PID: {}",
                 process.pid()
         );
-
+        generalUtils.kickAll(message);
         StarboundRconClient rconClient = rconClientProvider.getIfAvailable();
         if (rconClient != null) {
             try {
@@ -210,13 +219,15 @@ public class ServerLifespan {
             return false;
         }
     }
-
     public synchronized ServerRestartResult restartServer() {
+        return restartServer("");
+    }
+    public synchronized ServerRestartResult restartServer(String message) {
         Long previousPid = null;
         Integer exitCode = null;
         Boolean stopped = null;
         if (isServerRunning()) {
-            ServerStopResult serverStopResult = stopServer();
+            ServerStopResult serverStopResult = stopServer(message);
             previousPid = serverStopResult.pid();
             exitCode = serverStopResult.exitCode();
             stopped = serverStopResult.stopped();
@@ -244,6 +255,10 @@ public class ServerLifespan {
                                 String line;
                                 while ((line = reader.readLine()) != null) {
                                     log.info("[Game server] {}", line);
+                                    if (!serverReady && line.contains(READY_LOG_MARKER)) {
+                                        serverReady = true;
+                                        log.info("Game server is ready — accepting TCP connections, PID: {}", process.pid());
+                                    }
                                 }
 
                             } catch (Exception e) {
@@ -275,6 +290,11 @@ public class ServerLifespan {
     private boolean isServerRunning() {
         Process process = serverProcess;
         return process != null && process.isAlive();
+    }
+
+
+    public boolean isServerReady() {
+        return serverReady && isServerRunning();
     }
 
     public Long getServerPid() {
@@ -332,9 +352,8 @@ public class ServerLifespan {
 
 
     @OnStop
-    @PreDestroy
     public void destroy() {
-        stopServer();
+        stopServer("Server is shutting down");
     }
 
 }

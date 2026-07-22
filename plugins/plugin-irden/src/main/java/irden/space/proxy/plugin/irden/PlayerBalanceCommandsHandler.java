@@ -31,16 +31,17 @@ public class PlayerBalanceCommandsHandler {
 
 
     public void handleMoneyGiveCommand(CommandContext context) {
-        Player sender = context.sender(Player.class).get();
-        Player recipient = context.get("player", PlayerTarget.class).player();
-        int amount = context.get("amount", Integer.class);
-        UUID senderAccountId = (UUID) sender.metadata().get(PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY);
-        UUID recipientAccountId = (UUID) recipient.metadata().get(PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY);
-        var transaction = accountTransactionService.transfer(senderAccountId, recipientAccountId, amount, sender.uuid().toJavaUuid(), "Тестовая транзакция");
-        context.reply("Передано %s %s %s", transaction.getAmount(), getDeclinedAmount(transaction.getAmount()), recipient.name());
-        recipient.sendMessage("%s передал вам %s %s", recipient.nickname(), transaction.getAmount(), getDeclinedAmount(transaction.getAmount()));
-
+        context.sender(Player.class).ifPresent(sender -> {
+            Player recipient = context.get("player", PlayerTarget.class).player();
+            int amount = context.get("amount", Integer.class);
+            UUID senderAccountId = (UUID) sender.metadata().get(PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY);
+            UUID recipientAccountId = (UUID) recipient.metadata().get(PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY);
+            var transaction = accountTransactionService.transfer(senderAccountId, recipientAccountId, amount, UUID.randomUUID(), context.getOrDefault("description", String.class, ""));
+            context.reply("Передано %s %s %s", transaction.getAmount(), getDeclinedAmount(transaction.getAmount()), recipient.name());
+            recipient.sendMessage("%s передал вам %s %s", sender.nickname(), transaction.getAmount(), getDeclinedAmount(transaction.getAmount()));
+        });
     }
+
 
     private String getDeclinedAmount(long amount) {
         return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
@@ -55,4 +56,12 @@ public class PlayerBalanceCommandsHandler {
         });
     }
 
+    public void handleMoneyDropCommand(CommandContext context) {
+        context.sender(Player.class).ifPresent(sender -> {
+            int amount = context.get("amount", Integer.class);
+            UUID senderAccountId = (UUID) sender.metadata().get(PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY);
+            var transaction = accountTransactionService.withdraw(senderAccountId, amount, UUID.randomUUID(), context.getOrDefault("description", String.class, ""));
+            context.reply("Выброшено %s %s", transaction.getAmount(), getDeclinedAmount(transaction.getAmount()));
+        });
+    }
 }
