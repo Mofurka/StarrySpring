@@ -39,6 +39,10 @@
             <column name="created_at" type="java.sql.Types.TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+
+            <column name="last_seen" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
 
@@ -73,8 +77,8 @@
 
         <createIndex
                 schemaName="${playerManagerSchema}"
-                     tableName="player_roles"
-                     indexName="idx_player_manager_player_roles_uuid">
+                tableName="player_roles"
+                indexName="idx_player_manager_player_roles_uuid">
             <column name="player_uuid"/>
         </createIndex>
     </changeSet>
@@ -118,34 +122,6 @@
                 indexName="idx_player_manager_permission_overrides_uuid">
             <column name="player_uuid"/>
         </createIndex>
-    </changeSet>
-
-    <changeSet id="player-manager-005-add-last-seen-column"
-               author="Mofurka">
-        <addColumn               schemaName="${playerManagerSchema}"
-                   tableName="players">
-            <column name="last_seen"
-                    type="DATETIME"/>
-        </addColumn>
-    </changeSet>
-
-    <changeSet id="player-manager-006-add-not-null-constraint"
-               author="Mofurka">
-        <update tableName="players"
-                schemaName="${playerManagerSchema}">
-            <column name="created_at"
-                    valueComputed="CURRENT_TIMESTAMP"/>
-            <where>created_at IS NULL</where>
-        </update>
-        <update tableName="players"
-                schemaName="${playerManagerSchema}">
-            <column name="created_at"
-                    valueComputed="CURRENT_TIMESTAMP"/>
-            <where>created_at IS NULL</where>
-        </update>
-        <addNotNullConstraint columnName="last_seen"
-                              schemaName="${playerManagerSchema}"
-                              tableName="players" />
     </changeSet>
 
 </databaseChangeLog>
