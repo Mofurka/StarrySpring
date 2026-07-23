@@ -114,7 +114,7 @@ public class PlayerConnectionHandler {
             );
             players.add(context.session().sessionId(), player);
             context.session().attributes().putIfAbsent("player", player);
-
+            playerRepository.updateLastSeen(player.uuid().toString(), LocalDateTime.now());
 
             return PacketDecision.forward(
                     () -> eventPublisher.publishEvent(
@@ -123,19 +123,7 @@ public class PlayerConnectionHandler {
             );
 
         }
-        ConnectFailure connectFailure = new ConnectFailure("Player connection state not found. Please try again.");
-        context.session().sendToClient(PacketType.CONNECT_FAILURE, connectFailure);
-        return PacketDecision.cancel();
-    }
-
-    @OnConnectionSuccess
-    public void onConnectionSuccess(PluginSessionContext context) {
-        if (log.isInfoEnabled()) log.info("Session {} connected successfully.", context.sessionId());
-    }
-
-    @OnDisconnecting
-    public void onDisconnecting(PluginSessionContext context) {
-        if (log.isInfoEnabled()) log.info("Session {} is disconnecting.", context.sessionId());
+        return PacketDecision.cancel(() -> context.session().sendToClient(PacketType.CONNECT_FAILURE, new ConnectFailure("Player connection state not found. Please try again.")));
     }
 
     @OnDisconnected

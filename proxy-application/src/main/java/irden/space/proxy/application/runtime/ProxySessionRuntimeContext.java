@@ -6,6 +6,7 @@ import irden.space.proxy.plugin.api.SessionPermissionService;
 
 import java.net.Socket;
 
+
 public record ProxySessionRuntimeContext(ProxySession session,
                                          Socket clientSocket,
                                          Socket upstreamSocket,

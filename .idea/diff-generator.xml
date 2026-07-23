@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DiffGenerationConfig">
-    <option name="sourceModelValue" value="plugin-irden:plugin-irden" />
-    <option name="targetDbValue" value="30ea1f44-264c-412a-bd48-6937f68398b0" />
+    <option name="sourceModelValue" value="plugin-player-manager:plugin-player-manager" />
+    <option name="targetDbValue" value="46954e3b-6d60-47b9-82d1-8fbf06a6cdf5__starryspring_player_manager" />
   </component>
 </project>

@@ -75,6 +75,7 @@ public enum Color {
     }
 
     public static String colorString(String color, String text, boolean clear) {
+        if (color == null) return text;
         String resolved = resolveColor(color);
         String formatted = "^".concat(resolved).concat(";").concat(text);
         if (clear) {

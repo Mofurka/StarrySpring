@@ -72,7 +72,7 @@ public class PacketForwarder implements Runnable {
     @Override
     public void run() {
         try {
-            while (!clientSocket.isClosed() && !upstreamSocket.isClosed()) {
+            while (!clientSocket.isClosed() && (upstreamSocket == null || !upstreamSocket.isClosed())) {
                 PacketEnvelope envelope = readPacket();
                 if (envelope == null) {
                     continue;
@@ -100,6 +100,15 @@ public class PacketForwarder implements Runnable {
                 if (decision instanceof DropPacketDecision(Runnable afterDrop)) {
                     runAfterAction(packetDirection, "after-drop", afterDrop);
                     continue;
+                }
+
+                if (packetDirection == PacketDirection.TO_SERVER && upstreamSocket == null) {
+                    log.warn(
+                            "[{}] no upstream connection for session {} and packet was not handled by plugins, closing session",
+                            packetDirection,
+                            session.getId()
+                    );
+                    break;
                 }
 
                 PacketEnvelope envelopeToWrite = envelope;
@@ -213,9 +222,11 @@ public class PacketForwarder implements Runnable {
     }
 
     private Object resolveWriteLock(PacketDirection direction) {
-        return direction == PacketDirection.TO_CLIENT
-                ? context.clientSocket()
-                : context.upstreamSocket();
+        if (direction == PacketDirection.TO_CLIENT) {
+            return context.clientSocket();
+        }
+        Socket upstream = context.upstreamSocket();
+        return upstream != null ? upstream : session;
     }
 
     private SwitchableSessionTransport resolveTransport(PacketDirection direction) {
@@ -225,13 +236,19 @@ public class PacketForwarder implements Runnable {
     }
 
     private OutputStream resolveTarget(PacketDirection direction) throws IOException {
-        if (direction == packetDirection) {
+        if (direction == packetDirection && target != null) {
             return target;
         }
 
-        return direction == PacketDirection.TO_CLIENT
-                ? context.clientSocket().getOutputStream()
-                : context.upstreamSocket().getOutputStream();
+        if (direction == PacketDirection.TO_CLIENT) {
+            return context.clientSocket().getOutputStream();
+        }
+
+        Socket upstream = context.upstreamSocket();
+        if (upstream == null) {
+            throw new IOException("No upstream connection for session " + session.getId());
+        }
+        return upstream.getOutputStream();
     }
     private void applyNegotiatedSessionState(PacketInspectionResult inspection) {
         if (inspection.negotiatedOpenProtocolVersion() != null) {
@@ -342,10 +359,12 @@ public class PacketForwarder implements Runnable {
                 log.warn("Failed to close client socket for session {}", session.getId());
             }
 
-            try {
-                upstreamSocket.close();
-            } catch (Exception e) {
-                log.warn("Failed to close upstream socket for session {}", session.getId());
+            if (upstreamSocket != null) {
+                try {
+                    upstreamSocket.close();
+                } catch (Exception e) {
+                    log.warn("Failed to close upstream socket for session {}", session.getId());
+                }
             }
 
             try {

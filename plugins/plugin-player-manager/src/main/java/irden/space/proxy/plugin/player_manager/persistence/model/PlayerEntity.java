@@ -2,12 +2,14 @@ package irden.space.proxy.plugin.player_manager.persistence.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "players")
+@Table(name = "players", schema = "player_manager")
 @Getter
 @Setter
 @Builder
@@ -29,6 +31,11 @@ public class PlayerEntity {
     @Column(name = "ip_address", nullable = false, length = 45)
     private String ipAddress;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "last_seen", nullable = false)
+    @Builder.Default
+    private  LocalDateTime lastSeen = LocalDateTime.now();
 }

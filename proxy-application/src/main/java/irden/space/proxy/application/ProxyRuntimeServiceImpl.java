@@ -128,25 +128,14 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
             sessionRegistry.add(session);
             log.info("Accepted client {} for session {}", session.getClientIp(), session.getId());
 
-            upstreamSocket = new Socket(
-                    properties.getUpstreamHost(),
-                    properties.getUpstreamPort()
-            );
-            configureSocket(upstreamSocket);
-
             session.makeUpstreamConnecting();
-            log.info(
-                    "Connected upstream {}:{} for session {}",
-                    properties.getUpstreamHost(),
-                    properties.getUpstreamPort(),
-                    session.getId()
-            );
+            upstreamSocket = connectUpstream(session);
 
             InputStream clientIn = clientSocket.getInputStream();
             OutputStream clientOut = clientSocket.getOutputStream();
 
-            InputStream upstreamIn = upstreamSocket.getInputStream();
-            OutputStream upstreamOut = upstreamSocket.getOutputStream();
+            InputStream upstreamIn = upstreamSocket != null ? upstreamSocket.getInputStream() : null;
+            OutputStream upstreamOut = upstreamSocket != null ? upstreamSocket.getOutputStream() : null;
 
             session.activate();
             log.info("Session {} is ACTIVE", session.getId());
@@ -177,28 +166,57 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     session.getId().uuid() + "-proxy-c2s"
             );
 
-            Thread serverToClient = new Thread(
-                    new PacketForwarder(
-                            upstreamIn,
-                            clientOut,
-                            sessionRegistry,
-                            PacketDirection.TO_CLIENT,
-                            context,
-                            context.upstreamSideTransport(),
-                            packetInspector,
-                            packetInterceptionService,
-                            pluginSessionLifecycleService
-                    ),
-                    session.getId().uuid() + "-proxy-s2c"
-            );
-
             clientToServer.start();
-            serverToClient.start();
+
+            if (upstreamIn != null) {
+                Thread serverToClient = new Thread(
+                        new PacketForwarder(
+                                upstreamIn,
+                                clientOut,
+                                sessionRegistry,
+                                PacketDirection.TO_CLIENT,
+                                context,
+                                context.upstreamSideTransport(),
+                                packetInspector,
+                                packetInterceptionService,
+                                pluginSessionLifecycleService
+                        ),
+                        session.getId().uuid() + "-proxy-s2c"
+                );
+                serverToClient.start();
+            }
 
         } catch (Exception e) {
             log.warn("Failed to initialize client connection: {}", e.getMessage(), e);
             closeQuietly(upstreamSocket, "upstream", clientSocket);
             closeQuietly(clientSocket, "client", clientSocket);
+        }
+    }
+
+
+    private Socket connectUpstream(ProxySession session) {
+        try {
+            Socket upstreamSocket = new Socket(
+                    properties.getUpstreamHost(),
+                    properties.getUpstreamPort()
+            );
+            configureSocket(upstreamSocket);
+            log.info(
+                    "Connected upstream {}:{} for session {}",
+                    properties.getUpstreamHost(),
+                    properties.getUpstreamPort(),
+                    session.getId()
+            );
+            return upstreamSocket;
+        } catch (Exception e) {
+            log.warn(
+                    "Upstream {}:{} is unavailable for session {} ({}), continuing without it",
+                    properties.getUpstreamHost(),
+                    properties.getUpstreamPort(),
+                    session.getId(),
+                    e.getMessage()
+            );
+            return null;
         }
     }
 
@@ -235,6 +253,11 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     }
 
     private void sendPacket(ProxySessionRuntimeContext context, PacketDirection direction, PacketEnvelope envelope) {
+        if (direction == PacketDirection.TO_SERVER && context.upstreamSocket() == null) {
+            throw new IllegalStateException(
+                    "No upstream connection for session " + context.session().getId() + ", cannot send packet to server"
+            );
+        }
         try {
             synchronized (direction == PacketDirection.TO_CLIENT ? context.clientSocket() : context.upstreamSocket()) {
                 SwitchableSessionTransport transport = direction == PacketDirection.TO_CLIENT
