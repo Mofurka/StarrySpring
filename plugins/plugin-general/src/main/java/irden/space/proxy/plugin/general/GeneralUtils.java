@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.general;
 
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.color.Color;
+import irden.space.proxy.plugin.general.permissions.ChatPermissions;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;

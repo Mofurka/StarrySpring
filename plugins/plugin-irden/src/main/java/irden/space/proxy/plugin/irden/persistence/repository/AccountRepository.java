@@ -2,7 +2,9 @@ package irden.space.proxy.plugin.irden.persistence.repository;
 
 import irden.space.proxy.plugin.irden.persistence.model.AccountEntity;
 import irden.space.proxy.plugin.irden.persistence.model.AccountOwnerType;
+import irden.space.proxy.plugin.irden.persistence.model.AccountStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +21,19 @@ public interface AccountRepository
     findByOwnerTypeAndOwnerIdAndAccountCode(
             AccountOwnerType ownerType,
             String ownerId,
+            String accountCode
+    );
+
+
+    List<AccountEntity> findByOwnerTypeAndStatusOrderByBalanceDesc(
+            AccountOwnerType ownerType,
+            AccountStatus status,
+            Pageable pageable
+    );
+
+
+    List<AccountEntity> findByOwnerTypeAndAccountCodeOrderByOwnerName(
+            AccountOwnerType ownerType,
             String accountCode
     );
 

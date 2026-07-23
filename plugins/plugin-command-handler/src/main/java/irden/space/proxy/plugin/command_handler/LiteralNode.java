@@ -4,22 +4,25 @@ import irden.space.proxy.plugin.api.Permission;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public record LiteralNode(String name, String description, List<CommandNode> children, CommandExecutor executor,
-                          List<Permission> requiredPermissions) implements CommandNode {
+                          List<Permission> requiredPermissions, Set<CommandSurface> surfaces) implements CommandNode {
 
     public LiteralNode(
             String name,
             String description,
             List<CommandNode> children,
             CommandExecutor executor,
-            List<Permission> requiredPermissions
+            List<Permission> requiredPermissions,
+            Set<CommandSurface> surfaces
     ) {
         this.name = normalizeName(name);
         this.description = description == null ? "" : description.trim();
         this.children = List.copyOf(children);
         this.executor = executor;
         this.requiredPermissions = List.copyOf(requiredPermissions);
+        this.surfaces = surfaces == null ? Set.of() : Set.copyOf(surfaces);
     }
 
     private String normalizeName(String value) {

@@ -4,10 +4,11 @@ import irden.space.proxy.plugin.api.Permission;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public record ArgumentNode<T>(String name, String description, ArgumentType<T> type, boolean required,
                               List<CommandNode> children, CommandExecutor executor,
-                              List<Permission> requiredPermissions) implements CommandNode {
+                              List<Permission> requiredPermissions, Set<CommandSurface> surfaces) implements CommandNode {
 
     public ArgumentNode(
             String name,
@@ -16,7 +17,8 @@ public record ArgumentNode<T>(String name, String description, ArgumentType<T> t
             boolean required,
             List<CommandNode> children,
             CommandExecutor executor,
-            List<Permission> requiredPermissions
+            List<Permission> requiredPermissions,
+            Set<CommandSurface> surfaces
     ) {
         this.name = normalizeName(name);
         this.description = description == null ? "" : description.trim();
@@ -25,6 +27,7 @@ public record ArgumentNode<T>(String name, String description, ArgumentType<T> t
         this.children = List.copyOf(children);
         this.executor = executor;
         this.requiredPermissions = List.copyOf(requiredPermissions);
+        this.surfaces = surfaces == null ? Set.of() : Set.copyOf(surfaces);
 
         if (type.greedy() && !children.isEmpty()) {
             throw new IllegalArgumentException("Greedy argument cannot have children: " + name);

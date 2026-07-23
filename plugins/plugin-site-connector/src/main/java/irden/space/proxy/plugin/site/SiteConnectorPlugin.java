@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
         id = "site-connector",
         name = "Site Connector",
         version = "1.0.0",
-        dependsOn = {"player-manager", "general"},
+        dependsOn = {"player-manager", "general", "irden"},
         author = "https://github.com/Mofurka",
         description = "Integration plugin between app.irden.space and the game server"
 )

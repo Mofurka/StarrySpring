@@ -122,7 +122,9 @@ public final class StarCustomChatCommandExporter {
 	}
 
 	private static boolean hasAccess(CommandNode node, PermissionView permissions) {
-		return !node.hasRequiredPermissions() || permissions.hasAll(node.requiredPermissions());
+		// Узел должен быть и разрешён по правам, и объявлен для игровой поверхности экспорта.
+		return node.isExportedTo(CommandSurface.IN_GAME)
+				&& (!node.hasRequiredPermissions() || permissions.hasAll(node.requiredPermissions()));
 	}
 
 	private static String renderSegment(CommandNode node) {

@@ -1,9 +1,11 @@
 package irden.space.proxy.plugin.command_handler;
 
 import irden.space.proxy.plugin.api.Permission;
+import irden.space.proxy.plugin.api.PermissionEnum;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public final class LiteralBuilder implements CommandNodeBuilder<LiteralNode> {
 
@@ -11,6 +13,7 @@ public final class LiteralBuilder implements CommandNodeBuilder<LiteralNode> {
     private String description = "";
     private final List<CommandNode> children = new ArrayList<>();
     private final List<Permission> requiredPermissions = new ArrayList<>();
+    private Set<CommandSurface> surfaces = Set.of();
     private CommandExecutor executor;
 
     LiteralBuilder(String name) {
@@ -31,6 +34,16 @@ public final class LiteralBuilder implements CommandNodeBuilder<LiteralNode> {
         children.add(builder.buildNode());
         return this;
     }
+
+    public LiteralBuilder permission(PermissionEnum permission) {
+        if (permission == null) {
+            throw new IllegalArgumentException("Permission must not be null");
+        }
+
+        requiredPermissions.add(permission.permission());
+        return this;
+    }
+
 
     public LiteralBuilder permission(Permission permission) {
         if (permission == null) {
@@ -53,6 +66,16 @@ public final class LiteralBuilder implements CommandNodeBuilder<LiteralNode> {
         return this;
     }
 
+    public LiteralBuilder surfaces(CommandSurface... surfaces) {
+        this.surfaces = Set.of(surfaces);
+        return this;
+    }
+
+    public LiteralBuilder hidden() {
+        this.surfaces = Set.of(CommandSurface.NONE);
+        return this;
+    }
+
     public LiteralBuilder executes(CommandExecutor executor) {
         this.executor = executor;
         return this;
@@ -64,6 +87,6 @@ public final class LiteralBuilder implements CommandNodeBuilder<LiteralNode> {
 
     @Override
     public LiteralNode buildNode() {
-        return new LiteralNode(name, description, children, executor, requiredPermissions);
+        return new LiteralNode(name, description, children, executor, requiredPermissions, surfaces);
     }
 }

@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.Permission;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode<T>> {
 
@@ -13,6 +14,7 @@ public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode
     private boolean required = true;
     private final List<CommandNode> children = new ArrayList<>();
     private final List<Permission> requiredPermissions = new ArrayList<>();
+    private Set<CommandSurface> surfaces = Set.of();
     private CommandExecutor executor;
 
     ArgumentBuilder(String name, ArgumentType<T> type) {
@@ -66,6 +68,18 @@ public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode
         return this;
     }
 
+
+    public ArgumentBuilder<T> surfaces(CommandSurface... surfaces) {
+        this.surfaces = Set.of(surfaces);
+        return this;
+    }
+
+
+    public ArgumentBuilder<T> hidden() {
+        this.surfaces = Set.of(CommandSurface.NONE);
+        return this;
+    }
+
     public ArgumentBuilder<T> executes(CommandExecutor executor) {
         this.executor = executor;
         return this;
@@ -73,6 +87,6 @@ public final class ArgumentBuilder<T> implements CommandNodeBuilder<ArgumentNode
 
     @Override
     public ArgumentNode<T> buildNode() {
-        return new ArgumentNode<>(name, description, type, required, children, executor, requiredPermissions);
+        return new ArgumentNode<>(name, description, type, required, children, executor, requiredPermissions, surfaces);
     }
 }

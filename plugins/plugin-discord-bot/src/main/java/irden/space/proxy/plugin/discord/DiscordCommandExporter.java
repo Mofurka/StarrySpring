@@ -18,6 +18,9 @@ public final class DiscordCommandExporter {
         List<CommandData> result = new ArrayList<>();
 
         for (RegisteredCommand command : commands) {
+            if (!command.root().isExportedTo(CommandSurface.DISCORD)) {
+                continue;
+            }
             result.add(export(command));
         }
 
@@ -223,6 +226,7 @@ public final class DiscordCommandExporter {
     private static List<LiteralNode> literalChildren(CommandNode node) {
         return node.children()
                 .stream()
+                .filter(child -> child.isExportedTo(CommandSurface.DISCORD))
                 .filter(LiteralNode.class::isInstance)
                 .map(LiteralNode.class::cast)
                 .toList();
@@ -232,6 +236,7 @@ public final class DiscordCommandExporter {
         return new ArrayList<>(
                 node.children()
                         .stream()
+                        .filter(child -> child.isExportedTo(CommandSurface.DISCORD))
                         .filter(ArgumentNode.class::isInstance)
                         .map(child -> (ArgumentNode<?>) child)
                         .toList()

@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.general;
+package irden.space.proxy.plugin.general.permissions;
 
 import irden.space.proxy.plugin.api.PermissionEnum;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
