@@ -7,4 +7,7 @@ public class AccountNotFoundException extends BankingException {
     public AccountNotFoundException(UUID accountId) {
         super("Account not found: " + accountId);
     }
+    public AccountNotFoundException(String message) {
+        super(message);
+    }
 }

@@ -1,14 +1,12 @@
-package irden.space.proxy.plugin.site.web.rest.v1;
+package irden.space.proxy.plugin.site.web.rest.v1.online;
 
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
-import irden.space.proxy.plugin.site.web.rest.v1.dto.OnlinePlayerInfoDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

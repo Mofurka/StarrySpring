@@ -1,16 +1,16 @@
 package irden.space.boot;
 
+import irden.space.boot.persistence.PluginJpaInitializer;
+import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
-import irden.space.boot.persistence.PluginJpaInitializer;
-import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.runtime.*;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
@@ -30,6 +30,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
 
     private final ApplicationContext rootContext;
     private final PluginWebEndpointRegistrar webEndpointRegistrar;
+    private final PluginControllerAdviceRegistrar controllerAdviceRegistrar;
     private final PluginEventListenerRegistrar eventListenerRegistrar;
     private final PluginConfigInitializer configInitializer;
     private final PluginJpaInitializer jpaInitializer;
@@ -37,6 +38,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
         this.webEndpointRegistrar = new PluginWebEndpointRegistrar(this.rootContext);
+        this.controllerAdviceRegistrar = new PluginControllerAdviceRegistrar(this.rootContext);
         this.eventListenerRegistrar = new PluginEventListenerRegistrar(this.rootContext);
         this.configInitializer = new PluginConfigInitializer(this.rootContext);
         this.jpaInitializer = new PluginJpaInitializer(this.rootContext);
@@ -248,6 +250,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         });
 
         webEndpointRegistrar.registerControllers(owner.id(), localBeans.values(), scopedContext);
+        controllerAdviceRegistrar.registerAdvices(owner.id(), context.getBeanFactory(), localBeans, scopedContext);
         eventListenerRegistrar.registerListeners(owner.id(), localBeans.values(), scopedContext);
     }
 

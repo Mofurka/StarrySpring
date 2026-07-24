@@ -70,7 +70,7 @@ public class AccountService {
             AccountOwnerType ownerType,
             String ownerId,
             String accountCode
-    ) throws IllegalArgumentException {
+    ) throws AccountNotFoundException {
         String normalizedOwnerId =
                 AccountEntity.normalizeOwnerId(ownerId);
 
@@ -83,7 +83,7 @@ public class AccountService {
                         normalizedOwnerId,
                         normalizedAccountCode
                 )
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new AccountNotFoundException(
                         "Account not found: ownerType=%s, ownerId=%s, accountCode=%s"
                                 .formatted(
                                         ownerType,
