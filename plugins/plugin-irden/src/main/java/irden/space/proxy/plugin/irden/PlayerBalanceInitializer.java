@@ -13,7 +13,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.*;
+import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE;
+import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY;
 
 @Slf4j
 @Component

@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.general;
 
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
+import irden.space.proxy.plugin.command_handler.CommandSurface;
 import irden.space.proxy.plugin.command_handler.StringArgumentType;
 import irden.space.proxy.plugin.general.chat.WhisperCommandHandler;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
@@ -24,7 +25,7 @@ public class ChatCommands {
     )
     @SuppressWarnings("unused")
     public CommandSpec whisper() {
-        return CommandSpec.literal("whisper")
+        return CommandSpec.literal("whisper").surfaces(CommandSurface.IN_GAME)
                 .then(CommandSpec.argument("recipient", PlayerOnlineTargetArgumentType.playerTarget(playerManagerApi))
                         .then(CommandSpec.argument("message", StringArgumentType.greedyString())
                                 .executes(
@@ -36,7 +37,7 @@ public class ChatCommands {
 
     @ChatCommand(value = "reply", aliases = "r", description = "Reply to a person that whispters you")
     public CommandSpec reply() {
-        return CommandSpec.literal("reply")
+        return CommandSpec.literal("reply").surfaces(CommandSurface.IN_GAME)
                 .then(CommandSpec.argument("message", StringArgumentType.greedyString()).executes(
                         whisperCommandHandler::handleReply
                 )).build();

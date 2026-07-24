@@ -2,9 +2,6 @@ package irden.space.proxy.plugin.irden;
 
 import irden.space.proxy.plugin.api.PluginDefinition;
 import irden.space.proxy.plugin.api.ProxyPlugin;
-import irden.space.proxy.plugin.api.annotations.OnLoad;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 

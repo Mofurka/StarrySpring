@@ -27,9 +27,6 @@ public class SiteLinker {
                 .build();
         LinkPlayerResponse linkResult = irdenAppClient.link(build);
         if (linkResult.discordId() != null && linkResult.applicationId() != null) {
-            log.info("Персонаж был привязан!");
-            log.info("Персонаж был привязан!");
-            log.info("Персонаж был привязан!");
             PlayerAttributesEntity attributesEntity = PlayerAttributesEntity.builder()
                     .playerUuid(player.uuid().toString())
                     .applicationId(linkResult.applicationId())

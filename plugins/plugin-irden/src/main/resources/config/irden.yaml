@@ -1,2 +1,6 @@
 irden:
-
+  weather:
+    config-location: file:config/plugins/irden/weather/weather-system.json
+    state-path: config/plugins/irden/weather/weather-state.json
+    zone: Europe/Moscow
+    tick-cron: "0 0 * * * *"

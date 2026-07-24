@@ -1,12 +1,6 @@
 package irden.space.proxy.plugin.irden;
 
-import irden.space.proxy.plugin.command_handler.ChatCommand;
-import irden.space.proxy.plugin.command_handler.CommandExecutor;
-import irden.space.proxy.plugin.command_handler.CommandNodeBuilder;
-import irden.space.proxy.plugin.command_handler.CommandSpec;
-import irden.space.proxy.plugin.command_handler.CommandSurface;
-import irden.space.proxy.plugin.command_handler.IntegerArgumentType;
-import irden.space.proxy.plugin.command_handler.StringArgumentType;
+import irden.space.proxy.plugin.command_handler.*;
 import irden.space.proxy.plugin.irden.permissions.BalancePermissions;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.command.PlayerOnlineTargetArgumentType;
