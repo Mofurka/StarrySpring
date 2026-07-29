@@ -1,10 +1,11 @@
 package irden.space.proxy.plugin.discord.model;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,8 +19,8 @@ import java.util.Objects;
 @Component
 @Lazy
 public final class DiscordRoleManager {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true).build();
 
     private static final String DEFAULT_CONFIG_RESOURCE = "config/discord-ranks.jsonc";
 

@@ -1,16 +1,18 @@
 package irden.space.boot;
 
+import irden.space.boot.config.AsyncConfiguration;
+import irden.space.boot.persistence.PluginJpaInitializer;
+import irden.space.boot.scheduling.PluginSchedulingConfiguration;
+import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
-import irden.space.boot.persistence.PluginJpaInitializer;
-import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.runtime.*;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
@@ -30,6 +32,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
 
     private final ApplicationContext rootContext;
     private final PluginWebEndpointRegistrar webEndpointRegistrar;
+    private final PluginControllerAdviceRegistrar controllerAdviceRegistrar;
     private final PluginEventListenerRegistrar eventListenerRegistrar;
     private final PluginConfigInitializer configInitializer;
     private final PluginJpaInitializer jpaInitializer;
@@ -37,6 +40,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
         this.webEndpointRegistrar = new PluginWebEndpointRegistrar(this.rootContext);
+        this.controllerAdviceRegistrar = new PluginControllerAdviceRegistrar(this.rootContext);
         this.eventListenerRegistrar = new PluginEventListenerRegistrar(this.rootContext);
         this.configInitializer = new PluginConfigInitializer(this.rootContext);
         this.jpaInitializer = new PluginJpaInitializer(this.rootContext);
@@ -55,7 +59,8 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             configInitializer.apply(pluginContext, candidate);
             ConfigurationPropertiesBindingPostProcessor.register(pluginContext);
             pluginContext.register(PluginMethodSecurityConfiguration.class);
-            // Поднять per-plugin JPA (EMF/tx/repositories), если у плагина есть @Entity.
+            pluginContext.register(PluginSchedulingConfiguration.class);
+            pluginContext.register(AsyncConfiguration.class);
             jpaInitializer.apply(pluginContext, candidate);
             registerScopedRuntimeBeans(pluginContext, scopedContext);
             registerDependencyBeans(pluginContext, dependencyContainers);
@@ -134,7 +139,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
                     pluginContext.close();
                 }
             };
-        } catch (RuntimeException | Error e) {
+        } catch (Exception e) {
             pluginContext.close();
             throw e;
         }
@@ -248,6 +253,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         });
 
         webEndpointRegistrar.registerControllers(owner.id(), localBeans.values(), scopedContext);
+        controllerAdviceRegistrar.registerAdvices(owner.id(), context.getBeanFactory(), localBeans, scopedContext);
         eventListenerRegistrar.registerListeners(owner.id(), localBeans.values(), scopedContext);
     }
 
@@ -294,11 +300,11 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         try {
             type = Class.forName(className, false, classLoader);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Failed to load @RegisterPluginPermissions type " + className, e);
+            throw new IllegalStateException("Failed to load @RegisterPluginPermissions entityType " + className, e);
         }
         if (!type.isEnum() || !PermissionEnum.class.isAssignableFrom(type)) {
             throw new IllegalStateException(
-                    "@RegisterPluginPermissions on a type is only supported for PermissionEnum enums: " + className);
+                    "@RegisterPluginPermissions on a entityType is only supported for PermissionEnum enums: " + className);
         }
         return type.asSubclass(PermissionEnum.class);
     }
@@ -332,8 +338,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             PluginSessionContext sessionContext
     ) {
         List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
-        java.util.Collections.reverse(beans);
-        beans.forEach(bean -> PluginLifecycleInvoker.onDisconnecting(bean, sessionContext));
+        beans.reversed().forEach(bean -> PluginLifecycleInvoker.onDisconnecting(bean, sessionContext));
     }
 
     private void onDisconnected(
@@ -341,14 +346,12 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             PluginSessionContext sessionContext
     ) {
         List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
-        java.util.Collections.reverse(beans);
-        beans.forEach(bean -> PluginLifecycleInvoker.onDisconnected(bean, sessionContext));
+        beans.reversed().forEach(bean -> PluginLifecycleInvoker.onDisconnected(bean, sessionContext));
     }
 
     private void onStop(AnnotationConfigApplicationContext context) {
         List<Object> beans = new java.util.ArrayList<>(localApplicationBeans(context).values());
-        java.util.Collections.reverse(beans);
-        beans.forEach(PluginLifecycleInvoker::onStop);
+        beans.reversed().forEach(PluginLifecycleInvoker::onStop);
     }
 
     private Map<String, Object> localApplicationBeans(AnnotationConfigApplicationContext context) {
@@ -363,7 +366,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     }
 
     private boolean hasPacketHandlers(Class<?> beanType) {
-        return java.util.Arrays.stream(beanType.getDeclaredMethods())
+        return java.util.Arrays.stream(ProxyBeans.userClass(beanType).getDeclaredMethods())
                 .anyMatch(method -> method.isAnnotationPresent(PacketHandler.class));
     }
 

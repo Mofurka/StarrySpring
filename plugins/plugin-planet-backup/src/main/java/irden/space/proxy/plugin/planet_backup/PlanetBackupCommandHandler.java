@@ -4,13 +4,13 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.general.GeneralUtils;
+import irden.space.proxy.plugin.native_server_lifespan.ServerLifespan;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
-import irden.space.proxy.protocol.payload.packet.protocol_response.ProtocolResponse;
-import irden.space.proxy.protocol.payload.packet.server_disconnect.ServerDisconnect;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
@@ -21,6 +21,7 @@ import static java.lang.Thread.sleep;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnBean({ServerLifespan.class})
 public class PlanetBackupCommandHandler {
     private final PlanetBackupService backupService;
     private final GeneralUtils generalUtils;

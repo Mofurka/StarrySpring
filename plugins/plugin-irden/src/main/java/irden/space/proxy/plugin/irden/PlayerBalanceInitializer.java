@@ -1,8 +1,9 @@
 package irden.space.proxy.plugin.irden;
 
-import irden.space.proxy.plugin.irden.persistence.model.AccountEntity;
-import irden.space.proxy.plugin.irden.persistence.model.AccountOwnerType;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 import irden.space.proxy.plugin.irden.service.AccountService;
+import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.*;
+import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE;
+import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY;
 
 @Slf4j
 @Component
@@ -29,7 +31,7 @@ public class PlayerBalanceInitializer {
         try {
             AccountEntity account = accountService.getAccount(AccountOwnerType.CHARACTER, player.uuid().toString(), PLAYER_DEFAULT_ACCOUNT_CODE);
             accountUuid = account.getId();
-        } catch (IllegalArgumentException e) {
+        } catch (AccountNotFoundException _) {
             log.info("Player {} does not exist", player.uuid().toString());
             log.info("Creating one");
             AccountEntity account = accountService.createAccount(AccountOwnerType.CHARACTER, player.uuid().toString(), player.name(), PLAYER_DEFAULT_ACCOUNT_CODE);

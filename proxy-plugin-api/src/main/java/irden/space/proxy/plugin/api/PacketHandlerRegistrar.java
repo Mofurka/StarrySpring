@@ -18,16 +18,17 @@ public final class PacketHandlerRegistrar {
         Objects.requireNonNull(registry, "registry");
         Objects.requireNonNull(handlerTarget, "handlerTarget");
 
-        List<MethodBinding> methodBindings = Arrays.stream(handlerTarget.getClass().getDeclaredMethods())
+        Class<?> handlerType = ProxyBeans.userClass(handlerTarget);
+        List<MethodBinding> methodBindings = Arrays.stream(handlerType.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(PacketHandler.class))
                 .map(PacketHandlerRegistrar::createBinding)
                 .toList();
 
         if (methodBindings.isEmpty()) {
-            throw new IllegalArgumentException("No @PacketHandler methods found on " + handlerTarget.getClass().getName());
+            throw new IllegalArgumentException("No @PacketHandler methods found on " + handlerType.getName());
         }
 
-        validateNoOverlaps(handlerTarget.getClass(), methodBindings);
+        validateNoOverlaps(handlerType, methodBindings);
 
         for (MethodBinding methodBinding : methodBindings) {
             if (!methodBinding.method().trySetAccessible()) {

@@ -27,23 +27,15 @@ public enum Color {
     PINK("pink", new Rgba(255, 162, 187, 255)),
     CLEAR("clear", new Rgba(0, 0, 0, 0));
 
-    private final String colorCode;
-    private final Rgba rgba;
     // Заранее компилирую чтобы не мучать сервер
     private static final Pattern COLOR_STRIP_PATTERN = Pattern.compile("\\^[^;]*;");
     private static final Pattern COLOR_PATTERN = Pattern.compile("^\\^|;$");
+    private final String colorCode;
+    private final Rgba rgba;
 
     Color(String colorCode, Rgba rgba) {
         this.colorCode = colorCode;
         this.rgba = rgba;
-    }
-
-    public String color() {
-        return colorCode;
-    }
-
-    public Rgba rgba() {
-        return rgba;
     }
 
     public static Color fromString(String color) {
@@ -55,18 +47,6 @@ public enum Color {
         return null;
     }
 
-    public String colorString(String text) {
-        return colorString(text, true);
-    }
-
-    public String colorString(String text, boolean clear) {
-        String formatted = "^".concat(colorCode).concat(";").concat(text);
-        if (clear) {
-            formatted = formatted.concat("^reset;");
-        }
-        return formatted;
-    }
-
     public static String colorString(Color color, String text, boolean clear) {
         if (color == null) {
             return text;
@@ -75,6 +55,7 @@ public enum Color {
     }
 
     public static String colorString(String color, String text, boolean clear) {
+        if (color == null) return text;
         String resolved = resolveColor(color);
         String formatted = "^".concat(resolved).concat(";").concat(text);
         if (clear) {
@@ -90,6 +71,26 @@ public enum Color {
     public static String stripColorCodes(String text) {
         if (text == null) return null;
         return COLOR_STRIP_PATTERN.matcher(text).replaceAll("");
+    }
+
+    public String color() {
+        return colorCode;
+    }
+
+    public Rgba rgba() {
+        return rgba;
+    }
+
+    public String colorString(String text) {
+        return colorString(text, true);
+    }
+
+    public String colorString(String text, boolean clear) {
+        String formatted = "^".concat(colorCode).concat(";").concat(text);
+        if (clear) {
+            formatted = formatted.concat("^reset;");
+        }
+        return formatted;
     }
 
 }

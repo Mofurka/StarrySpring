@@ -16,6 +16,15 @@ public final class CommandContextKey<T> {
         return new CommandContextKey<>(name, type);
     }
 
+    private static String normalizeName(String value) {
+        Objects.requireNonNull(value, "name");
+        String normalized = value.trim();
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("CommandContextKey name must not be blank");
+        }
+        return normalized;
+    }
+
     public String name() {
         return name;
     }
@@ -43,15 +52,6 @@ public final class CommandContextKey<T> {
     @Override
     public String toString() {
         return "CommandContextKey[name=%s, type=%s]".formatted(name, type.getName());
-    }
-
-    private static String normalizeName(String value) {
-        Objects.requireNonNull(value, "name");
-        String normalized = value.trim();
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("CommandContextKey name must not be blank");
-        }
-        return normalized;
     }
 }
 

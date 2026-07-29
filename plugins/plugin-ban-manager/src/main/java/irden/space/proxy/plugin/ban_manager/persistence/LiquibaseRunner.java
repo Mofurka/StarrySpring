@@ -11,6 +11,6 @@ public final class LiquibaseRunner {
 
     public static void runLiquibaseMigrations(DataSource dataSource) {
 
-        PluginLiquibaseRunner.run(dataSource, "db/changelog/ban-manager.xml");
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/ban-manager.xml", LiquibaseRunner.class.getClassLoader());
     }
 }

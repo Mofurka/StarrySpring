@@ -1,6 +1,6 @@
 package irden.space.proxy.plugin.irden.service.exception;
 
-import irden.space.proxy.plugin.irden.persistence.model.AccountOwnerType;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 
 public class AccountAlreadyExistsException extends BankingException {
 

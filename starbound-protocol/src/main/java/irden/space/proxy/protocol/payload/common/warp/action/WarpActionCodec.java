@@ -18,7 +18,7 @@ public enum WarpActionCodec implements BinaryCodec<WarpAction> {
         return switch (warpType) {
             case TO_WORLD -> new ToWorldWarpAction(WorldTargetCodec.INSTANCE.read(reader));
             case TO_PLAYER -> new ToPlayerWarpAction(StarUuidCodec.INSTANCE.read(reader));
-            case TO_ALIAS -> new ToAliasWarpAction(reader.readInt32BE());
+            case TO_ALIAS -> new ToAliasWarpAction(ToAliasWarpAction.WarpAliasType.fromId(reader.readInt32BE()));
         };
     }
 
@@ -33,12 +33,14 @@ public enum WarpActionCodec implements BinaryCodec<WarpAction> {
                 writer.writeByte(WarpType.TO_PLAYER.id());
                 StarUuidCodec.INSTANCE.write(writer, uuid);
             }
-            case ToAliasWarpAction(int aliasId) -> {
+            case ToAliasWarpAction(ToAliasWarpAction.WarpAliasType aliasType) -> {
                 writer.writeByte(WarpType.TO_ALIAS.id());
-                writer.writeInt32BE(aliasId);
+                writer.writeInt32BE(aliasType.getId());
             }
             default -> throw new IllegalStateException("Unsupported warp payload: " + payload);
         }
     }
+
+
 
 }

@@ -48,7 +48,7 @@ public final class PluginJpaInitializer {
     public void apply(AnnotationConfigApplicationContext pluginContext, PluginCandidate candidate) {
         String basePackage = candidate.pluginClass().getPackageName();
         if (!hasEntities(pluginContext, basePackage)) {
-            return; // у плагина нет JPA-сущностей — ничего не поднимаем
+            return; // у плагина нет JPA-сущностей - ничего не поднимаем
         }
 
         String pluginId = candidate.descriptor().id();
@@ -94,7 +94,7 @@ public final class PluginJpaInitializer {
                     emf.setJpaVendorAdapter(vendorAdapter);
 
                     Map<String, Object> properties = new HashMap<>();
-                    properties.put("hibernate.hbm2ddl.auto", "none"); // DDL — за Liquibase
+                    properties.put("hibernate.hbm2ddl.auto", "none"); // DDL - за Liquibase
                     properties.put("hibernate.default_schema", schema);
                     emf.setJpaPropertyMap(properties);
                     return emf;

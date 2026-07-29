@@ -15,7 +15,9 @@ public final class LiquibaseRunner {
 
     @OnLoad
     public void runLiquibaseMigrations() {
-        PluginLiquibaseRunner.run(dataSource, "db/changelog/0.init-schema.xml");
-        PluginLiquibaseRunner.run(dataSource, "db/changelog/1.bank-account.xml");
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/0.init-schema.xml", getClass().getClassLoader());
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/1.bank-account.xml", getClass().getClassLoader());
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/2.fight-snapshot-record.xml", getClass().getClassLoader());
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/3.player-stats.xml", getClass().getClassLoader());
     }
 }

@@ -28,10 +28,20 @@ public class BearerAuthenticator implements RestAuthenticator {
 
     private AutoCloseable registration;
 
+    private static boolean constantTimeEquals(String expected, String presented) {
+        if (presented == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                presented.getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
     @OnLoad
     public void register() {
         if (config.bearerToken() == null || config.bearerToken().isBlank()) {
-            log.warn("launcher.bearer-token is empty — bearer auth will reject every request (stub)");
+            log.warn("launcher.bearer-token is empty - bearer auth will reject every request (stub)");
         }
         registration = authenticatorRegistry.register(this);
         log.info("Registered launcher bearer authenticator");
@@ -66,15 +76,5 @@ public class BearerAuthenticator implements RestAuthenticator {
         }
 
         return AuthenticationResult.success("launcher", Set.of("ROLE_LAUNCHER"));
-    }
-
-    private static boolean constantTimeEquals(String expected, String presented) {
-        if (presented == null) {
-            return false;
-        }
-        return MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8),
-                presented.getBytes(StandardCharsets.UTF_8)
-        );
     }
 }

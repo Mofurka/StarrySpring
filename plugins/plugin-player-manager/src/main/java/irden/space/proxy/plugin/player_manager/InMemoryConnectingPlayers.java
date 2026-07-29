@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.player_manager;
 
+import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component("connectingPlayerRegistry")
 public class InMemoryConnectingPlayers implements PlayerRegistry<TempPlayer> {
     private final Map<String, TempPlayer> playersBySessionId = new ConcurrentHashMap<>();
+
     @Override
     public boolean add(String id, TempPlayer player) {
         if (playersBySessionId.containsKey(player.sessionId())) {
@@ -22,6 +24,21 @@ public class InMemoryConnectingPlayers implements PlayerRegistry<TempPlayer> {
     @Override
     public TempPlayer getBySessionId(String sessionId) {
         return playersBySessionId.get(sessionId);
+    }
+
+    @Override
+    public Player getByUuid(String uuid) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public Player getByEntityId(int entityId) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public Player getByClientId(int clientId) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

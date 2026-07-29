@@ -17,7 +17,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface EntityMessageHandler {
 
-    /** Имя сообщения (как в игре), сравнивается точно, с учётом регистра. */
+    /**
+     * Имя сообщения (как в игре), сравнивается точно, с учётом регистра.
+     */
     String value();
 
     String description() default "";

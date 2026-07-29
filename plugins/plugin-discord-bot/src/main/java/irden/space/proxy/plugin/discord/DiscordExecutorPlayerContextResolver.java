@@ -26,7 +26,6 @@ public final class DiscordExecutorPlayerContextResolver implements CommandContex
                 .name(String.format("<@!%s>", session.userId()))
                 .account(session.userName())
                 .ipAddress(session.clientIp())
-                .sessionId(session.sessionId())
                 .lastSeen(LocalDateTime.now(ZoneId.systemDefault()))
                 .sessionContext(session)
                 .build();

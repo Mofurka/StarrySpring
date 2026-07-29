@@ -1,16 +1,18 @@
 package irden.space.proxy.protocol.assets.pak;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import irden.space.proxy.protocol.assets.item.ActiveItem;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
 public final class InMemoryGameAssetStore implements GameAssetStore {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder().configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true).build();
 
     private final boolean enabled;
     private final List<Path> archives;
@@ -57,8 +59,8 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
                         JsonNode jsonNode = OBJECT_MAPPER.readTree(data);
                         JsonNode itemNameNode = jsonNode.get("itemName");
 
-                        if (itemNameNode != null && itemNameNode.isTextual()) {
-                            String itemName = itemNameNode.asText();
+                        if (itemNameNode != null && itemNameNode.isString()) {
+                            String itemName = itemNameNode.asString();
                             Path itemPath = Path.of(normalizedPath);
                             String itemDirectory = itemPath.getParent().toString();
                             ActiveItem activeItem = new ActiveItem(itemName, jsonNode, itemDirectory);

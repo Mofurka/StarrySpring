@@ -12,17 +12,23 @@ public enum StarPolyFCodec implements BinaryCodec<StarPolyF> {
 
     @Override
     public StarPolyF read(BinaryReader reader) {
-        int verticesCount  = VlqUnsignedCodec.INSTANCE.read(reader);
+        int verticesCount = VlqUnsignedCodec.INSTANCE.read(reader);
         StarVec2F[] vertices = new StarVec2F[verticesCount];
         for (int i = 0; i < verticesCount; i++) {
-            StarVec2F vertex = StarVec2FCodec.INSTANCE.readFixedPointBased(reader, 0.003125f);
-            vertices[i] = vertex;
+            // PolyF сериализуется как writeContainer(vertexes): VLQ-длина + каждая вершина через
+            // DataStream::operator<<(Vec2F) = 2× сырой float32 (BE). НЕ fixed-point:
+            // NetElementData<PolyF> m_collisionPoly использует обычный DataStream, без оптимизации.
+            vertices[i] = StarVec2FCodec.INSTANCE.read(reader);
         }
         return new StarPolyF(vertices);
     }
 
     @Override
     public void write(BinaryWriter writer, StarPolyF value) {
-
+        StarVec2F[] vertices = value.vertices();
+        VlqUnsignedCodec.INSTANCE.write(writer, vertices.length);
+        for (StarVec2F vertex : vertices) {
+            StarVec2FCodec.INSTANCE.write(writer, vertex);
+        }
     }
 }

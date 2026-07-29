@@ -37,6 +37,7 @@ public class PluginArgumentType implements ArgumentType<String> {
     public String displayName() {
         return "plugin name";
     }
+
     @Override
     public boolean supportsAutocomplete() {
         return true;
@@ -50,7 +51,7 @@ public class PluginArgumentType implements ArgumentType<String> {
             return List.of();
         }
         String normalizedInput = input.trim();
-        return pluginRuntimeAdminPlugin.searchPlugins(normalizedInput,25);
+        return pluginRuntimeAdminPlugin.searchPlugins(normalizedInput, 25);
     }
 
 }

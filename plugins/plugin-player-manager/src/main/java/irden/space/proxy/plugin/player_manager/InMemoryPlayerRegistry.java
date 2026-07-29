@@ -11,6 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component("onlinePlayerRegistry")
 public final class InMemoryPlayerRegistry implements PlayerRegistry<Player> {
     private final Map<String, Player> playersBySessionId = new ConcurrentHashMap<>();
+    private final Map<String, Player> playersByUuid = new ConcurrentHashMap<>();
+    private final Map<Integer, Player> playersByClientId = new ConcurrentHashMap<>();
+    private final Map<Integer, Player> playersByEntityId = new ConcurrentHashMap<>();
 
     @Override
     public boolean add(String id, Player player) {
@@ -18,6 +21,9 @@ public final class InMemoryPlayerRegistry implements PlayerRegistry<Player> {
             return false; // Player with the same session ID already exists
         }
         playersBySessionId.put(player.sessionContext().sessionId(), player);
+        playersByUuid.put(player.uuid().toString(), player);
+        playersByClientId.put(player.clientId(), player);
+        playersByEntityId.put(player.entityId(), player);
         return true;
     }
 
@@ -27,8 +33,29 @@ public final class InMemoryPlayerRegistry implements PlayerRegistry<Player> {
     }
 
     @Override
+    public Player getByUuid(String uuid) {
+        return playersByUuid.get(uuid);
+    }
+
+    @Override
+    public Player getByEntityId(int entityId) {
+        return playersByEntityId.get(entityId);
+    }
+
+    @Override
+    public Player getByClientId(int clientId) {
+        return playersByClientId.get(clientId);
+    }
+
+    @Override
     public Player removeBySessionId(String sessionId) {
-        return playersBySessionId.remove(sessionId);
+        Player remove = playersBySessionId.remove(sessionId);
+        if (remove != null) {
+            playersByUuid.remove(remove.uuid().toString());
+            playersByClientId.remove(remove.clientId());
+            playersByEntityId.remove(remove.entityId());
+        }
+        return remove;
     }
 
     @Override
@@ -46,6 +73,10 @@ public final class InMemoryPlayerRegistry implements PlayerRegistry<Player> {
             return false; // Player with the given session ID does not exist
         }
         playersBySessionId.put(player.sessionContext().sessionId(), player);
+        playersByUuid.put(player.uuid().toString(), player);
+        playersByClientId.put(player.clientId(), player);
+        playersByEntityId.put(player.entityId(), player);
+
         return true;
     }
 }

@@ -1,7 +1,5 @@
 package irden.space.proxy.plugin.player_manager.roles;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import irden.space.proxy.plugin.api.PermissionRegistry;
 import irden.space.proxy.plugin.player_manager.model.StarryRole;
 import irden.space.proxy.plugin.player_manager.permissions.PermissionResolver;
@@ -9,6 +7,8 @@ import irden.space.proxy.plugin.player_manager.permissions.model.StarryRoles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,8 +20,8 @@ import java.util.*;
 public final class RoleManager {
     public static final String OWNER_ROLE_NAME = "Owner";
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    private static final JsonMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true).build();
 
     private static final String DEFAULT_CONFIG_RESOURCE = "config/permissions.jsonc";
 
@@ -42,6 +42,17 @@ public final class RoleManager {
         this.configPath = Objects.requireNonNull(configPath, "configPath");
         this.permissionResolver = Objects.requireNonNull(permissionResolver, "permissionResolver");
         reload();
+    }
+
+    private static List<String> safeList(List<String> values) {
+        return values == null ? List.of() : values;
+    }
+
+    private static String normalizeRoleName(String roleName) {
+        if (roleName == null || roleName.isBlank()) {
+            throw new IllegalStateException("Role name must not be blank in permissions configuration");
+        }
+        return roleName.trim();
     }
 
     public synchronized void reload() {
@@ -204,17 +215,6 @@ public final class RoleManager {
                 PermissionRegistry.registerIfAbsent(permissionRule);
             }
         }
-    }
-
-    private static List<String> safeList(List<String> values) {
-        return values == null ? List.of() : values;
-    }
-
-    private static String normalizeRoleName(String roleName) {
-        if (roleName == null || roleName.isBlank()) {
-            throw new IllegalStateException("Role name must not be blank in permissions configuration");
-        }
-        return roleName.trim();
     }
 
 }

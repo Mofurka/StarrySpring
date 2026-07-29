@@ -1,6 +1,6 @@
 package irden.space.proxy.plugin.irden.persistence.repository;
 
-import irden.space.proxy.plugin.irden.persistence.model.AccountTransactionEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountTransactionEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;

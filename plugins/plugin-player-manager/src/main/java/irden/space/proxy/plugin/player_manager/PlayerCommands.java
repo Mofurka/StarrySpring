@@ -1,6 +1,5 @@
 package irden.space.proxy.plugin.player_manager;
 
-import irden.space.proxy.plugin.api.Permission;
 import irden.space.proxy.plugin.api.PermissionRegistry;
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
@@ -57,6 +56,9 @@ public class PlayerCommands {
                                         sb.append("- Client ID: ").append(player.clientId()).append(System.lineSeparator());
                                         sb.append("- Entity ID: ").append(player.entityId()).append(System.lineSeparator());
                                         sb.append("- IP Address: ").append(player.ipAddress()).append(System.lineSeparator());
+                                        sb.append("- Previous Location: ").append(player.position().getPreviousLocation().toString()).append(System.lineSeparator());
+                                        sb.append("- Current Location: ").append(player.position().getCurrentLocation().toString()).append(System.lineSeparator());
+                                        sb.append("- Position: ").append("{").append(player.position().getX()).append(",").append(player.position().getY()).append("}").append(System.lineSeparator());
                                         Map<String, Object> metadata = player.metadata();
                                         if (!metadata.isEmpty()) {
                                             sb.append("- Metadata: ").append(System.lineSeparator());

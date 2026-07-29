@@ -1,17 +1,9 @@
 package irden.space.proxy.protocol.assets.item;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import lombok.Data;
+import tools.jackson.databind.JsonNode;
 
 
-@Data
-public class ActiveItem {
-
-    private final String itemName;
-
-    private final JsonNode data;
-
-    private final String itemDirectory;
+public record ActiveItem(String itemName, JsonNode data, String itemDirectory) {
 
     public JsonNode get(String fieldName) {
         return data.get(fieldName);

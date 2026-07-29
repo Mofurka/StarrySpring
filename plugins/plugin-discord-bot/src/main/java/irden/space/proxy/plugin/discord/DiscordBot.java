@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -77,6 +78,11 @@ public final class DiscordBot extends ListenerAdapter {
         } else {
             log.info("No commands to register for Discord bot.");
         }
+    }
+
+    public void sendMessageIntoChannelById(Long channelId, String message) {
+        Objects.requireNonNull(this.jda.getChannelById(TextChannel.class, channelId), "Channel id does not exist, or unavailable")
+                .sendMessage(message).queue();
     }
 
     @Override
@@ -185,15 +191,15 @@ public final class DiscordBot extends ListenerAdapter {
                 event
         );
         StringBuilder rawInput = new StringBuilder("/").append(event.getName());
-            if (event.getSubcommandGroup() != null && !event.getSubcommandGroup().isBlank()) {
-                rawInput.append(" ").append(event.getSubcommandGroup());
-            }
-            if (event.getSubcommandName() != null && !event.getSubcommandName().isBlank()) {
-                rawInput.append(" ").append(event.getSubcommandName());
-            }
-            for (OptionMapping option : event.getOptions()) {
-                rawInput.append(" ").append(option.getAsString());
-            }
+        if (event.getSubcommandGroup() != null && !event.getSubcommandGroup().isBlank()) {
+            rawInput.append(" ").append(event.getSubcommandGroup());
+        }
+        if (event.getSubcommandName() != null && !event.getSubcommandName().isBlank()) {
+            rawInput.append(" ").append(event.getSubcommandName());
+        }
+        for (OptionMapping option : event.getOptions()) {
+            rawInput.append(" ").append(option.getAsString());
+        }
         var payload = new ChatSent(rawInput.toString(), null, null);
         return new PacketInterceptionContext(session, null, payload, PacketDirection.TO_SERVER);
     }

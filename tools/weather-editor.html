@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор погоды · Irden</title>
+</head>
+<body>
+<title>Редактор погоды · Irden</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{
+  --paper:#eef2f6; --panel:#ffffff; --panel-2:#f6f9fb; --ink:#12202b; --muted:#5f7285;
+  --line:#d5dee6; --line-2:#e6edf2; --accent:#1f8fb8; --accent-ink:#0c5e79; --accent-soft:#dceef4;
+  --ok:#2f9e5b; --warn:#c1841f; --crit:#cf4b3a;
+  --ok-soft:#e2f3e8; --warn-soft:#f7ecd6; --crit-soft:#f7e2de;
+  --shadow:0 1px 2px rgba(18,32,43,.06), 0 6px 20px rgba(18,32,43,.06);
+  --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0b131b; --panel:#111d27; --panel-2:#0e1922; --ink:#dce7ef; --muted:#8498a8;
+    --line:#233543; --line-2:#1a2833; --accent:#46b3d8; --accent-ink:#9bd9ec; --accent-soft:#12303c;
+    --ok:#4bb673; --warn:#d99f3c; --crit:#e06553;
+    --ok-soft:#123024; --warn-soft:#2f2718; --crit-soft:#301c18;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="light"]{
+  --paper:#eef2f6; --panel:#ffffff; --panel-2:#f6f9fb; --ink:#12202b; --muted:#5f7285;
+  --line:#d5dee6; --line-2:#e6edf2; --accent:#1f8fb8; --accent-ink:#0c5e79; --accent-soft:#dceef4;
+  --ok:#2f9e5b; --warn:#c1841f; --crit:#cf4b3a; --ok-soft:#e2f3e8; --warn-soft:#f7ecd6; --crit-soft:#f7e2de;
+  --shadow:0 1px 2px rgba(18,32,43,.06), 0 6px 20px rgba(18,32,43,.06);
+}
+:root[data-theme="dark"]{
+  --paper:#0b131b; --panel:#111d27; --panel-2:#0e1922; --ink:#dce7ef; --muted:#8498a8;
+  --line:#233543; --line-2:#1a2833; --accent:#46b3d8; --accent-ink:#9bd9ec; --accent-soft:#12303c;
+  --ok:#4bb673; --warn:#d99f3c; --crit:#e06553; --ok-soft:#123024; --warn-soft:#2f2718; --crit-soft:#301c18;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+button{font-family:inherit;font-size:inherit;cursor:pointer;color:inherit}
+input,select,textarea{font-family:inherit;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 8px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{resize:vertical;line-height:1.45}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- shell ---- */
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:10px 18px;
+  background:color-mix(in srgb,var(--panel) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:9px;margin-right:auto;min-width:0}
+.brand b{font-weight:650;letter-spacing:-.01em}
+.brand .sub{color:var(--muted);font-size:12px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbtn{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:550;transition:border-color .15s,background .15s}
+.tbtn:hover{border-color:var(--accent)}
+.tbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tbtn.primary:hover{filter:brightness(1.06)}
+.tbtn.ghost{background:transparent}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:600;padding:5px 9px;border-radius:20px;border:1px solid transparent}
+.badge.ok{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.badge.bad{background:var(--crit-soft);color:var(--crit);border-color:color-mix(in srgb,var(--crit) 30%,transparent)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+.layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:0;align-items:start}
+.rail{position:sticky;top:53px;align-self:start;padding:16px 12px;border-right:1px solid var(--line);min-height:calc(100vh - 53px)}
+.rail nav{display:flex;flex-direction:column;gap:2px}
+.rail a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:550;font-size:13px;border:1px solid transparent}
+.rail a:hover{background:var(--panel-2)}
+.rail a.active{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 25%,transparent);color:var(--accent-ink)}
+.rail a .c{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.rail a.active .c{color:var(--accent-ink)}
+.rail .eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.09em;font-size:10px;color:var(--muted);margin:14px 10px 6px}
+.vlist{display:flex;flex-direction:column;gap:5px;margin:0 2px}
+.vitem{display:flex;gap:7px;font-size:12px;line-height:1.35;padding:6px 8px;border-radius:7px;background:var(--panel-2)}
+.vitem .k{flex:0 0 auto;width:4px;border-radius:3px;align-self:stretch}
+.vitem.err .k{background:var(--crit)} .vitem.warn .k{background:var(--warn)}
+.vitem b{font-family:var(--mono);font-weight:600}
+.vclean{font-size:12px;color:var(--muted);padding:6px 8px}
+
+.main{padding:20px 22px 80px;max-width:1180px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+h2.sec{font-size:19px;font-weight:640;letter-spacing:-.01em;margin:0 0 3px;text-wrap:balance}
+.sec-lead{color:var(--muted);font-size:13px;margin:0 0 16px;max-width:64ch}
+.eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;font-size:10.5px;color:var(--accent-ink);font-weight:600}
+
+/* ---- graph ---- */
+.graphwrap{position:relative;border-radius:var(--r);overflow:hidden;background:
+  radial-gradient(circle at 50% 46%, color-mix(in srgb,var(--accent) 7%,transparent), transparent 60%), var(--panel);
+  border:1px solid var(--line)}
+.graphwrap svg{display:block;width:100%;height:auto;touch-action:none}
+.gnode{cursor:pointer}
+.gnode text{font-family:var(--mono);font-size:15px;paint-order:stroke;stroke:var(--panel);stroke-width:3.5px;stroke-linejoin:round}
+.gtip{position:absolute;pointer-events:none;z-index:5;background:var(--ink);color:var(--paper);font-size:12px;line-height:1.4;
+  padding:8px 10px;border-radius:8px;max-width:260px;box-shadow:var(--shadow);opacity:0;transform:translateY(3px);transition:opacity .12s}
+.gtip .t{font-family:var(--mono);font-weight:600;margin-bottom:3px}
+.gtip.show{opacity:1;transform:none}
+.glegend{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:11px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.glegend .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.gtoolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--panel);border:0;padding:6px 11px;font-size:12.5px;font-weight:550;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent-soft);color:var(--accent-ink)}
+
+/* ---- forms / cards ---- */
+.grid{display:grid;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.field .hint{font-size:11px;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.card+.card{margin-top:14px}
+.card-head{display:flex;align-items:center;gap:11px;padding:12px 14px;cursor:pointer;user-select:none}
+.card-head:hover{background:var(--panel-2)}
+.stripe{width:12px;height:34px;border-radius:5px;flex:0 0 auto;border:1px solid rgba(0,0,0,.12)}
+.card-title{display:flex;flex-direction:column;gap:1px;min-width:0;margin-right:auto}
+.card-title .id{font-family:var(--mono);font-weight:650;font-size:15px;letter-spacing:-.01em}
+.card-title .meta{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-body{padding:4px 14px 16px;border-top:1px solid var(--line-2);display:none}
+.card.open .card-body{display:block}
+.card.open .chev{transform:rotate(90deg)}
+.chev{color:var(--muted);transition:transform .15s;flex:0 0 auto}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;padding:3px 5px 3px 9px;border-radius:20px;background:var(--panel-2);border:1px solid var(--line)}
+.chip button{border:0;background:transparent;color:var(--muted);font-size:14px;line-height:1;padding:0 2px}
+.chip button:hover{color:var(--crit)}
+.chip.tag{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent-ink)}
+.chip.add{cursor:text;padding-left:9px}
+.chip.add input{border:0;background:transparent;padding:2px 0;width:80px}
+.chip.add input:focus{box-shadow:none}
+.pill{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+.pill.danger{background:var(--crit-soft);color:var(--crit)}
+.pill.special{background:var(--warn-soft);color:var(--warn)}
+
+.subhead{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
+.subhead h4{margin:0;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.subhead .line{flex:1;height:1px;background:var(--line-2)}
+.mini{font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:7px;padding:4px 9px}
+.mini:hover{filter:brightness(.97)}
+.iconbtn{border:1px solid var(--line);background:var(--panel);border-radius:7px;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+.iconbtn:hover{border-color:var(--crit);color:var(--crit)}
+
+.trow{border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:9px;background:var(--panel-2)}
+.trow .thead{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.wbar{height:6px;border-radius:4px;background:var(--accent);opacity:.75;min-width:3px}
+.cond{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);display:grid;gap:10px}
+.kv{display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center}
+.kv .rng{display:flex;gap:5px}
+.kv input{width:100%}
+.tinyhead{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+table.periods{width:100%;border-collapse:collapse;font-size:13px}
+table.periods th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;font-weight:600;padding:0 8px 8px}
+table.periods td{padding:5px 8px;border-top:1px solid var(--line-2)}
+table.periods input{width:100%}
+.clock{display:flex;height:30px;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-top:6px}
+.clock .seg-h{flex:1;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);color:#fff;border-right:1px solid rgba(255,255,255,.18);min-width:0;overflow:hidden}
+.clock .seg-h.gap{background:repeating-linear-gradient(45deg,var(--crit),var(--crit) 5px,#0000 5px,#0000 10px)}
+
+.pcard{border:1px solid var(--line);border-radius:9px;padding:11px;background:var(--panel-2);margin-bottom:9px}
+.swatch-in{display:flex;align-items:center;gap:8px}
+.swatch-box{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);flex:0 0 auto}
+.textlines{display:flex;flex-direction:column;gap:6px}
+.imglink{font-size:11px;font-family:var(--mono)}
+
+.jsonarea{width:100%;min-height:60vh;font-family:var(--mono);font-size:12px;line-height:1.5;white-space:pre;overflow:auto}
+.statrow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;box-shadow:var(--shadow)}
+.stat .v{font-family:var(--mono);font-size:20px;font-weight:650;font-variant-numeric:tabular-nums}
+.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:var(--mono)}
+.abar{display:grid;grid-template-columns:118px 1fr 118px 108px;gap:12px;align-items:center;padding:5px 0}
+.abar .name{font-family:var(--mono);font-size:12.5px}
+.abar .track{position:relative;height:15px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line)}
+.abar .band{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--accent) 28%,transparent);border-radius:8px}
+.abar .mean{position:absolute;top:-3px;bottom:-3px;width:2.5px;background:var(--accent);border-radius:2px}
+.abar .nums{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.sbar{display:grid;grid-template-columns:150px 1fr 78px 78px;gap:10px;align-items:center;padding:3px 0}
+.sbar .id{font-family:var(--mono);font-size:12.5px;display:flex;gap:7px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbar .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto;border:1px solid rgba(0,0,0,.15)}
+.sbar .track{height:15px;border-radius:5px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line-2)}
+.sbar .fill{height:100%;border-radius:5px}
+.sbar .pct{font-family:var(--mono);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+.simbadge{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.simbadge.ok{background:var(--ok-soft);color:var(--ok)} .simbadge.warn{background:var(--warn-soft);color:var(--warn)} .simbadge.crit{background:var(--crit-soft);color:var(--crit)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--ink);color:var(--paper);
+  padding:10px 16px;border-radius:9px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s;z-index:60}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.modal-ov{position:fixed;inset:0;z-index:80;background:rgba(8,15,22,.55);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .12s}
+.modal-ov.show{opacity:1}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);width:min(430px,100%);padding:18px}
+.modal h3{margin:0 0 6px;font-size:16px;font-weight:620}
+.modal p{margin:0 0 13px;color:var(--muted);font-size:13px}
+.modal input{width:100%;margin-bottom:15px}
+.modal .actions{display:flex;justify-content:flex-end;gap:8px}
+.empty{color:var(--muted);font-size:13px;font-style:italic;padding:6px 0}
+
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr}
+  .rail{position:static;border-right:0;border-bottom:1px solid var(--line);min-height:0;padding:12px}
+  .rail nav{flex-direction:row;flex-wrap:wrap}
+  .rail .eyebrow,.rail .vlist,.rail .vclean{display:none}
+  .main{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="topbar">
+  <div class="brand">
+    <b>Редактор погоды</b>
+    <span class="sub" id="filelabel">weather-system.json</span>
+  </div>
+  <span id="vbadge" class="badge ok"><span class="dot"></span><span id="vtext">проверка…</span></span>
+  <button class="tbtn ghost" id="btn-theme" title="Тема">◐</button>
+  <button class="tbtn" id="btn-import">Импорт</button>
+  <button class="tbtn" id="btn-reset" title="Загрузить встроенный пример">Пример</button>
+  <button class="tbtn primary" id="btn-export">Экспорт JSON</button>
+</div>
+
+<div class="layout">
+  <aside class="rail">
+    <nav id="nav"></nav>
+    <div class="eyebrow">Проверка</div>
+    <div class="vlist" id="vlist"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileinput" accept="application/json,.json" style="display:none">
+
+<script type="application/json" id="default-config">
+{"settings":{"defaultState":"clear","historySize":48,"sameStateMultiplier":0.72,"initialAtmosphere":{"humidity":0.45,"cloudiness":0.25,"wind":0.2,"instability":0.25,"groundWetness":0.2,"temperature":16.0},"atmosphereBounds":{"humidity":{"min":0.0,"max":1.0},"cloudiness":{"min":0.0,"max":1.0},"wind":{"min":0.0,"max":1.0},"instability":{"min":0.0,"max":1.0},"groundWetness":{"min":0.0,"max":1.0},"temperature":{"min":-30.0,"max":45.0}}},"periods":{"night":{"fromHour":0,"toHour":5,"channelName":"🌙погода-ночь"},"dawn":{"fromHour":5,"toHour":11,"channelName":"🌄погода-рассвет"},"day":{"fromHour":11,"toHour":17,"channelName":"☀️погода-день"},"sunset":{"fromHour":17,"toHour":24,"channelName":"🌇погода-закат"}},"globalTransitions":[{"to":"groundmist","weight":18,"conditions":{"periods":["dawn"],"atmosphere":{"humidity":{"min":0.65},"groundWetness":{"min":0.55},"wind":{"max":0.35}},"recentWeather":{"anyTags":["precipitation"],"withinTicks":4}},"modifiers":[{"condition":{"atmosphere":{"humidity":{"min":0.82}}},"multiplier":1.7},{"condition":{"atmosphere":{"groundWetness":{"min":0.78}}},"multiplier":1.6}]},{"to":"fog","weight":8,"conditions":{"periods":["sunset"],"atmosphere":{"humidity":{"min":0.7},"groundWetness":{"min":0.5},"wind":{"max":0.3}},"recentWeather":{"anyTags":["precipitation"],"withinTicks":5}}},{"to":"thunder","weight":4,"conditions":{"periods":["day"],"atmosphere":{"humidity":{"min":0.6},"cloudiness":{"min":0.65},"instability":{"min":0.6}}}},{"to":"heat","weight":5,"conditions":{"periods":["day"],"atmosphere":{"humidity":{"max":0.42},"cloudiness":{"max":0.3},"groundWetness":{"max":0.35},"temperature":{"min":19.0}},"absentRecentWeather":{"anyTags":["precipitation"],"withinTicks":4}}}],"states":{"clear":{"serverWeather":"clear","tags":["clear","dry"],"allowedPeriods":["night","dawn","day","sunset"],"cooldownTicks":0,"duration":{"minTicks":2,"maxTicks":5},"atmosphereChanges":{"humidity":-0.04,"cloudiness":-0.1,"groundWetness":-0.05,"instability":-0.03,"temperature":0.5,"wind":-0.03},"transitions":[{"to":"clear","weight":25},{"to":"partly_cloudy","weight":22},{"to":"wind","weight":13},{"to":"cloudy","weight":8,"conditions":{"periods":["day","sunset"],"atmosphere":{"cloudiness":{"min":0.25}}}},{"to":"darkcloud","weight":3,"conditions":{"atmosphere":{"humidity":{"min":0.55},"cloudiness":{"min":0.45}}}},{"to":"firefly","weight":3,"conditions":{"periods":["night","sunset"],"atmosphere":{"cloudiness":{"max":0.25},"wind":{"max":0.35}}}},{"to":"magicnight","weight":0.8,"conditions":{"periods":["night"],"atmosphere":{"cloudiness":{"max":0.2}}}},{"to":"dayhorror","weight":0.6,"conditions":{"periods":["day"],"atmosphere":{"wind":{"max":0.2}}}},{"to":"nighthorror","weight":0.8,"conditions":{"periods":["night","sunset"],"atmosphere":{"cloudiness":{"min":0.55}}}}],"presentations":{"dawn":[{"weight":11.6,"color":"0xa2fe7a","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127514042412576868/morning_good.jpg","text":[":sunny: Ранний восход. Летнее солнышко вышло после прохладной ночи, утро началось, работа не ждёт!"]},{"weight":11.8,"color":"0xa2fe7a","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127514042152534108/morning_good.jpg","text":[":sunny: Восход. Утро началось, можно проснуться в такой приятный период дня. Работа вас подождёт."]}],"sunset":[{"weight":8.0,"color":"0x22ce52","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127536943421472809/dawn_good.jpeg","text":[":black_small_square: Чистый вечер. День сменяется чистым вечером. Пустое небо и уходящее солнце машет вам, завершая цикл дня. Кажется, этот вечер будет спокойным и приятным. **Во время этой погоды вы получаете +2 к силе воле вне боя.**"],"stats":{"WIL":2}},{"weight":5.0,"color":"0xdadada","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127544423912312882/cloudy2.jpg","text":[":feather: Перистые облака. Чистое небо, совсем очищенное от облаков.. лишь только высоко в небе виднеются маленькие, будто перья облака. Это хорошая вечерняя погода для прогулки. **Вы получаете +1 к охоте и рыбалке.**"]}],"night":[{"weight":10.0,"color":"0x9aff88","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127549903711780974/night1.jpg","text":[":full_moon: *Высокая луна.* Небо абсолютно чисто, а луна стоит в зените! Сейчас самое время повыть на луну.. ну и прогуляться - это будет довольно романтично. **Во время этой погоды вы получаете +2 к решительности в бою и вне боя.**"],"stats":{"DET":2}}],"day":[{"weight":10.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127530880492109834/cloudy.jpg","text":[":white_sun_small_cloud: Слабая облачность. День начинается не так уж и плохо, но скоро точно может пойти не очень приятный дождик."]}]}},"calm":{"serverWeather":"clear","tags":["clear","dry","calm"],"allowedPeriods":["dawn"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"humidity":-0.02,"cloudiness":-0.06,"groundWetness":-0.03,"wind":-0.1},"transitions":[{"to":"clear","weight":20},{"to":"wind","weight":8},{"to":"partly_cloudy","weight":10}],"presentations":{"dawn":[{"weight":10.0,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127514926336987207/morning_windy.jpg","text":[":zzz: Штиль. Сегодняшнее утро совсем тихое и приятное. Прогулка, рыбалка и охота - это всё, что нужно делать с самого утра! **Вы получаете +1 попытку на рыбалку или охоту.**"]}]}},"partly_cloudy":{"serverWeather":"clear","tags":["cloudy","dry"],"allowedPeriods":["dawn","day","sunset"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"cloudiness":0.03,"humidity":0.01,"wind":0.01},"transitions":[{"to":"clear","weight":18},{"to":"partly_cloudy","weight":20},{"to":"cloudy","weight":20,"conditions":{"periods":["day","sunset"]}},{"to":"cloudy_wind","weight":12,"conditions":{"periods":["dawn"]}},{"to":"darkcloud","weight":8},{"to":"wind","weight":10}],"presentations":{"dawn":[{"weight":10.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127516250109657159/morning_cloudy.jpg","text":[":cloud: Облака сбиваются в небольшие кучки и закрывают обзор на утреннее солнце, которое так и хочет взглянуть на вас!"]}],"day":[{"weight":10.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127530880492109834/cloudy.jpg","text":[":white_sun_small_cloud: Слабая облачность. День начинается не так уж и плохо, но скоро точно может пойти не очень приятный дождик."]}],"sunset":[{"weight":5.0,"color":"0xdadada","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127544013235437568/cloudy.jpeg","text":[":white_sun_small_cloud: *Закрытый закат.* Солнце красиво выглядывает из-за кучи облаков, озаряя всё окружение красивыми и прямыми лучами. Сегодняшний день заканчивается великолепно! **Все получают +2 к одному действию, находясь снаружи.**"]}]}},"cloudy":{"serverWeather":"clear","tags":["cloudy"],"allowedPeriods":["day","sunset"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"cloudiness":0.08,"humidity":0.04,"temperature":-0.2},"transitions":[{"to":"partly_cloudy","weight":15},{"to":"cloudy","weight":22},{"to":"darkcloud","weight":20},{"to":"drizzle","weight":13,"conditions":{"periods":["dawn","sunset"],"atmosphere":{"humidity":{"min":0.55}}}},{"to":"rain","weight":8,"conditions":{"periods":["night","sunset"],"atmosphere":{"humidity":{"min":0.65}}}},{"to":"warm_rain","weight":7,"conditions":{"periods":["day"],"atmosphere":{"humidity":{"min":0.6}}}}],"presentations":{"day":[{"weight":8.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127530880492109834/cloudy.jpg","text":[":white_sun_cloud::cloud: Густая облачность. Сегодня день не самый приятный: серое обычное небо и даже солнца совсем не видно. Хорошая погода для собирательства и лесных дел. **Вы получаете +1 попытку на травничество.**"]}],"sunset":[{"weight":11.0,"color":"0xdadada","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127544013235437568/cloudy.jpeg","text":[":cloud: Серое небо. Кажется, должен начаться дождь? Но будто бы всё так и задумано, и небо будет серым ещё долгое время. Некоторым будет даже казаться, что началась морось.. но лишь казаться."]}]}},"cloudy_wind":{"serverWeather":"wind","tags":["cloudy","wind"],"allowedPeriods":["dawn"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"cloudiness":0.07,"humidity":0.03,"wind":0.08},"transitions":[{"to":"wind","weight":20},{"to":"partly_cloudy","weight":15},{"to":"darkcloud","weight":12},{"to":"drizzle","weight":8}],"presentations":{"dawn":[{"weight":10.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447587196108812/1046374174953852990/Morningcloudy.jpg","text":[":cloud: Облачность. Облака сбиваются в большие кучи и начинают создавать большие тени под собой. Приятный ветер, утро и теплое солнышко. Это хорошая погода для прогулки. **Во время этой погоды вы получаете +2 к броску решительности вне боя.**"],"stats":{"DET":2}}]}},"post_rain_clouds":{"serverWeather":"darkcloud","tags":["cloudy","wet","post_precipitation"],"allowedPeriods":["dawn"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"humidity":0.02,"cloudiness":-0.03,"groundWetness":-0.01,"wind":-0.02},"transitions":[{"to":"groundmist","weight":20},{"to":"partly_cloudy","weight":18},{"to":"clear","weight":12},{"to":"wind","weight":8}],"presentations":{"dawn":[{"weight":10.0,"color":"0x1bcdfa","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127520420833263696/morning_rain.jpg","text":[":fog::cloud: Плотные тучи. Кажется, ночью был дождь, облака кажутся такими близкими и так далекими одновременно. Дождь может начаться, а может и нет. В любом случае можно ещё немного подремать. **Во время этой погоды вы получаете -1 к решительности вне боя и в бою.**"],"stats":{"DET":-1}}]}},"post_rain_clear":{"serverWeather":"clear","tags":["clear","wet","post_precipitation"],"allowedPeriods":["day"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"humidity":-0.04,"cloudiness":-0.12,"groundWetness":-0.05,"temperature":0.7},"transitions":[{"to":"clear","weight":25},{"to":"partly_cloudy","weight":15},{"to":"wind","weight":8},{"to":"heat","weight":5}],"presentations":{"day":[{"weight":12.6,"color":"0xa2fe7a","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127521943378219088/day_good.jpg","text":[":sunny::zzz: Штиль и чистое небо. Наконец, после долгих дождей, природа успокоилась и оголила небо. Вокруг ни шелеста, ни других звуков, кроме журчания ручейков и пения птиц. **Во время события охоты можно найти только птиц.**"]}]}},"heat":{"serverWeather":"clear","tags":["clear","dry","heat"],"allowedPeriods":["day"],"cooldownTicks":8,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"humidity":-0.08,"cloudiness":-0.1,"groundWetness":-0.1,"temperature":2.0,"instability":0.06},"transitions":[{"to":"clear","weight":18},{"to":"partly_cloudy","weight":12},{"to":"warm_wind","weight":10},{"to":"thunder","weight":8,"conditions":{"atmosphere":{"instability":{"min":0.55},"humidity":{"min":0.45}}}},{"to":"darkcloud","weight":5,"conditions":{"atmosphere":{"instability":{"min":0.6}}}}],"presentations":{"day":[{"weight":17.8,"color":"0xa2fe7a","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127526056711180338/day_special1.jpg","text":[":sunny: Жар. Солнце почти в зените, небо чисто, а вот солнце очень жаркое. Кажется день начался! И очень плохо. **Во время этой погоды вы получаете -2 к выносливости во время боя и вне боя. Несоответствующая одежда погоде также заставляет прокинуть средний порог выносливости, чтобы не получить обморок.**"],"stats":{"END":-2}}]}},"wind":{"serverWeather":"wind","tags":["wind"],"allowedPeriods":["night","dawn","day","sunset"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"wind":0.12,"humidity":-0.03,"groundWetness":-0.04,"cloudiness":0.01},"transitions":[{"to":"clear","weight":14},{"to":"wind","weight":20},{"to":"partly_cloudy","weight":15},{"to":"cloudy","weight":10,"conditions":{"periods":["day","sunset"]}},{"to":"cloudy_wind","weight":10,"conditions":{"periods":["dawn"]}},{"to":"windstorm","weight":8,"conditions":{"periods":["night","day"],"atmosphere":{"wind":{"min":0.55}}}},{"to":"darkcloud","weight":6,"conditions":{"atmosphere":{"cloudiness":{"min":0.45}}}}],"presentations":{"dawn":[{"weight":5.0,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127514926336987207/morning_windy.jpg","text":[":dash: Приятный ветерок. Слабый и приятный утренний бриз - погода в самый раз для весенней прогулки по процветающему лесу."]},{"weight":5.0,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127548522468753408/morning_windy.png","text":[":dash: :zzz: Тихий утренний ветер. Кажется, утро началось с слабого ветра. Потоки воздуха нагоняют облака, а выйти наружу будет хорошим решением. **Во время этой погоды вы получаете +2 к Силе воли в бою и вне боя.**"],"stats":{"WIL":2}}],"day":[{"weight":9.0,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127547883651076136/day_windy.png","text":[":dash: Изменчивый ветер. Сегодня дневная погода немного хаотична: ветер то и дело меняет свое направление. Сегодняшняя погода вас немного закрутит. **Вы получаете -1 к броскам рефлексов.**"],"stats":{"REF":-1}}],"sunset":[{"weight":17.8,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1081581326811017236/Windy.jpg","text":[":dash: Тихий ветер. Вечерний теплый ветерок дует вам прямо в лицо, но люди внутри своих укрытий даже не слышат его.. а он есть! **Во время этой погоды вы получаете +1 к броскам силы воли вне боя.**"],"stats":{"WIL":1}},{"weight":12.6,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1081581326811017236/Windy.jpg","text":[":dash: Ветер. Самый обычный вечерний ветер. Ветрено и немного прохладно! **Во время этой погоды вы получаете -1 к рефлексам во время боя и вне боя.**"],"stats":{"REF":-1}}],"night":[{"weight":11.0,"color":"0xa4b0b0","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127551373257494648/night_windy.jpg","text":[":dash: Ночной бриз. Ночная ветряная приятная погода, которая сопровождает ночных охотников и тех, кому не спится."]}]}},"warm_wind":{"serverWeather":"wind","tags":["wind","warm","dry"],"allowedPeriods":["day"],"cooldownTicks":4,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"wind":0.1,"humidity":-0.05,"groundWetness":-0.05,"temperature":1.0},"transitions":[{"to":"clear","weight":16},{"to":"wind","weight":15},{"to":"partly_cloudy","weight":12},{"to":"heat","weight":6}],"presentations":{"day":[{"weight":5.0,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127527578295607296/Windy.jpg","text":[":dash: Тёплый ветер. Вы чувствуете теплые горные потоки воздуха, летящие прямо на вас. Нетипичный климат для гор, но вам это на руку. Приятно во время такой погоды пройтись по горным равнинам. **Во время этой погоды вы получаете +1 попытку в событии поиска трав.**"]}]}},"darkcloud":{"serverWeather":"darkcloud","tags":["cloudy","heavy_clouds"],"allowedPeriods":["night","dawn","day"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"humidity":0.08,"cloudiness":0.12,"instability":0.07,"temperature":-0.5},"transitions":[{"to":"cloudy","weight":15,"conditions":{"periods":["day","sunset"]}},{"to":"cloudy_wind","weight":10,"conditions":{"periods":["dawn"]}},{"to":"darkcloud","weight":18},{"to":"drizzle","weight":15,"conditions":{"periods":["dawn","sunset"]}},{"to":"rain","weight":15,"conditions":{"periods":["night","sunset"]}},{"to":"warm_rain","weight":10,"conditions":{"periods":["day"]}},{"to":"thunder","weight":9,"conditions":{"periods":["day"],"atmosphere":{"instability":{"min":0.55}}}},{"to":"storm","weight":6,"conditions":{"periods":["night","day","sunset"],"atmosphere":{"humidity":{"min":0.72},"instability":{"min":0.58}}}}],"presentations":{"dawn":[{"weight":5.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447587196108812/1046374174953852990/Morningcloudy.jpg","text":[":cloud: :small_red_triangle: *Сильная облачность.* Кажется, тучки набегают, а утро будто и не начинается. Возможно, скоро будет дождь. **Во время этой погоды вы теряете одну дополнительную попытку в событиях добычи (где это возможно).**"]},{"weight":4.0,"color":"0x1bcdfa","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127520420833263696/morning_rain.jpg","text":[":cloud::black_large_square: *Тёмнотучи.* Утро или ночь? Кажется, ничего из этого не имеет значения, ведь погода оказывается самой плохой для прогулок. Да и погода эта тянет вас спать.. **Во время этой погоды вы получаете -2 к внимательности и -2 к решительности. Находясь в уюте, вы восстанавливаете на 4 больше стамины.**"],"stats":{"DET":-2,"PER":-2}}],"day":[{"weight":5.0,"color":"0xffffff","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127530880492109834/cloudy.jpg","text":[":cloud::small_red_triangle: *Высокие тучи.* Облака собрались в огромные клочки пара, что кажется вот-вот упадёт на вас дождем. Одновременно с этим будет дуть уже более холодный и неприятный ветер, сдувающий зонтики одуванчиков. Это не очень приятная погода. **Во время этой погоды вы получаете -1 к силе воли во время боя и вне боя.**"],"stats":{"WIL":-1}}],"night":[{"weight":15.8,"color":"0x889797","image":"https://cdn.discordapp.com/attachments/539447933062479902/1081591486396772392/Cloudy.jpg","text":[":cloud::new_moon: *Тучи.* Тёмная ночь, тучи, которые перекрывают ночную луну.. снаружи стало как-то прохладно и темно. Но это вам не помешает сходить прогуляться. **Во время этой погоды вы получаете -1 к внимательности во время боя и вне.**"],"stats":{"PER":-1}}]}},"drizzle":{"serverWeather":"drizzle","tags":["cloudy","wet","precipitation"],"allowedPeriods":["dawn","sunset"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"humidity":0.08,"cloudiness":0.04,"groundWetness":0.12,"temperature":-0.4,"wind":-0.02},"transitions":[{"to":"cloudy_wind","weight":8,"conditions":{"periods":["dawn"]}},{"to":"cloudy","weight":12,"conditions":{"periods":["sunset"]}},{"to":"drizzle","weight":20},{"to":"rain","weight":18,"conditions":{"periods":["night","sunset"]}},{"to":"warm_rain","weight":12,"conditions":{"periods":["day"]}},{"to":"darkcloud","weight":14},{"to":"clear","weight":5}],"presentations":{"dawn":[{"weight":6.0,"color":"0x1bcdfa","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127520420833263696/morning_rain.jpg","text":[":droplet: Морось. Слабый дождь, кажется, совсем недавно начался, можно выйти и прогуляться под таким! Но если вы хотите поработать.. вам не очень понравится. **Каждая неудачная попытка в событиях Добычи накладывает -1 к решительности. Эффект снимается успокоительным или через два часа активного отыгрыша.**"]}],"sunset":[{"weight":7.0,"color":"0x1bcdfa","image":"","text":[":white_sun_rain_cloud: Тёплый дождь. Сегодня вечер начался с лёгкого и тёплого дождя. Кажется, это идеальная погода для тех, кто живёт в лесу и не моется. Что для остальных.. переоденьтесь! **Вы получаете -1 к броскам выносливости.**"],"stats":{"END":-1}}]}},"rain":{"serverWeather":"rain","tags":["cloudy","wet","precipitation"],"allowedPeriods":["night","sunset"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":4},"atmosphereChanges":{"humidity":0.12,"cloudiness":0.06,"groundWetness":0.18,"temperature":-0.8,"instability":0.02},"transitions":[{"to":"rain","weight":20},{"to":"drizzle","weight":22,"conditions":{"periods":["dawn","sunset"]}},{"to":"storm","weight":10},{"to":"darkcloud","weight":18},{"to":"post_rain_clouds","weight":18,"conditions":{"periods":["dawn"]}},{"to":"cloudy","weight":12,"conditions":{"periods":["sunset"]}}],"presentations":{"sunset":[{"weight":5.0,"color":"0x1bcdfa","image":"","text":[":cloud_rain: Холодный дождь. Сегодня вечер начался с холодного дождя. Кажется, тучи в итоге собрались в большие кучи, которые спровоцировали эту плохую погоду. Стоит приодеться в чём-то водонепроницаемом и захватить зонтик. **Во время этой погоды вы получаете -1 к выносливости в бою и вне боя. Вы не можете заниматься травничеством и рыбалкой.**"],"stats":{"END":-1}}],"night":[{"weight":10.0,"color":"0x2c303f","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127555972852875404/night_rain.jpg","text":[":cloud_rain: *Ночной дождь.* Снаружи начался дождь! Слабый ночной дождь начался.. приятная и в какой-то степени романтическое настроение этот дождь на вас наводит! Гулять лишь по желанию, однако зонтик захватить у вас в приоритете. **Прокинув легкий порог выносливости вы не заболеете.**"]}]}},"warm_rain":{"serverWeather":"rain","tags":["cloudy","wet","precipitation","warm"],"allowedPeriods":["day"],"cooldownTicks":5,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"humidity":0.1,"cloudiness":0.05,"groundWetness":0.15,"temperature":-0.2,"instability":0.04},"transitions":[{"to":"warm_rain","weight":18},{"to":"storm","weight":9},{"to":"darkcloud","weight":16},{"to":"cloudy","weight":18},{"to":"post_rain_clear","weight":10}],"presentations":{"day":[{"weight":5.0,"color":"0x1bcdfa","image":"https://cdn.discordapp.com/attachments/539447933062479902/1081568185993674913/Rain_warn.jpg","text":[":white_sun_small_cloud::cloud_rain: Тёплый дождь. Сегодня погода хоть и пасмурная, но капли совсем не холодные.. скорее приятные! Почти природный душ. **Вы получаете -1 к броскам выносливости вне боя.**"],"stats":{"END":-1}}]}},"storm":{"serverWeather":"storm","tags":["cloudy","wet","precipitation","storm","dangerous"],"allowedPeriods":["night","day","sunset"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"humidity":0.15,"cloudiness":0.1,"groundWetness":0.25,"temperature":-1.2,"wind":0.15,"instability":-0.04},"transitions":[{"to":"storm","weight":9},{"to":"rain","weight":25,"conditions":{"periods":["night","sunset"]}},{"to":"warm_rain","weight":15,"conditions":{"periods":["day"]}},{"to":"drizzle","weight":18,"conditions":{"periods":["dawn","sunset"]}},{"to":"darkcloud","weight":22},{"to":"post_rain_clouds","weight":20,"conditions":{"periods":["dawn"]}},{"to":"post_rain_clear","weight":12,"conditions":{"periods":["day"]}}],"presentations":{"day":[{"weight":4.0,"color":"0x1bcdfa","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127535796702957628/day_rain.jpg","text":[":cloud_rain: Ливень. Летний ливень начал лить, завершая прекрасную дневную погоду. Кажется, этот ливень будет еще идти очень долго. Похоже, работникам снаружи придется перенести свои планы.. **Прокинув средний порог выносливости, вы не заболеете. Во время этой погоды вы не можете охотиться, рыбачить и искать травы.**"]}],"sunset":[{"weight":4.0,"color":"0x1bcdfa","image":"","text":[":cloud_rain::sweat_drops: *Проливной дождь.* Сегодня совсем не лучший вечер. Тучи собрались очень быстро и спровоцировали очень сильный и холодный дождь. Это вам напоминает самую обычную погоду Гризы. Животные спрятались, а растения все закрыли свои бутоны. Это плохая погода для прогулок! **Прокинув средний порог выносливости, вы не заболеете. Во время этой погоды вы не можете заниматься активностями вне укрытия.**"]}],"night":[{"weight":5.0,"color":"0x2c303f","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127555972852875404/night_rain.jpg","text":[":cloud_rain::umbrella: *Сильный ливень.* Ночью начался просто кошмар! Снаружи слышны завывания ветра и шквальный дождь - пугающая погода, которую сопровождают молнии с редким громом. Наутро точно останется очень много луж. **Вы не можете заниматься поиском трав, охотиться и рыбачить. Прокинув средний порог выносливости, вы не заболеете.**"]},{"weight":1.0,"color":"0x71799b","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127555972852875404/night_rain.jpg","text":[":ocean: *Потопный дождь.* Снаружи льёт не просто как из ведра, а льёт так, будто сама Ньефе вас прокляла! Дворики, низменности заполняются водой, устраивая небольшие потопы. Соломенные крыши протекают, а под деревянными крышами и там где были дыры стоит поставить ведро. Помимо этого, звучат, громыхают молнии, пугая всех и вся. Выходить из укрытия крайне опасно. **Во время этой погоды вы не можете заниматься добычей. Находясь в укрытии, вы получаете -2 ко всем броскам, если находитесь не в глубине здания.**"]}]}},"thunder":{"serverWeather":"thunder","tags":["cloudy","thunder"],"allowedPeriods":["day"],"cooldownTicks":6,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"cloudiness":0.08,"humidity":0.03,"instability":0.12,"wind":0.04},"transitions":[{"to":"darkcloud","weight":20},{"to":"warm_rain","weight":15},{"to":"storm","weight":12},{"to":"cloudy","weight":12}],"presentations":{"day":[{"weight":7.0,"color":"0x1bcdfa","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127535796702957628/day_rain.jpg","text":[":zap: Летний гром. Где-то из дали вы слышите раскаты грома, что пугает живность и местных пугливых личностей. Дождя однако нет, что несомненно радует. Гулять? Если прихватить с собой беруши. **Во время этой погоды вы не можете охотиться. Не пройдя средний порог решительности, вы получаете -1 ко всем действиям.**"]}]}},"windstorm":{"serverWeather":"windstorm","tags":["wind","storm","dangerous"],"allowedPeriods":["night","day"],"cooldownTicks":0,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"wind":0.2,"cloudiness":0.05,"humidity":-0.02,"instability":0.05},"transitions":[{"to":"wind","weight":25},{"to":"darkcloud","weight":18},{"to":"storm","weight":10},{"to":"clear","weight":8}],"presentations":{"day":[{"weight":5.0,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127527578295607296/Windy.jpg","text":[":wind_blowing_face::dash: Сильный ветер. Сегодня дневная погода хаотична: ветер пытается вас повалить, слабым вовсе лучше держаться за укрытиями, чтобы просто не упасть от такого ветра. **Вы получаете -1 к передвижению.**"]}],"night":[{"weight":7.0,"color":"0xa4b0b0","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127551373257494648/night_windy.jpg","text":[":dash: :dash: Сильный ветер. За окном бушует сильный ночной ветер. Выходить наружу в такую погоду совсем не хочется - лучше посидеть и почитать книжку. **Вы получаете -1 к передвижению. Средний порог рефлексов оставит на вас головной убор!**"]},{"weight":5.0,"color":"0xa4b0b0","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127552040650948688/nught_windy1.jpg","text":[":dash: :recycle: *Переменный сильный ветер.* Сильный ветер, чья сила постоянно меняется.. снаружи то ветки активно шелестят, то всё резко затихает. И так всю ночь! Прогулка или охота? Забудьте.. **Во время этой погоды вы получаете -1 к точности атак и -1 к передвижению.**"]}]}},"fog":{"serverWeather":"fog","tags":["fog","wet"],"allowedPeriods":["sunset"],"cooldownTicks":8,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"humidity":-0.02,"groundWetness":-0.02,"wind":-0.1,"temperature":-0.3},"transitions":[{"to":"fog","weight":12},{"to":"cloudy","weight":18},{"to":"partly_cloudy","weight":22},{"to":"clear","weight":16},{"to":"wind","weight":8}],"presentations":{"sunset":[{"weight":11.6,"color":"0xf1ffec","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127539183892836444/windy_mist.jpg","text":[":fog: *Вечерний туман.* После дождя или после жаркого дня начал подниматься густой туман, что сигнализировал о похолодании. Редкое событие, что не позволит вам заняться своими делами. **Во время этой погоды вы получаете -3 к внимательности вне боя и в бою.**"],"stats":{"PER":-3}}]}},"groundmist":{"serverWeather":"groundmist","tags":["fog","wet","post_precipitation"],"allowedPeriods":["dawn"],"cooldownTicks":6,"duration":{"minTicks":1,"maxTicks":3},"atmosphereChanges":{"humidity":-0.03,"groundWetness":-0.02,"wind":-0.08,"temperature":0.2},"transitions":[{"to":"groundmist","weight":15},{"to":"cloudy_wind","weight":10},{"to":"partly_cloudy","weight":22},{"to":"clear","weight":18},{"to":"wind","weight":8}],"presentations":{"dawn":[{"weight":11.6,"color":"0xa2fe7a","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127514042152534108/morning_good.jpg","text":[":white_sun_small_cloud: Поздний восход. Как-то поздно утро начинается, солнце ещё даже не вышло из-за горизонта, и малые облака уже начинают виднеться над вершинами гор. Работа подождёт, ведь сон важнее."]}]}},"firefly":{"serverWeather":"firefly","tags":["clear","special","calm"],"allowedPeriods":["night","sunset"],"cooldownTicks":12,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"cloudiness":-0.08,"wind":-0.06,"instability":-0.03},"transitions":[{"to":"clear","weight":24},{"to":"wind","weight":10},{"to":"partly_cloudy","weight":8},{"to":"nighthorror","weight":1}],"presentations":{"sunset":[{"weight":8.0,"color":"0x22ce52","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127536943421472809/dawn_good.jpeg","text":[":sunrise_over_mountains: Закат. Красивый вечерний закат озаряет горные хребты Гризы. Прекрасная погода для простых посиделок прямо под этим самым солнышком. Лучи летнего светила ласкают ваше лицо: пора провести этот вечер с небольшой пользой. **Вы получаете +1 к броскам поиска трав и рыбалки.**"]}],"night":[{"weight":8.0,"color":"0x9aff88","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127549630352195634/night.jpg","text":[":crescent_moon: *Приятная ночь.* Сегодня ночь начинается самым спокойным образом! Тучи разошлись, оставляя озаряющую ночную луну. Ночная прогулка сегодня будет хорошим выбором."]}]}},"nighthorror":{"serverWeather":"nighthorror","tags":["special","horror","dark"],"allowedPeriods":["night","sunset"],"cooldownTicks":12,"duration":{"minTicks":1,"maxTicks":2},"atmosphereChanges":{"cloudiness":0.08,"instability":0.04,"temperature":-0.5},"transitions":[{"to":"clear","weight":16},{"to":"darkcloud","weight":20},{"to":"wind","weight":10},{"to":"firefly","weight":4}],"presentations":{"sunset":[{"weight":5.0,"color":"0x22ce52","image":"https://cdn.discordapp.com/attachments/539447933062479902/1081581544994512956/cloudy_silent.jpg","text":[":interrobang: *Напряженный вечер.* Тишина и неописуемое напряжение. Будучи снаружи, вам хочется поскорее уйти куда-то и спрятаться от чувства наблюдения за вами. Этот вечер точно не для прогулок. **Находясь в лесу, вы должны прокинуть средний порог решительности, чтобы не получить нервоз.**"]}],"night":[{"weight":12.6,"color":"0x525c5c","image":"https://cdn.discordapp.com/attachments/539447933062479902/1081591486396772392/Cloudy.jpg","text":[":black_large_square: *Мрак.* Темнейшая ночь. Сегодня, кажется, стемнело ещё раньше чем обычно.. ночью бродить во время такой погоды будет опасно! Захватите факел или фонарь.  **Во время этой погоды вы получаете -2 к внимательности во время боя и вне.**"],"stats":{"PER":-2}},{"weight":11.6,"color":"0x323838","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127553544174710804/night_special.png","text":[":black_large_square: :question: *Тихий мрак.* Ещё более тёмная погода. Облака застилают ночное небо так плотно, что даже вершин гор не видно с горных низин! Стало не очень приятно бродить снаружи, потому лучше быстрее вернуться домой и лечь спать! **Во время этой погоды вы не можете заниматься активностями, кроме рубки дерева. Вы получаете -3 к решительности во время боя и вне боя если находитесь в одиночестве. Если вы в сопровождении, то получаете только -1 к решительности во время боя и вне боя.**"],"stats":{"DET":-3}}]}},"dayhorror":{"serverWeather":"dayhorror","tags":["special","horror","calm"],"allowedPeriods":["day"],"cooldownTicks":24,"duration":{"minTicks":1,"maxTicks":1},"atmosphereChanges":{"wind":-0.12,"instability":0.1},"transitions":[{"to":"clear","weight":20},{"to":"wind","weight":10},{"to":"partly_cloudy","weight":10},{"to":"darkcloud","weight":6}],"presentations":{"day":[{"weight":11.6,"color":"0xa2fe7a","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127527071099404369/day_special2.jpg","text":[":high_brightness: *Подозрительно тихий полдень.* День наступил, и, кажется, сейчас.. тишина. Будто все вокруг резко перестали работать, а птички и животные спрятались в своих укрытиях.  **Во время этой погоды вы не можете заниматься добычей, кроме рубки дерева. Сложный порог решительности, чтобы не получить чувство нервоза.**"]}]}},"magicnight":{"serverWeather":"magicnight","tags":["special","magic","clear"],"allowedPeriods":["night"],"cooldownTicks":36,"duration":{"minTicks":1,"maxTicks":1},"atmosphereChanges":{"cloudiness":-0.1,"wind":-0.05,"instability":0.03},"transitions":[{"to":"clear","weight":25},{"to":"firefly","weight":10},{"to":"wind","weight":8},{"to":"darkcloud","weight":5}],"presentations":{"night":[{"weight":3.0,"color":"0x42ff20","image":"https://cdn.discordapp.com/attachments/539447933062479902/1127549416811802624/night_goodspecial.jpg","text":[":sparkles::crescent_moon: *Магическая ночь.* Сегодня звёзды и луна особенны. Свет из этих далёких миров, доходя до Ирдена, преломляется и становится немного голубоватым. Сегодня ночь просто прекрасна, даже для зачарователей. **Во время этой погоды вы получаете +2 к броску магии и восстанавливаете 2 маны.**"],"stats":{"MAG":2}}]}}}}
+</script>
+
+<script>
+"use strict";
+const $ = (s,r=document)=>r.querySelector(s);
+function el(tag, props, ...kids){
+  const n=document.createElement(tag);
+  for(const k in (props||{})){
+    const v=props[k];
+    if(k==="class")n.className=v;
+    else if(k==="style"&&typeof v==="object")Object.assign(n.style,v);
+    else if(k.slice(0,2)==="on"&&typeof v==="function")n.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==="html")n.innerHTML=v;
+    else if(v!==null&&v!==undefined&&v!==false)n.setAttribute(k, v===true?"":v);
+  }
+  for(const kid of kids.flat()){ if(kid==null||kid===false)continue; n.append(kid.nodeType?kid:document.createTextNode(String(kid))); }
+  return n;
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------- state ---------- */
+let MODEL, TAB="graph", SELECTED=null, SHOW_ALL_EDGES=false, GRAPH_FILTER="all";
+const TABS=[["graph","Граф"],["settings","Настройки"],["periods","Периоды"],["states","Состояния"],["global","Глобальные"],["sim","Симуляция"],["json","JSON"]];
+
+function loadDefault(){ return JSON.parse($("#default-config").textContent); }
+function boot(){
+  try{ MODEL = normalize(loadDefault()); }catch(e){ MODEL = normalize({settings:{},periods:{},states:{},globalTransitions:[]}); }
+  render();
+}
+
+/* fill missing collections so editing is safe; preserves everything present */
+function normalize(m){
+  m=m||{}; m.settings=m.settings||{};
+  const s=m.settings;
+  s.initialAtmosphere=s.initialAtmosphere||{}; s.atmosphereBounds=s.atmosphereBounds||{};
+  if(typeof s.historySize!=="number")s.historySize=24;
+  if(typeof s.sameStateMultiplier!=="number")s.sameStateMultiplier=1;
+  if(!s.defaultState)s.defaultState="";
+  m.periods=m.periods||{}; m.states=m.states||{}; m.globalTransitions=m.globalTransitions||[];
+  for(const id in m.states){ const d=m.states[id];
+    d.tags=d.tags||[]; d.allowedPeriods=d.allowedPeriods||[]; d.transitions=d.transitions||[];
+    d.atmosphereChanges=d.atmosphereChanges||{}; d.presentations=d.presentations||{};
+    if(typeof d.cooldownTicks!=="number")d.cooldownTicks=0;
+    d.duration=d.duration||{minTicks:1,maxTicks:1};
+    if(!d.serverWeather)d.serverWeather="";
+  }
+  return m;
+}
+const stateIds = ()=>Object.keys(MODEL.states);
+const periodIds = ()=>Object.keys(MODEL.periods);
+const atmoKeys = ()=>Object.keys(MODEL.settings.atmosphereBounds).length?Object.keys(MODEL.settings.atmosphereBounds):Object.keys(MODEL.settings.initialAtmosphere);
+
+/* ---------- color helpers ---------- */
+function normHex(c){ if(!c)return null; let x=String(c).trim().toLowerCase(); if(x.startsWith("0x"))x=x.slice(2); if(x.startsWith("#"))x=x.slice(1);
+  if(!/^[0-9a-f]{6}$/.test(x))return null; return "#"+x; }
+function toStored(hex){ if(!hex)return ""; return "0x"+hex.replace("#","").toLowerCase(); }
+function lum(hex){ const h=normHex(hex); if(!h)return .5; const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255;
+  return .2126*r+.7152*g+.0722*b; }
+const TAGCOLORS={dangerous:"#cf4b3a",storm:"#7c4bd0",horror:"#8a3b64",special:"#c98a2b",magic:"#3aa0c9",precipitation:"#2f76c9",wet:"#3a8fbf",fog:"#8fa3ad",clear:"#e0b13a",dry:"#caa24a",wind:"#5aa38b",cloudy:"#8895a0"};
+
+/* primary node fill from state's own color, fallback to tag color */
+function nodeFill(d){ const h=normHex(d.color); if(h)return h; for(const t of (d.tags||[])) if(TAGCOLORS[t])return TAGCOLORS[t]; return "#8895a0"; }
+
+/* ---------- validation ---------- */
+function validate(){
+  const errs=[], warns=[];
+  const S=MODEL.states, P=MODEL.periods, set=MODEL.settings;
+  const sids=new Set(Object.keys(S)), pids=new Set(Object.keys(P));
+  if(!Object.keys(S).length)errs.push(["states","Не задано ни одного состояния"]);
+  if(!set.defaultState)errs.push(["settings","Не задано состояние по умолчанию"]);
+  else if(!sids.has(set.defaultState))errs.push(["settings",`Состояние по умолчанию «${set.defaultState}» не существует`]);
+  // periods
+  if(!Object.keys(P).length)errs.push(["periods","Не задано ни одного периода"]);
+  for(const id in P){ const p=P[id];
+    if(p.fromHour<0||p.fromHour>23)errs.push(["periods",`Период «${id}»: fromHour вне 0–23`]);
+    if(p.toHour<1||p.toHour>24)errs.push(["periods",`Период «${id}»: toHour вне 1–24`]);
+    if(p.fromHour===p.toHour)errs.push(["periods",`Период «${id}»: нулевая длительность`]);
+  }
+  const cover=hourCoverage();
+  cover.forEach((n,h)=>{ if(n===0)errs.push(["periods",`Час ${h}:00 не покрыт ни одним периодом`]);
+    else if(n>1)errs.push(["periods",`Час ${h}:00 покрыт ${n} периодами (нужен ровно 1)`]); });
+  // states
+  const incoming=new Set();
+  const checkTrans=(list,src)=>{ for(const t of (list||[])){
+    if(!t.to||!sids.has(t.to))errs.push(["states",`Переход из «${src}» → «${t.to}» ведёт в неизвестное состояние`]);
+    else incoming.add(t.to);
+    if(typeof t.weight!=="number"||t.weight<0)errs.push(["states",`Переход «${src}» → «${t.to}»: вес должен быть ≥ 0`]);
+    for(const m of (t.modifiers||[])) if(typeof m.multiplier==="number"&&m.multiplier<0)errs.push(["states",`Модификатор «${src}» → «${t.to}»: множитель < 0`]);
+    for(const per of ((t.conditions&&t.conditions.periods)||[])) if(!pids.has(per))errs.push(["states",`Условие перехода «${src}» → «${t.to}» ссылается на неизвестный период «${per}»`]);
+  }};
+  for(const id in S){ const d=S[id];
+    if(!d.serverWeather)warns.push(["states",`«${id}»: пустой serverWeather (код для игры)`]);
+    for(const per of (d.allowedPeriods||[])) if(!pids.has(per))errs.push(["states",`«${id}»: allowedPeriods ссылается на неизвестный период «${per}»`]);
+    for(const per in (d.presentations||{})) if(per!=="*"&&!pids.has(per))errs.push(["states",`«${id}»: презентация для неизвестного периода «${per}»`]);
+    if(d.duration&&d.duration.minTicks>d.duration.maxTicks)warns.push(["states",`«${id}»: minTicks > maxTicks (движок подравняет)`]);
+    if(!(d.transitions||[]).length&&!MODEL.globalTransitions.length)warns.push(["states",`«${id}»: нет исходящих переходов (тупик)`]);
+    checkTrans(d.transitions,id);
+  }
+  checkTrans(MODEL.globalTransitions,"∀ глобальные");
+  for(const id in S){ if(id!==set.defaultState&&!incoming.has(id)){
+    const viaGlobal=MODEL.globalTransitions.some(t=>t.to===id);
+    if(!viaGlobal)warns.push(["states",`«${id}»: недостижимо (нет входящих переходов)`]);
+  }}
+  return {errs,warns};
+}
+function hourCoverage(){ const cover=new Array(24).fill(0);
+  for(const id in MODEL.periods){ const p=MODEL.periods[id],f=p.fromHour,t=p.toHour;
+    for(let h=0;h<24;h++){ const inside=f<t?(h>=f&&h<t):(h>=f||h<t); if(inside)cover[h]++; } }
+  return cover;
+}
+
+/* ---------- shell render ---------- */
+function render(){
+  renderNav();
+  const {errs,warns}=validate();
+  renderBadge(errs,warns); renderVlist(errs,warns);
+  const main=$("#main"); main.innerHTML="";
+  ({graph:renderGraph,settings:renderSettings,periods:renderPeriods,states:renderStates,global:renderGlobal,sim:renderSim,json:renderJson}[TAB])(main);
+}
+function renderNav(){
+  const nav=$("#nav"); nav.innerHTML="";
+  const counts={graph:stateIds().length,settings:"",periods:periodIds().length,states:stateIds().length,global:MODEL.globalTransitions.length,sim:"",json:""};
+  for(const [id,label] of TABS){
+    nav.append(el("a",{href:"#",class:id===TAB?"active":"",onclick:e=>{e.preventDefault();TAB=id;render();window.scrollTo(0,0);}},
+      el("span",{},label), counts[id]!==""?el("span",{class:"c num"},String(counts[id])):null));
+  }
+}
+function renderBadge(errs,warns){
+  const b=$("#vbadge"),t=$("#vtext");
+  if(errs.length){ b.className="badge bad"; t.textContent=`${errs.length} ${plural(errs.length,"ошибка","ошибки","ошибок")}`; }
+  else if(warns.length){ b.className="badge"; b.style.background="var(--warn-soft)"; b.style.color="var(--warn)"; t.textContent=`${warns.length} ${plural(warns.length,"замечание","замечания","замечаний")}`; }
+  else{ b.className="badge ok"; b.style.background=""; b.style.color=""; t.textContent="всё чисто"; }
+}
+function renderVlist(errs,warns){
+  const v=$("#vlist"); v.innerHTML="";
+  if(!errs.length&&!warns.length){ v.append(el("div",{class:"vclean"},"Конфигурация валидна ✓")); return; }
+  const add=(arr,cls)=>arr.slice(0,40).forEach(([tab,msg])=>{
+    v.append(el("div",{class:"vitem "+cls,style:{cursor:"pointer"},onclick:()=>{TAB=tab;render();}},
+      el("span",{class:"k"}), el("span",{},msg)));
+  });
+  add(errs,"err"); add(warns,"warn");
+}
+function plural(n,a,b,c){ n=Math.abs(n)%100; const d=n%10; if(n>10&&n<20)return c; if(d===1)return a; if(d>1&&d<5)return b; return c; }
+
+/* ---------- generic editors ---------- */
+function field(label,control,hint){ return el("div",{class:"field"}, el("label",{},label), control, hint?el("span",{class:"hint"},hint):null); }
+function numInput(val,on,opts={}){ const i=el("input",{type:"number",class:"num",value:val??"",step:opts.step??"any"});
+  if(opts.min!=null)i.min=opts.min; if(opts.max!=null)i.max=opts.max; if(opts.w)i.style.width=opts.w;
+  i.addEventListener("input",()=>{ const v=i.value===""?null:Number(i.value); on(v); softCommit(opts.graph); }); return i; }
+function textInput(val,on,opts={}){ const i=el("input",{type:"text",value:val??""}); if(opts.w)i.style.width=opts.w; if(opts.ph)i.placeholder=opts.ph;
+  i.addEventListener("input",()=>{ on(i.value); softCommit(opts.graph); }); return i; }
+function selectInput(val,options,on,opts={}){ const s=el("select");
+  if(opts.blank)s.append(el("option",{value:""},opts.blank));
+  for(const o of options){ const op=el("option",{value:o},o); if(o===val)op.selected=true; s.append(op); }
+  if(val&&!options.includes(val)){ const op=el("option",{value:val},val+" (?)"); op.selected=true; s.append(op); }
+  s.addEventListener("change",()=>{ on(s.value); softCommit(opts.graph); }); if(opts.w)s.style.width=opts.w; return s; }
+
+function chipsEditor(list,{tag=false}={}){
+  const wrap=el("div",{class:"chips"});
+  const redraw=()=>{ wrap.innerHTML="";
+    list.forEach((v,i)=>wrap.append(el("span",{class:"chip"+(tag?" tag":"")}, v,
+      el("button",{title:"Убрать",onclick:()=>{list.splice(i,1);redraw();softCommit(true);}},"×"))));
+    const inp=el("input",{type:"text",placeholder:"+ добавить",onkeydown:e=>{
+      if(e.key==="Enter"&&inp.value.trim()){ list.push(inp.value.trim()); inp.value=""; redraw(); softCommit(true); }}});
+    wrap.append(el("span",{class:"chip add"},inp));
+  };
+  redraw(); return wrap;
+}
+function periodChecks(selected){
+  const wrap=el("div",{class:"chips"});
+  periodIds().forEach(p=>{ const on=selected.includes(p);
+    wrap.append(el("button",{class:"chip"+(on?" tag":""),style:{cursor:"pointer"},onclick:()=>{
+      const i=selected.indexOf(p); if(i<0)selected.push(p); else selected.splice(i,1); softCommit(true); render();
+    }}, on?"✓ "+p:p));
+  });
+  if(!periodIds().length)wrap.append(el("span",{class:"empty"},"нет периодов"));
+  return wrap;
+}
+/* key→number map editor (atmosphereChanges, initialAtmosphere, stats) */
+function mapEditor(obj,{keyOptions=null,intVal=false,keyPh="ключ",graph=false}={}){
+  const box=el("div",{class:"grid",style:{gap:"7px"}});
+  const redraw=()=>{ box.innerHTML="";
+    Object.keys(obj).forEach(k=>{
+      box.append(el("div",{class:"kv"},
+        keyOptions?el("span",{class:"mono",style:{fontSize:"12px"}},k):textInput(k,nv=>{ if(nv&&nv!==k){ obj[nv]=obj[k]; delete obj[k]; } },{}),
+        numInput(obj[k],v=>obj[k]=(v==null?0:(intVal?Math.round(v):v)),{step:intVal?1:"any",w:"110px",graph}),
+        el("span",{}), el("button",{class:"iconbtn",title:"Удалить",onclick:()=>{delete obj[k];redraw();softCommit(graph);}},"×")));
+    });
+    const avail=keyOptions?keyOptions.filter(k=>!(k in obj)):null;
+    const adder = keyOptions
+      ? selectInput("", ["", ...(avail||[])], k=>{ if(k){ obj[k]=0; redraw(); softCommit(graph);} },{blank:"+ переменная"})
+      : (()=>{ const i=el("input",{type:"text",placeholder:"+ "+keyPh,onkeydown:e=>{ if(e.key==="Enter"&&i.value.trim()){ obj[i.value.trim()]=0; i.value=""; redraw(); softCommit(graph);} }}); return i; })();
+    box.append(el("div",{class:"row"},adder));
+  };
+  redraw(); return box;
+}
+/* atmosphere range map: key→{min?,max?} used in conditions */
+function rangeMapEditor(obj){
+  const box=el("div",{class:"grid",style:{gap:"7px"}});
+  const redraw=()=>{ box.innerHTML="";
+    box.append(el("div",{class:"kv tinyhead"},el("span",{},"переменная"),el("span",{},"мин"),el("span",{},"макс"),el("span",{})));
+    Object.keys(obj).forEach(k=>{ const r=obj[k]||{};
+      box.append(el("div",{class:"kv"},
+        el("span",{class:"mono",style:{fontSize:"12px"}},k),
+        numInput(r.min,v=>{ if(v==null)delete r.min; else r.min=v; obj[k]=r; },{w:"90px"}),
+        numInput(r.max,v=>{ if(v==null)delete r.max; else r.max=v; obj[k]=r; },{w:"90px"}),
+        el("button",{class:"iconbtn",onclick:()=>{delete obj[k];redraw();softCommit();}},"×")));
+    });
+    const avail=atmoKeys().filter(k=>!(k in obj));
+    box.append(el("div",{class:"row"},selectInput("",["",...avail],k=>{ if(k){obj[k]={min:0};redraw();softCommit();} },{blank:"+ ограничение"})));
+  };
+  redraw(); return box;
+}
+
+/* history condition editor {anyTags,allTags,anyStates,withinTicks} */
+function histEditor(getObj,setObj,title){
+  const wrap=el("div");
+  const redraw=()=>{ wrap.innerHTML=""; const h=getObj();
+    if(!h){ wrap.append(el("button",{class:"mini",onclick:()=>{setObj({withinTicks:4});redraw();softCommit();}},"+ "+title)); return; }
+    wrap.append(el("div",{class:"trow",style:{marginBottom:"0"}},
+      el("div",{class:"thead"},el("span",{class:"tinyhead"},title),
+        el("button",{class:"iconbtn",style:{marginLeft:"auto"},onclick:()=>{setObj(undefined);redraw();softCommit();}},"×")),
+      el("div",{class:"cond",style:{borderTop:"0",paddingTop:"6px"}},
+        field("в пределах тиков",numInput(h.withinTicks,v=>h.withinTicks=(v==null?1:Math.round(v)),{step:1,min:1,w:"90px"})),
+        field("любой из тегов",chipsEditor(h.anyTags=h.anyTags||[])),
+        field("все теги",chipsEditor(h.allTags=h.allTags||[])),
+        field("любое из состояний",chipsEditor(h.anyStates=h.anyStates||[])))));
+  };
+  redraw(); return wrap;
+}
+
+/* conditions editor: periods, tags, atmosphere, recent/absent */
+function conditionsEditor(getCond,setCond){
+  const wrap=el("div");
+  const redraw=()=>{ wrap.innerHTML=""; const c=getCond();
+    if(!c||isEmptyCond(c)){ wrap.append(el("button",{class:"mini",onclick:()=>{setCond({periods:[],atmosphere:{}});redraw();softCommit();}},"+ условия")); return; }
+    c.periods=c.periods||[]; c.currentAnyTags=c.currentAnyTags||[]; c.currentAllTags=c.currentAllTags||[]; c.atmosphere=c.atmosphere||{};
+    wrap.append(el("div",{class:"cond"},
+      el("div",{class:"thead"},el("span",{class:"tinyhead"},"условия перехода"),
+        el("button",{class:"iconbtn",style:{marginLeft:"auto"},title:"Убрать все условия",onclick:()=>{setCond(undefined);redraw();softCommit();}},"×")),
+      field("периоды",periodChecks(c.periods)),
+      field("любой из тегов текущей погоды",chipsEditor(c.currentAnyTags)),
+      field("все теги текущей погоды",chipsEditor(c.currentAllTags)),
+      field("атмосфера в диапазоне",rangeMapEditor(c.atmosphere)),
+      histEditor(()=>c.recentWeather,v=>c.recentWeather=v,"недавно была погода"),
+      histEditor(()=>c.absentRecentWeather,v=>c.absentRecentWeather=v,"недавно НЕ было погоды")));
+  };
+  redraw(); return wrap;
+}
+function isEmptyCond(c){ if(!c)return true;
+  return !(c.periods&&c.periods.length)&&!(c.currentAnyTags&&c.currentAnyTags.length)&&!(c.currentAllTags&&c.currentAllTags.length)
+    &&!(c.atmosphere&&Object.keys(c.atmosphere).length)&&!c.recentWeather&&!c.absentRecentWeather; }
+
+/* ---------- transitions ---------- */
+function transitionList(list,srcLabel){
+  const box=el("div");
+  const maxW=Math.max(1,...list.map(t=>t.weight||0));
+  const redraw=()=>{ box.innerHTML="";
+    if(!list.length)box.append(el("div",{class:"empty"},"нет переходов"));
+    list.forEach((t,i)=>{
+      const modsBox=el("div");
+      const drawMods=()=>{ modsBox.innerHTML="";
+        (t.modifiers||[]).forEach((m,mi)=>{ modsBox.append(el("div",{class:"trow",style:{background:"var(--panel)"}},
+          el("div",{class:"thead"},el("span",{class:"tinyhead"},"×"),
+            numInput(m.multiplier,v=>m.multiplier=(v==null?1:v),{w:"80px",step:"any"}),
+            el("span",{class:"hint"},"множитель веса при условии"),
+            el("button",{class:"iconbtn",style:{marginLeft:"auto"},onclick:()=>{t.modifiers.splice(mi,1);drawMods();softCommit();}},"×")),
+          el("div",{style:{marginTop:"8px"}},conditionsEditor(()=>m.condition,v=>m.condition=v)))); });
+        modsBox.append(el("button",{class:"mini",onclick:()=>{ t.modifiers=t.modifiers||[]; t.modifiers.push({condition:{atmosphere:{}},multiplier:1}); drawMods(); softCommit(); }},"+ модификатор"));
+      };
+      drawMods();
+      box.append(el("div",{class:"trow"},
+        el("div",{class:"thead"},
+          el("span",{class:"tinyhead"},"→"),
+          selectInput(t.to,stateIds(),v=>t.to=v,{w:"170px",graph:true,blank:"- выбрать -"}),
+          el("span",{class:"tinyhead"},"вес"),
+          numInput(t.weight,v=>t.weight=(v==null?0:v),{w:"80px",min:0,step:"any",graph:true}),
+          el("span",{class:"wbar",style:{flex:"1",maxWidth:"120px",width:(Math.max(3,(t.weight||0)/maxW*100))+"px"}}),
+          el("button",{class:"iconbtn",title:"Удалить переход",style:{marginLeft:"auto"},onclick:()=>{list.splice(i,1);redraw();softCommit(true);}},"×")),
+        conditionsEditor(()=>t.conditions,v=>t.conditions=v),
+        el("div",{class:"subhead"},el("span",{class:"line"}),el("h4",{},"модификаторы"),el("span",{class:"line"})),
+        modsBox));
+    });
+    box.append(el("button",{class:"mini",style:{marginTop:"4px"},onclick:()=>{list.push({to:stateIds()[0]||"",weight:10});redraw();softCommit(true);}},"+ переход"));
+  };
+  redraw(); return box;
+}
+
+/* ---------- presentations ---------- */
+function presentationsEditor(pres){
+  const box=el("div");
+  const redraw=()=>{ box.innerHTML="";
+    const keys=Object.keys(pres);
+    keys.forEach(period=>{
+      const list=pres[period];
+      const head=el("div",{class:"subhead"},
+        el("h4",{},"период: "+period),
+        el("span",{class:"line"}),
+        el("button",{class:"mini",onclick:()=>{list.push({weight:5,color:"0xffffff",image:"",text:[""]});redraw();softCommit();}},"+ вариант"),
+        el("button",{class:"iconbtn",title:"Удалить период",onclick:()=>{delete pres[period];redraw();softCommit();}},"×"));
+      box.append(head);
+      list.forEach((p,pi)=>box.append(presCard(p,()=>{list.splice(pi,1);redraw();softCommit();})));
+    });
+    const avail=[...periodIds(),"*"].filter(k=>!(k in pres));
+    box.append(el("div",{class:"row",style:{marginTop:"8px"}},
+      selectInput("",["",...avail],k=>{ if(k){pres[k]=[{weight:5,color:"0xffffff",image:"",text:[""]}];redraw();softCommit();} },{blank:"+ период презентации"})));
+  };
+  redraw(); return box;
+}
+function presCard(p,onDel){
+  const hex=normHex(p.color)||"#ffffff";
+  const swatch=el("span",{class:"swatch-box",style:{background:hex}});
+  const colorPick=el("input",{type:"color",value:hex,style:{width:"38px",height:"30px",padding:"2px"}});
+  colorPick.addEventListener("input",()=>{ p.color=toStored(colorPick.value); swatch.style.background=colorPick.value; softCommit(); });
+  const textBox=el("div",{class:"textlines"});
+  const drawText=()=>{ textBox.innerHTML="";
+    (p.text||[]).forEach((line,li)=>{ const ta=el("textarea",{rows:2},line); ta.value=line;
+      ta.addEventListener("input",()=>{ p.text[li]=ta.value; softCommit(); });
+      textBox.append(el("div",{class:"row",style:{flexWrap:"nowrap",alignItems:"flex-start"}}, ta,
+        el("button",{class:"iconbtn",onclick:()=>{p.text.splice(li,1);drawText();softCommit();}},"×"))); });
+    textBox.append(el("button",{class:"mini",onclick:()=>{p.text=p.text||[];p.text.push("");drawText();softCommit();}},"+ строка текста"));
+  };
+  drawText();
+  const imgLink = p.image ? el("a",{href:p.image,target:"_blank",rel:"noopener",class:"imglink"},"открыть ↗") : el("span",{class:"hint"},"нет ссылки");
+  return el("div",{class:"pcard"},
+    el("div",{class:"row"},
+      field("вес",numInput(p.weight,v=>p.weight=(v==null?1:v),{w:"80px",step:"any"})),
+      field("цвет",el("div",{class:"swatch-in"},swatch,colorPick,el("span",{class:"mono hint"}, p.color||""))),
+      el("div",{style:{marginLeft:"auto"}},el("button",{class:"iconbtn",title:"Удалить вариант",onclick:onDel},"×"))),
+    field("картинка (URL)",el("div",{class:"row",style:{flexWrap:"nowrap"}},textInput(p.image,v=>{p.image=v;},{w:"100%",ph:"https://…"}),imgLink)),
+    field("текст (варианты строк выбираются случайно)",textBox),
+    field("статы персонажа",mapEditor(p.stats=p.stats||{},{intVal:true,keyPh:"код (WIL, DET…)"})));
+}
+
+/* ---------- TAB: settings ---------- */
+function renderSettings(main){
+  const s=MODEL.settings;
+  main.append(
+    el("div",{},el("h2",{class:"sec"},"Настройки"),el("p",{class:"sec-lead"},"Глобальные параметры симуляции: стартовая точка, память истории и границы атмосферы.")),
+    el("div",{class:"panel",style:{padding:"16px"}},
+      el("div",{class:"grid",style:{gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))"}},
+        field("состояние по умолчанию",selectInput(s.defaultState,stateIds(),v=>s.defaultState=v,{blank:"- выбрать -",graph:true}),"старт и запасной вариант"),
+        field("размер истории (тиков)",numInput(s.historySize,v=>s.historySize=(v==null?1:Math.round(v)),{step:1,min:1}),"окно для cooldown / recentWeather"),
+        field("множитель того же состояния",numInput(s.sameStateMultiplier,v=>s.sameStateMultiplier=(v==null?1:v),{step:"any",min:0}),"склонность остаться в текущей погоде"))),
+    el("div",{class:"panel",style:{padding:"16px",marginTop:"14px"}},
+      el("div",{class:"eyebrow"},"стартовая атмосфера"),
+      el("p",{class:"sec-lead",style:{marginTop:"4px"}},"Значения переменных при инициализации (и после сброса состояния)."),
+      mapEditor(s.initialAtmosphere,{keyPh:"переменная"})),
+    el("div",{class:"panel",style:{padding:"16px",marginTop:"14px"}},
+      el("div",{class:"eyebrow"},"границы атмосферы"),
+      el("p",{class:"sec-lead",style:{marginTop:"4px"}},"Каждое изменение атмосферы клампится к этим пределам. Ключи отсюда доступны в условиях переходов."),
+      boundsEditor(s.atmosphereBounds)));
+}
+function boundsEditor(obj){
+  const box=el("div",{class:"grid",style:{gap:"7px"}});
+  const redraw=()=>{ box.innerHTML="";
+    box.append(el("div",{class:"kv tinyhead"},el("span",{},"переменная"),el("span",{},"мин"),el("span",{},"макс"),el("span",{})));
+    Object.keys(obj).forEach(k=>{ const r=obj[k]||{};
+      box.append(el("div",{class:"kv"},
+        textInput(k,nv=>{ if(nv&&nv!==k){obj[nv]=obj[k];delete obj[k];} },{}),
+        numInput(r.min,v=>{ if(v==null)delete r.min; else r.min=v; obj[k]=r; },{w:"100px"}),
+        numInput(r.max,v=>{ if(v==null)delete r.max; else r.max=v; obj[k]=r; },{w:"100px"}),
+        el("button",{class:"iconbtn",onclick:()=>{delete obj[k];redraw();softCommit();}},"×")));
+    });
+    const i=el("input",{type:"text",placeholder:"+ переменная",onkeydown:e=>{ if(e.key==="Enter"&&i.value.trim()){obj[i.value.trim()]={min:0,max:1};i.value="";redraw();softCommit();} }});
+    box.append(el("div",{class:"row"},i));
+  };
+  redraw(); return box;
+}
+
+/* ---------- TAB: periods ---------- */
+function renderPeriods(main){
+  main.append(el("div",{},el("h2",{class:"sec"},"Периоды суток"),
+    el("p",{class:"sec-lead"},"Каждый час 0–23 должен принадлежать ровно одному периоду. Диапазон может переходить через полночь (fromHour > toHour).")));
+  const cover=hourCoverage();
+  const clock=el("div",{class:"clock"});
+  for(let h=0;h<24;h++){ const pid=periodForHour(h); const bg=pid?periodColor(pid):"transparent";
+    clock.append(el("div",{class:"seg-h"+(cover[h]!==1?" gap":""),style:{background:cover[h]===1?bg:undefined},title:`${h}:00 - ${pid||"НЕ ПОКРЫТ"}${cover[h]>1?" (пересечение!)":""}`}, h%2===0?h:"")); }
+  const tbl=el("table",{class:"periods"});
+  tbl.append(el("thead",{},el("tr",{},["","период (id)","с часа","до часа","Discord-канал",""].map(h=>el("th",{},h)))));
+  const tb=el("tbody"); tbl.append(tb);
+  const redraw=()=>{ tb.innerHTML="";
+    Object.keys(MODEL.periods).forEach(id=>{ const p=MODEL.periods[id];
+      tb.append(el("tr",{},
+        el("td",{},el("span",{class:"swatch-box",style:{width:"16px",height:"16px",background:periodColor(id)}})),
+        el("td",{},textInput(id,nv=>{ if(nv&&nv!==id&&!(nv in MODEL.periods)){ MODEL.periods[nv]=MODEL.periods[id]; delete MODEL.periods[id]; render(); } },{w:"130px"})),
+        el("td",{},numInput(p.fromHour,v=>p.fromHour=(v==null?0:Math.round(v)),{step:1,min:0,max:23,w:"70px"})),
+        el("td",{},numInput(p.toHour,v=>p.toHour=(v==null?0:Math.round(v)),{step:1,min:1,max:24,w:"70px"})),
+        el("td",{},textInput(p.channelName,v=>p.channelName=v,{w:"100%"})),
+        el("td",{},el("button",{class:"iconbtn",onclick:()=>{delete MODEL.periods[id];render();}},"×"))));
+    });
+  };
+  redraw();
+  main.append(el("div",{class:"panel",style:{padding:"14px"}},
+    el("div",{class:"eyebrow"},"сутки · покрытие часов"), clock,
+    el("div",{style:{overflowX:"auto",marginTop:"14px"}},tbl),
+    el("div",{class:"row",style:{marginTop:"12px"}},
+      el("button",{class:"mini",onclick:()=>{ let n="period",i=1; while(n in MODEL.periods)n="period"+(++i); MODEL.periods[n]={fromHour:0,toHour:1,channelName:""}; render(); }},"+ период"))));
+}
+const PERIOD_PALETTE=["#3a6ea5","#c99a3a","#4aa3c9","#8a6bbf","#5aa38b","#b0603f"];
+function periodColor(id){ const ks=periodIds(); const i=ks.indexOf(id); return PERIOD_PALETTE[(i<0?0:i)%PERIOD_PALETTE.length]; }
+function periodForHour(h){ for(const id in MODEL.periods){ const p=MODEL.periods[id]; const inside=p.fromHour<p.toHour?(h>=p.fromHour&&h<p.toHour):(h>=p.fromHour||h<p.toHour); if(inside)return id; } return null; }
+
+/* ---------- TAB: states ---------- */
+function renderStates(main){
+  const head=el("div",{class:"row",style:{justifyContent:"space-between",alignItems:"center"}},
+    el("div",{},el("h2",{class:"sec"},"Состояния погоды"),el("p",{class:"sec-lead",style:{marginBottom:"0"}},`${stateIds().length} состояний. Клик по карточке раскрывает редактор.`)),
+    el("button",{class:"tbtn primary",onclick:addState},"+ состояние"));
+  main.append(head);
+  const filter=el("input",{type:"text",placeholder:"фильтр по id / тегу / serverWeather…",style:{margin:"14px 0",width:"100%",maxWidth:"340px"}});
+  filter.addEventListener("input",()=>drawCards(filter.value.trim().toLowerCase()));
+  main.append(filter);
+  const list=el("div"); main.append(list);
+  function drawCards(q=""){ list.innerHTML="";
+    stateIds().forEach(id=>{ const d=MODEL.states[id];
+      const hay=(id+" "+(d.tags||[]).join(" ")+" "+(d.serverWeather||"")).toLowerCase();
+      if(q&&!hay.includes(q))return;
+      list.append(stateCard(id,d,()=>drawCards(q)));
+    });
+    if(!list.children.length)list.append(el("div",{class:"empty"},"ничего не найдено"));
+  }
+  drawCards();
+}
+function stateCard(id,d,refresh){
+  const open = SELECTED===id;
+  const fill=nodeFill(d);
+  const badges=[];
+  if((d.tags||[]).includes("dangerous"))badges.push(el("span",{class:"pill danger"},"опасно"));
+  if((d.tags||[]).includes("special"))badges.push(el("span",{class:"pill special"},"особое"));
+  const card=el("div",{class:"card"+(open?" open":"")});
+  const body=el("div",{class:"card-body"});
+  const head=el("div",{class:"card-head",onclick:()=>{ card.classList.toggle("open"); if(card.classList.contains("open")&&!body.dataset.built){ buildBody(); } }},
+    el("span",{class:"stripe",style:{background:fill}}),
+    el("div",{class:"card-title"},
+      el("span",{class:"id"},id),
+      el("span",{class:"meta"},`${d.serverWeather||"-"} · ${(d.tags||[]).join(", ")||"без тегов"} · ${(d.transitions||[]).length} перех.`)),
+    ...badges,
+    el("span",{class:"chev"},"▶"));
+  function buildBody(){
+    body.dataset.built="1"; body.innerHTML="";
+    body.append(
+      el("div",{class:"grid",style:{gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",marginTop:"12px"}},
+        field("id состояния",(()=>{const b=el("button",{class:"mini",onclick:()=>renameState(id)},"переименовать «"+id+"»");return b;})(),"каскадно обновит ссылки"),
+        field("serverWeather (код для игры)",textInput(d.serverWeather,v=>d.serverWeather=v),"форсится на сервере через RCON"),
+        field("cooldown (тиков)",numInput(d.cooldownTicks,v=>d.cooldownTicks=(v==null?0:Math.round(v)),{step:1,min:0}),"мин. пауза перед повтором"),
+        field("длительность мин/макс",el("div",{class:"row",style:{flexWrap:"nowrap"}},
+          numInput(d.duration.minTicks,v=>d.duration.minTicks=(v==null?1:Math.round(v)),{step:1,min:1,w:"70px"}),
+          numInput(d.duration.maxTicks,v=>d.duration.maxTicks=(v==null?1:Math.round(v)),{step:1,min:1,w:"70px"}))),
+        field("цвет карточки/узла",(()=>{ const hex=normHex(d.color)||fill; const ci=el("input",{type:"color",value:hex,style:{width:"48px",height:"30px",padding:"2px"}});
+          ci.addEventListener("input",()=>{ d.color=toStored(ci.value); softCommit(true); render(); }); return el("div",{class:"swatch-in"},ci,el("span",{class:"mono hint"},d.color||"(из тега)")); })(),"наследует граф")),
+      el("div",{class:"subhead"},el("h4",{},"теги"),el("span",{class:"line"})),
+      chipsEditor(d.tags,{tag:true}),
+      el("div",{class:"subhead"},el("h4",{},"разрешённые периоды"),el("span",{class:"line"})),
+      periodChecks(d.allowedPeriods),
+      el("div",{class:"subhead"},el("h4",{},"изменения атмосферы за тик"),el("span",{class:"line"})),
+      mapEditor(d.atmosphereChanges,{keyOptions:atmoKeys()}),
+      el("div",{class:"subhead"},el("h4",{},"переходы"),el("span",{class:"line"})),
+      transitionList(d.transitions,id),
+      el("div",{class:"subhead"},el("h4",{},"презентации"),el("span",{class:"line"})),
+      presentationsEditor(d.presentations),
+      el("div",{style:{marginTop:"18px",textAlign:"right"}},
+        el("button",{class:"tbtn ghost",style:{color:"var(--crit)",borderColor:"var(--crit)"},onclick:()=>{
+          askConfirm(`Удалить состояние «${id}»?`,"Ссылки на это состояние станут ошибками валидации.").then(ok=>{
+            if(ok){ delete MODEL.states[id]; if(SELECTED===id)SELECTED=null; refresh(); softCommit(true); toast("Состояние удалено"); }
+          });
+        }},"Удалить состояние")));
+  }
+  if(open)buildBody();
+  card.append(head,body);
+  return card;
+}
+function addState(){
+  askText("id нового состояния (латиница, цифры, _)","").then(raw=>{
+    if(!raw)return; const id=raw.trim();
+    if(!/^[a-z0-9_]+$/i.test(id)){ toast("id: только латиница, цифры, _"); return; }
+    if(id in MODEL.states){ toast("такое состояние уже есть"); return; }
+    MODEL.states[id]={serverWeather:id,tags:[],allowedPeriods:periodIds(),cooldownTicks:0,duration:{minTicks:1,maxTicks:2},atmosphereChanges:{},transitions:[],presentations:{}};
+    SELECTED=id; render();
+  });
+}
+function renameState(old){
+  askText("Новый id для «"+old+"»",old).then(raw=>{
+    if(!raw)return; const nn=raw.trim(); if(nn===old)return;
+    if(!/^[a-z0-9_]+$/i.test(nn)){ toast("id: только латиница, цифры, _"); return; }
+    if(nn in MODEL.states){ toast("такое состояние уже есть"); return; }
+    const rebuilt={}; for(const k in MODEL.states)rebuilt[k===old?nn:k]=MODEL.states[k]; MODEL.states=rebuilt;
+    const fix=list=>{ for(const t of (list||[]))if(t.to===old)t.to=nn; };
+    for(const k in MODEL.states)fix(MODEL.states[k].transitions);
+    fix(MODEL.globalTransitions);
+    if(MODEL.settings.defaultState===old)MODEL.settings.defaultState=nn;
+    if(SELECTED===old)SELECTED=nn;
+    render(); toast("Переименовано, ссылки обновлены");
+  });
+}
+
+/* ---------- TAB: global ---------- */
+function renderGlobal(main){
+  main.append(el("div",{},el("h2",{class:"sec"},"Глобальные переходы"),
+    el("p",{class:"sec-lead"},"Кандидаты «из любого состояния». Добавляются к переходам текущего состояния при подсчёте весов - удобно для редких событий (туман, жара) без прописывания в каждом состоянии.")));
+  main.append(el("div",{class:"panel",style:{padding:"14px"}},transitionList(MODEL.globalTransitions,"∀")));
+}
+
+/* ---------- TAB: json ---------- */
+function renderJson(main){
+  main.append(el("div",{},el("h2",{class:"sec"},"JSON"),el("p",{class:"sec-lead"},"Готовый к вставке в weather-system.json. Можно вставить свой конфиг и применить.")));
+  const ta=el("textarea",{class:"jsonarea"}); ta.value=serialize();
+  const status=el("span",{class:"hint"});
+  main.append(el("div",{class:"row",style:{marginBottom:"10px"}},
+    el("button",{class:"tbtn primary",onclick:()=>{ copy(ta.value); }},"Скопировать"),
+    el("button",{class:"tbtn",onclick:()=>download(ta.value)},"Скачать .json"),
+    el("button",{class:"tbtn",onclick:()=>{ try{ MODEL=normalize(JSON.parse(ta.value)); SELECTED=null; render(); toast("Применено"); }catch(e){ status.textContent="Ошибка JSON: "+e.message; status.style.color="var(--crit)"; } }},"Применить из поля"),
+    status));
+  main.append(el("div",{class:"panel",style:{padding:"2px"}},ta));
+}
+
+/* ---------- serialize (tidy) ---------- */
+function serialize(){ return JSON.stringify(clean(MODEL),null,2); }
+function clean(m){
+  const out={settings:cleanSettings(m.settings),periods:{},globalTransitions:(m.globalTransitions||[]).map(cleanTrans),states:{}};
+  for(const id in m.periods){ const p=m.periods[id]; out.periods[id]={fromHour:p.fromHour,toHour:p.toHour,channelName:p.channelName||""}; }
+  for(const id in m.states)out.states[id]=cleanState(m.states[id]);
+  return out;
+}
+function cleanSettings(s){ const o={defaultState:s.defaultState,historySize:s.historySize,sameStateMultiplier:s.sameStateMultiplier,
+  initialAtmosphere:{...s.initialAtmosphere},atmosphereBounds:{}};
+  for(const k in s.atmosphereBounds)o.atmosphereBounds[k]=cleanRange(s.atmosphereBounds[k]); return o; }
+function cleanState(d){ const o={serverWeather:d.serverWeather||""};
+  if((d.tags||[]).length)o.tags=[...d.tags];
+  if((d.allowedPeriods||[]).length)o.allowedPeriods=[...d.allowedPeriods];
+  o.cooldownTicks=d.cooldownTicks||0;
+  o.duration={minTicks:d.duration.minTicks,maxTicks:d.duration.maxTicks};
+  if(Object.keys(d.atmosphereChanges||{}).length)o.atmosphereChanges={...d.atmosphereChanges};
+  if((d.transitions||[]).length)o.transitions=d.transitions.map(cleanTrans);
+  const pres={}; let any=false;
+  for(const per in (d.presentations||{})){ pres[per]=d.presentations[per].map(cleanPres); any=true; }
+  if(any)o.presentations=pres;
+  return o;
+}
+function cleanTrans(t){ const o={to:t.to,weight:t.weight};
+  const c=cleanCond(t.conditions); if(c)o.conditions=c;
+  if((t.modifiers||[]).length)o.modifiers=t.modifiers.map(m=>{ const mo={condition:cleanCond(m.condition)||{},multiplier:m.multiplier}; return mo; });
+  return o;
+}
+function cleanCond(c){ if(!c||isEmptyCond(c))return null; const o={};
+  if((c.periods||[]).length)o.periods=[...c.periods];
+  if((c.currentAnyTags||[]).length)o.currentAnyTags=[...c.currentAnyTags];
+  if((c.currentAllTags||[]).length)o.currentAllTags=[...c.currentAllTags];
+  const atm={}; let a=false; for(const k in (c.atmosphere||{})){ atm[k]=cleanRange(c.atmosphere[k]); a=true; } if(a)o.atmosphere=atm;
+  if(c.recentWeather)o.recentWeather=cleanHist(c.recentWeather);
+  if(c.absentRecentWeather)o.absentRecentWeather=cleanHist(c.absentRecentWeather);
+  return o;
+}
+function cleanHist(h){ const o={withinTicks:h.withinTicks||1};
+  if((h.anyTags||[]).length)o.anyTags=[...h.anyTags];
+  if((h.allTags||[]).length)o.allTags=[...h.allTags];
+  if((h.anyStates||[]).length)o.anyStates=[...h.anyStates];
+  return o; }
+function cleanRange(r){ const o={}; if(r&&r.min!=null)o.min=r.min; if(r&&r.max!=null)o.max=r.max; return o; }
+function cleanPres(p){ const o={weight:p.weight,color:p.color||"",image:p.image||"",text:[...(p.text||[])]};
+  if(Object.keys(p.stats||{}).length)o.stats={...p.stats}; return o; }
+
+/* ---------- graph ---------- */
+function renderGraph(main){
+  main.append(el("div",{},el("h2",{class:"sec"},"Граф переходов"),
+    el("p",{class:"sec-lead"},"Полу-марковская модель: узлы - состояния (цвет = их собственный color), дуги - переходы, толщина - вес. Кликните узел, чтобы выделить его окружение; ещё раз - сбросить.")));
+  const toolbar=el("div",{class:"gtoolbar"},
+    el("div",{class:"seg"},
+      ...[["all","все"],["clear","ясные"],["cloudy","облачные"],["wet","осадки"],["special","особые"]].map(([k,l])=>
+        el("button",{class:GRAPH_FILTER===k?"on":"",onclick:()=>{GRAPH_FILTER=k;render();}},l))),
+    el("button",{class:"tbtn ghost",onclick:()=>{SHOW_ALL_EDGES=!SHOW_ALL_EDGES;render();}}, SHOW_ALL_EDGES?"скрыть все дуги":"показать все дуги"),
+    SELECTED?el("button",{class:"tbtn ghost",onclick:()=>{SELECTED=null;render();}},"сбросить выбор ("+SELECTED+")"):null);
+  main.append(toolbar);
+  const wrap=el("div",{class:"graphwrap"});
+  const tip=el("div",{class:"gtip"});
+  wrap.append(buildSvg(tip),tip,
+    el("div",{class:"glegend"},
+      el("span",{},el("span",{class:"swatch",style:{background:"var(--accent)"}}),"исходящие"),
+      el("span",{},el("span",{class:"swatch",style:{background:"var(--muted)"}}),"входящие"),
+      el("span",{},el("span",{class:"swatch",style:{background:"#c98a2b"}}),"глобальные (∀)"),
+      el("span",{},"пунктир - переход с условиями"),
+      el("span",{class:"mono"},stateIds().length+" состояний · "+countEdges()+" переходов")));
+  main.append(wrap);
+  if(SELECTED)main.append(neighborPanel());
+}
+function countEdges(){ let n=MODEL.globalTransitions.length; for(const id in MODEL.states)n+=(MODEL.states[id].transitions||[]).length; return n; }
+function passFilter(d){ if(GRAPH_FILTER==="all")return true;
+  const tags=d.tags||[];
+  if(GRAPH_FILTER==="clear")return tags.includes("clear");
+  if(GRAPH_FILTER==="cloudy")return tags.includes("cloudy")||tags.includes("fog");
+  if(GRAPH_FILTER==="wet")return tags.includes("precipitation")||tags.includes("wet");
+  if(GRAPH_FILTER==="special")return tags.includes("special");
+  return true;
+}
+const SVGNS="http://www.w3.org/2000/svg";
+function svg(tag,attrs){ const n=document.createElementNS(SVGNS,tag); for(const k in attrs)n.setAttribute(k,attrs[k]); return n; }
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#888"; }
+let GC={};
+function buildSvg(tip){
+  GC={accent:cssVar("--accent"),muted:cssVar("--muted"),ink:cssVar("--ink"),line:cssVar("--line"),panel:cssVar("--panel"),glob:"#c98a2b"};
+  const ids=stateIds().filter(id=>passFilter(MODEL.states[id]));
+  const N=ids.length, W=1000, H=760, cx=W/2, cy=H/2+6, R=Math.min(W,H)/2-120;
+  const root=svg("svg",{viewBox:`0 0 ${W} ${H}`,preserveAspectRatio:"xMidYMid meet",role:"img","aria-label":"Граф переходов погоды"});
+  const defs=svg("defs");
+  defs.append(marker("arrow",GC.accent),marker("arrow-mut",GC.muted),marker("arrow-glob",GC.glob));
+  root.append(defs);
+  const pos={}; ids.forEach((id,i)=>{ const a=-Math.PI/2+i/N*2*Math.PI; pos[id]={x:cx+R*Math.cos(a),y:cy+R*Math.sin(a),a}; });
+  const gEdges=svg("g",{}), gNodes=svg("g",{});
+  root.append(gEdges,gNodes);
+  const sel=SELECTED&&pos[SELECTED]?SELECTED:null;
+  const inSet=new Set(), outSet=new Set();
+  if(sel){ (MODEL.states[sel].transitions||[]).forEach(t=>{ if(pos[t.to])outSet.add(t.to); });
+    for(const id of ids)for(const t of (MODEL.states[id].transitions||[]))if(t.to===sel)inSet.add(id);
+    MODEL.globalTransitions.forEach(t=>{ if(pos[t.to])outSet.add("∀:"+t.to); });
+  }
+  // edges
+  const edge=(from,to,weight,cond,kind)=>{
+    if(!pos[from]||!pos[to])return;
+    const a=pos[from],b=pos[to];
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const cxp=mx+(cx-mx)*0.28, cyp=my+(cy-my)*0.28;
+    const width=Math.max(.7,Math.min(6,Math.sqrt(weight)));
+    let color=GC.line, opacity=SHOW_ALL_EDGES?0.22:0.0, marker="";
+    if(kind==="out"){ color=GC.accent; opacity=.9; marker="url(#arrow)"; }
+    else if(kind==="in"){ color=GC.muted; opacity=.8; marker="url(#arrow-mut)"; }
+    else if(kind==="glob"){ color=GC.glob; opacity=.9; marker="url(#arrow-glob)"; }
+    else{ color=GC.muted; }
+    if(opacity<=0)return;
+    const p=svg("path",{d:`M${a.x},${a.y} Q${cxp},${cyp} ${b.x},${b.y}`,fill:"none",stroke:color,
+      "stroke-width":width,"stroke-opacity":opacity,"stroke-linecap":"round"});
+    if(cond)p.setAttribute("stroke-dasharray","2 5");
+    if(marker)p.setAttribute("marker-end",marker);
+    gEdges.append(p);
+  };
+  if(sel){
+    (MODEL.states[sel].transitions||[]).forEach(t=>edge(sel,t.to,t.weight,hasCond(t),"out"));
+    for(const id of ids)for(const t of (MODEL.states[id].transitions||[]))if(t.to===sel)edge(id,sel,t.weight,hasCond(t),"in");
+    MODEL.globalTransitions.forEach(t=>edge(sel,t.to,t.weight,hasCond(t),"glob"));
+  } else if(SHOW_ALL_EDGES){
+    for(const id of ids)for(const t of (MODEL.states[id].transitions||[]))edge(id,t.to,t.weight,hasCond(t),"all");
+  }
+  // nodes
+  ids.forEach(id=>{ const d=MODEL.states[id],p=pos[id];
+    const fill=nodeFill(id&&d?d:d);
+    const dim = sel && id!==sel && !inSet.has(id) && !outSet.has(id) && !outSet.has("∀:"+id);
+    const g=svg("g",{class:"gnode",transform:`translate(${p.x},${p.y})`,opacity:dim?0.28:1});
+    const isSel=id===sel;
+    const c=svg("circle",{r:isSel?18:13,fill,stroke:isSel?GC.accent:(lum(fill)>.7?"rgba(0,0,0,.35)":"rgba(255,255,255,.55)"),"stroke-width":isSel?3:1.5});
+    const right=p.x>=cx;
+    const label=svg("text",{x:right?20:-20,y:5,"text-anchor":right?"start":"end",fill:GC.ink});
+    label.textContent=id;
+    g.append(c,label);
+    g.addEventListener("click",e=>{ e.stopPropagation(); SELECTED=(SELECTED===id?null:id); render(); });
+    g.addEventListener("mousemove",e=>showTip(tip,e,id,d));
+    g.addEventListener("mouseenter",e=>showTip(tip,e,id,d));
+    g.addEventListener("mouseleave",()=>tip.classList.remove("show"));
+    gNodes.append(g);
+  });
+  root.addEventListener("click",()=>{ if(SELECTED){SELECTED=null;render();} });
+  // center marker for global
+  if(sel){ const gm=svg("g",{transform:`translate(${cx},${cy})`});
+    gm.append(svg("circle",{r:7,fill:GC.glob,opacity:.5}));
+    const tx=svg("text",{x:0,y:4,"text-anchor":"middle",fill:GC.muted,"font-size":"13"}); tx.textContent="∀";
+    gm.append(tx); root.append(gm);
+  }
+  return root;
+}
+function marker(id,color){ const m=svg("marker",{id,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"});
+  m.append(svg("path",{d:"M0,0 L10,5 L0,10 z",fill:color})); return m; }
+function hasCond(t){ return t.conditions&&!isEmptyCond(t.conditions); }
+function showTip(tip,e,id,d){
+  const wrap=tip.parentElement.getBoundingClientRect();
+  tip.innerHTML="";
+  tip.append(el("div",{class:"t"},id));
+  tip.append(el("div",{},`${d.serverWeather||"-"} · ${(d.tags||[]).join(", ")||"без тегов"}`));
+  tip.append(el("div",{style:{color:"#9fb4c2",marginTop:"3px"}},`периоды: ${(d.allowedPeriods||[]).join(", ")||"любые"}`));
+  tip.append(el("div",{style:{color:"#9fb4c2"}},`длит. ${d.duration.minTicks}–${d.duration.maxTicks}, cooldown ${d.cooldownTicks}`));
+  tip.append(el("div",{style:{color:"#9fb4c2"}},`переходов: ${(d.transitions||[]).length}`));
+  let x=e.clientX-wrap.left+14, y=e.clientY-wrap.top+14;
+  if(x>wrap.width-260)x=wrap.width-270; if(x<6)x=6;
+  tip.style.left=x+"px"; tip.style.top=y+"px"; tip.classList.add("show");
+}
+function neighborPanel(){
+  const d=MODEL.states[SELECTED];
+  const out=(d.transitions||[]).map(t=>[t.to,t.weight,hasCond(t)]);
+  const inc=[]; for(const id of stateIds())for(const t of (MODEL.states[id].transitions||[]))if(t.to===SELECTED)inc.push([id,t.weight,hasCond(t)]);
+  const glob=MODEL.globalTransitions.filter(t=>t.to===SELECTED).map(t=>[t.weight,hasCond(t)]);
+  const line=(arr,dir)=>el("div",{},
+    el("div",{class:"tinyhead",style:{marginBottom:"6px"}},dir),
+    el("div",{class:"chips"}, arr.length?arr.map(([to,w,c])=>el("span",{class:"chip",style:{cursor:"pointer"},onclick:()=>{SELECTED=to;render();}},
+      to,el("span",{class:"mono",style:{color:"var(--muted)"}},"·"+w+(c?" ⚡":"")))):el("span",{class:"empty"},"нет")));
+  return el("div",{class:"panel",style:{padding:"16px",marginTop:"14px"}},
+    el("div",{class:"eyebrow"},"окружение · "+SELECTED),
+    el("div",{class:"grid",style:{gridTemplateColumns:"1fr 1fr",gap:"18px",marginTop:"10px"}},
+      line(out,"→ исходящие"),
+      line(inc,"← входящие")),
+    glob.length?el("div",{style:{marginTop:"12px"}},el("span",{class:"tinyhead"},"также доступно глобально (∀): "),
+      el("span",{class:"mono"},glob.map(([w,c])=>"вес "+w+(c?" ⚡":"")).join(", "))):null,
+    el("div",{style:{marginTop:"14px"}},el("button",{class:"tbtn",onclick:()=>{TAB="states";render();setTimeout(()=>{},0);}},"открыть в редакторе →")));
+}
+
+/* ---------- TAB: simulation ---------- */
+function mulberry32(a){ return function(){ a|=0;a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function simulate(ticks){
+  const S=MODEL.states, SET=MODEL.settings, G=MODEL.globalTransitions, B=SET.atmosphereBounds||{};
+  const HIST=SET.historySize||24, SAME=SET.sameStateMultiplier||1;
+  const start=SET.defaultState;
+  if(!start||!S[start])return {error:"Не задано корректное состояние по умолчанию (вкладка «Настройки»)."};
+  const cover=hourCoverage(); if(cover.some(n=>n!==1))return {error:"Периоды не покрывают ровно каждый час 0–23. Исправьте на вкладке «Периоды», иначе симуляция недостоверна."};
+  const rnd=mulberry32(0x9e3779b9);
+  const clampv=(k,v)=>{ const b=B[k]; if(!b)return v; if(b.min!=null)v=Math.max(b.min,v); if(b.max!=null)v=Math.min(b.max,v); return v; };
+  const applyAtmo=(atmo,ch)=>{ const a=Object.assign({},atmo); for(const k in (ch||{}))a[k]=clampv(k,(a[k]||0)+ch[k]); return a; };
+  const allowed=(d,per)=>{ const ap=d.allowedPeriods||[]; return !ap.length || (per!=null&&ap.includes(per)); };
+  const rngOk=(r,v)=>((r.min==null)||v>=r.min)&&((r.max==null)||v<=r.max);
+  const histMatch=(tl,c)=>{ const lim=Math.min(Math.max(1,c.withinTicks||1),tl.length);
+    for(let i=0;i<lim;i++){ const e=tl[i];
+      const anyt=!(c.anyTags&&c.anyTags.length)||c.anyTags.some(t=>e.tags.includes(t));
+      const allt=(c.allTags||[]).every(t=>e.tags.includes(t));
+      const st=!(c.anyStates&&c.anyStates.length)||c.anyStates.includes(e.stateId);
+      if(anyt&&allt&&st)return true; } return false; };
+  const condMatch=(c,per,curId,curDef,atmo,history)=>{ if(!c||isEmptyCond(c))return true;
+    if((c.periods&&c.periods.length)&&!c.periods.includes(per))return false;
+    const tags=curDef.tags||[];
+    if((c.currentAnyTags&&c.currentAnyTags.length)&&!c.currentAnyTags.some(t=>tags.includes(t)))return false;
+    if(!(c.currentAllTags||[]).every(t=>tags.includes(t)))return false;
+    for(const k in (c.atmosphere||{})) if(!rngOk(c.atmosphere[k],atmo[k]||0))return false;
+    const tl=[{stateId:curId,tags:tags}].concat(history);
+    if(c.recentWeather&&!histMatch(tl,c.recentWeather))return false;
+    if(c.absentRecentWeather&&histMatch(tl,c.absentRecentWeather))return false;
+    return true; };
+  const onCd=(to,tdef,curId,history)=>{ const cd=tdef.cooldownTicks||0; if(cd<=0)return false; if(curId===to)return true;
+    const lim=Math.min(cd,history.length); for(let i=0;i<lim;i++) if(history[i].stateId===to)return true; return false; };
+  const randDur=d=>{ const a=(d&&d.minTicks)||1,b=Math.max(a,(d&&d.maxTicks)||1); return a>=b?a:a+Math.floor(rnd()*(b-a+1)); };
+
+  const timeIn={},entries={},attempted={},eligible={};
+  Object.keys(S).forEach(id=>{timeIn[id]=0;entries[id]=0;});
+  const aStat={}; for(const k in B)aStat[k]={min:Infinity,max:-Infinity,sum:0};
+  let cur=start, atmo=Object.assign({},SET.initialAtmosphere), rem=randDur(S[cur].duration), history=[], hour=0;
+  for(let t=0;t<ticks;t++){
+    const per=periodForHour(hour), cdef=S[cur];
+    atmo=applyAtmo(atmo,cdef.atmosphereChanges);
+    for(const k in aStat){ const v=atmo[k]||0; const s=aStat[k]; if(v<s.min)s.min=v; if(v>s.max)s.max=v; s.sum+=v; }
+    timeIn[cur]++;
+    history.unshift({stateId:cur,tags:cdef.tags||[]}); if(history.length>HIST)history.length=HIST;
+    if(allowed(cdef,per)&&rem>1){ rem--; }
+    else{
+      const cand={};
+      const consider=(rule,key)=>{ const to=rule.to, tdef=S[to]; if(!tdef)return;
+        attempted[key]=(attempted[key]||0)+1;
+        if(!allowed(tdef,per))return; if(onCd(to,tdef,cur,history))return;
+        if(!condMatch(rule.conditions,per,cur,cdef,atmo,history))return;
+        eligible[key]=(eligible[key]||0)+1;
+        let w=rule.weight||0;
+        for(const m of (rule.modifiers||[])) if(condMatch(m.condition,per,cur,cdef,atmo,history))w*=(m.multiplier||1);
+        if(to===cur)w*=SAME; if(w>0)cand[to]=(cand[to]||0)+w;
+      };
+      for(const rule of (cdef.transitions||[]))consider(rule,cur+"→"+rule.to);
+      for(const rule of G)consider(rule,"∀→"+rule.to);
+      let sel; const keys=Object.keys(cand);
+      if(!keys.length)sel=allowed(cdef,per)?cur:start;
+      else{ let tot=0; for(const k of keys)tot+=cand[k]; let roll=rnd()*tot; sel=keys[keys.length-1];
+        for(const k of keys){ roll-=cand[k]; if(roll<=0){sel=k;break;} } }
+      if(sel!==cur)entries[sel]=(entries[sel]||0)+1;
+      cur=sel; rem=randDur(S[sel].duration);
+    }
+    hour=(hour+1)%24;
+  }
+  const atmo2={}; for(const k in aStat){ const s=aStat[k]; atmo2[k]={min:s.min===Infinity?0:s.min,max:s.max===-Infinity?0:s.max,mean:s.sum/ticks,bound:B[k]||{}}; }
+  const dead=[];
+  const minAtt=Math.max(30,ticks/2000);
+  for(const key in attempted){ const att=attempted[key], e=eligible[key]||0;
+    let rule=null,glob=key.startsWith("∀→"); const to=key.split("→")[1]; const src=key.split("→")[0];
+    const pool=glob?G:((S[src]&&S[src].transitions)||[]); for(const r of pool)if(r.to===to){rule=r;break;}
+    const hasC=rule&&rule.conditions&&!isEmptyCond(rule.conditions);
+    if(hasC&&att>=minAtt&&e/att<0.03)dead.push({src,to,pass:e/att,e,att,glob});
+  }
+  dead.sort((a,b)=>a.pass-b.pass);
+  return {ticks,timeIn,entries,atmo:atmo2,dead};
+}
+
+function renderSim(main){
+  main.append(el("div",{},el("h2",{class:"sec"},"Симуляция"),
+    el("p",{class:"sec-lead"},"Прогон движка в браузере: 1 тик = 1 час, старт с полуночи, детерминированный seed. Показывает, куда реально сходится модель - распределение погод и равновесие атмосферы.")));
+  const ticksIn=el("input",{type:"number",class:"num",value:"30000",step:"100",min:"1",style:{width:"120px"}});
+  const out=el("div");
+  const run=()=>{ let n=Math.round(Number(ticksIn.value)||30000); n=Math.max(1,Math.min(200000,n)); ticksIn.value=n;
+    out.innerHTML=""; out.append(el("div",{class:"empty"},"считаю…"));
+    setTimeout(()=>{ const r=simulate(n); drawSim(out,r); },10); };
+  main.append(el("div",{class:"gtoolbar"},
+    field("тиков (часов)",ticksIn),
+    el("button",{class:"tbtn primary",style:{alignSelf:"flex-end"},onclick:run},"Прогнать"),
+    el("span",{class:"hint",style:{alignSelf:"flex-end"}},"~1 час игрового времени = 1 тик крона")),
+    out);
+  run();
+}
+function drawSim(out,r){
+  out.innerHTML="";
+  if(r.error){ out.append(el("div",{class:"panel",style:{padding:"16px",borderColor:"var(--crit)"}},
+    el("span",{class:"simbadge crit"},"нельзя симулировать"),el("p",{style:{marginTop:"8px",marginBottom:0}},r.error))); return; }
+  const ids=Object.keys(r.timeIn).sort((a,b)=>r.timeIn[b]-r.timeIn[a]);
+  const seen=ids.filter(id=>r.timeIn[id]>0).length, unreach=ids.filter(id=>r.entries[id]===0&&id!==MODEL.settings.defaultState&&r.timeIn[id]===0).length;
+  const pinned=Object.keys(r.atmo).filter(k=>{ const a=r.atmo[k],b=a.bound; if(b.min==null||b.max==null||b.max<=b.min)return false; const f=(a.mean-b.min)/(b.max-b.min); return f<=0.12||f>=0.88; }).length;
+  out.append(el("div",{class:"statrow"},
+    stat(r.ticks.toLocaleString("ru"),"тиков"),
+    stat(seen+" / "+ids.length,"погод встречено"),
+    stat(String(unreach),"недостижимо",unreach?"crit":"ok"),
+    stat(String(pinned),"переменных у границы",pinned?"warn":"ok")));
+  // atmosphere
+  const atmoPanel=el("div",{class:"panel",style:{padding:"16px"}},el("div",{class:"eyebrow"},"равновесие атмосферы"),
+    el("p",{class:"sec-lead",style:{margin:"4px 0 12px"}},"Полоса - наблюдаемый диапазон в пределах границ, засечка - среднее. «Прижата к границе» = дельты несбалансированы (сумма по времени тянет в пол/потолок)."));
+  for(const k in r.atmo)atmoPanel.append(atmoBar(k,r.atmo[k]));
+  out.append(atmoPanel);
+  // distribution
+  const maxPct=Math.max(...ids.map(id=>r.timeIn[id]))/r.ticks*100||1;
+  const distPanel=el("div",{class:"panel",style:{padding:"16px",marginTop:"14px"}},
+    el("div",{class:"eyebrow"},"распределение состояний · доля времени"),
+    el("div",{class:"sbar",style:{marginTop:"10px",color:"var(--muted)"}},
+      el("span",{class:"tinyhead"},"состояние"),el("span",{class:"tinyhead"},""),el("span",{class:"tinyhead",style:{textAlign:"right"}},"% времени"),el("span",{class:"tinyhead",style:{textAlign:"right"}},"входов")));
+  ids.forEach(id=>{ const d=MODEL.states[id],pct=r.timeIn[id]/r.ticks*100,fill=nodeFill(d);
+    const rare=r.timeIn[id]===0?"crit":(pct<0.1?"warn":null);
+    distPanel.append(el("div",{class:"sbar"},
+      el("span",{class:"id"},el("span",{class:"sw",style:{background:fill}}),id,
+        rare==="crit"?el("span",{class:"simbadge crit"},"нет"):(rare==="warn"?el("span",{class:"simbadge warn"},"редко"):null)),
+      el("div",{class:"track"},el("div",{class:"fill",style:{width:Math.max(0.5,pct/maxPct*100)+"%",background:fill,opacity:.85}})),
+      el("span",{class:"pct"},pct.toFixed(2)+"%"),
+      el("span",{class:"pct",style:{color:"var(--muted)"}},String(r.entries[id]))));
+  });
+  out.append(distPanel);
+  // dead conditions
+  if(r.dead.length){ const dp=el("div",{class:"panel",style:{padding:"16px",marginTop:"14px"}},
+      el("div",{class:"eyebrow"},"условия, которые почти никогда не проходят"),
+      el("p",{class:"sec-lead",style:{margin:"4px 0 10px"}},"Переход достижим по правилу, но его условие выполняется <3% попыток - цель практически недостижима этим путём."));
+    r.dead.slice(0,24).forEach(x=>dp.append(el("div",{class:"sbar",style:{gridTemplateColumns:"1fr 90px 90px"}},
+      el("span",{class:"id"},(x.glob?"∀":x.src)+" → "+x.to),
+      el("span",{class:"pct",style:{color:"var(--warn)"}},(x.pass*100).toFixed(2)+"%"),
+      el("span",{class:"pct",style:{color:"var(--muted)"}},x.e+"/"+x.att))));
+    out.append(dp);
+  }
+}
+function stat(v,l,cls){ return el("div",{class:"stat"},el("div",{class:"v",style:cls?{color:"var(--"+(cls==="crit"?"crit":cls==="warn"?"warn":"ok")+")"}:{}},v),el("div",{class:"l"},l)); }
+function atmoBar(name,a){
+  const b=a.bound, has=b.min!=null&&b.max!=null&&b.max>b.min;
+  const pct=x=>has?Math.max(0,Math.min(100,(x-b.min)/(b.max-b.min)*100)):50;
+  const lo=pct(a.min),hi=pct(a.max),mp=pct(a.mean);
+  let status="-",cls="ok";
+  if(has){ const f=(a.mean-b.min)/(b.max-b.min);
+    if(f<=0.12){status="прижата к полу";cls="crit";} else if(f>=0.88){status="прижата к потолку";cls="crit";}
+    else if(f<=0.25){status="дрейф вниз";cls="warn";} else if(f>=0.75){status="дрейф вверх";cls="warn";} else status="стабильна"; }
+  return el("div",{class:"abar"},
+    el("span",{class:"name"},name),
+    el("div",{class:"track"},
+      el("div",{class:"band",style:{left:Math.min(lo,hi)+"%",width:Math.max(1.5,Math.abs(hi-lo))+"%"}}),
+      el("div",{class:"mean",style:{left:mp+"%"}})),
+    el("span",{class:"nums"},a.min.toFixed(2)+" · "+a.mean.toFixed(2)+" · "+a.max.toFixed(2)),
+    el("span",{style:{textAlign:"right"}},el("span",{class:"simbadge "+cls},status)));
+}
+
+/* ---------- commit / io ---------- */
+let softTimer=null, graphDirty=false;
+function softCommit(affectsGraph){ if(affectsGraph)graphDirty=true;
+  clearTimeout(softTimer);
+  softTimer=setTimeout(()=>{ const {errs,warns}=validate(); renderBadge(errs,warns); renderVlist(errs,warns); renderNav();
+    if(graphDirty&&TAB==="graph"){ graphDirty=false; render(); } },180);
+}
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1900); }
+/* inline modals - sandboxed artifacts block window.prompt/confirm */
+function modal(build){ return new Promise(resolve=>{
+  const ov=el("div",{class:"modal-ov"}), box=el("div",{class:"modal"}); let done=false;
+  const finish=v=>{ if(done)return; done=true; ov.classList.remove("show"); document.removeEventListener("keydown",esc); setTimeout(()=>ov.remove(),140); resolve(v); };
+  function esc(e){ if(e.key==="Escape")finish(null); }
+  ov.append(box); document.body.append(ov); requestAnimationFrame(()=>ov.classList.add("show"));
+  ov.addEventListener("mousedown",e=>{ if(e.target===ov)finish(null); });
+  document.addEventListener("keydown",esc);
+  build(box,finish);
+});}
+function askText(title,initial){ return modal((box,finish)=>{
+  const inp=el("input",{type:"text",value:initial||""});
+  box.append(el("h3",{},title),inp,el("div",{class:"actions"},
+    el("button",{class:"tbtn ghost",onclick:()=>finish(null)},"Отмена"),
+    el("button",{class:"tbtn primary",onclick:()=>finish(inp.value)},"OK")));
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter")finish(inp.value); });
+  setTimeout(()=>{inp.focus();inp.select();},30);
+});}
+function askConfirm(title,msg,okLabel){ return modal((box,finish)=>{
+  box.append(el("h3",{},title),msg?el("p",{},msg):null,el("div",{class:"actions"},
+    el("button",{class:"tbtn ghost",onclick:()=>finish(false)},"Отмена"),
+    el("button",{class:"tbtn primary",style:{background:"var(--crit)",borderColor:"var(--crit)"},onclick:()=>finish(true)},okLabel||"Удалить")));
+});}
+function copy(text){ navigator.clipboard?.writeText(text).then(()=>toast("Скопировано в буфер"),()=>toast("Не удалось скопировать")); }
+function download(text){ const blob=new Blob([text],{type:"application/json"}); const url=URL.createObjectURL(blob);
+  const a=el("a",{href:url,download:"weather-system.json"}); document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url); toast("Файл сохранён"); }
+function importJson(text,name){ try{ MODEL=normalize(JSON.parse(text)); SELECTED=null; if(name)$("#filelabel").textContent=name; render(); toast("Загружено: "+(name||"из буфера")); }
+  catch(e){ toast("Ошибка JSON: "+e.message); } }
+
+/* ---------- theme ---------- */
+function initTheme(){
+  const saved=null; // sessionStorage may be unavailable; default to system
+  $("#btn-theme").addEventListener("click",()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const sysDark=matchMedia("(prefers-color-scheme:dark)").matches;
+    const next = cur ? (cur==="dark"?"light":"dark") : (sysDark?"light":"dark");
+    document.documentElement.setAttribute("data-theme",next); if(TAB==="graph")render();
+  });
+}
+
+/* ---------- wire ---------- */
+$("#btn-export").addEventListener("click",()=>{ TAB="json"; render(); window.scrollTo(0,0); });
+$("#btn-reset").addEventListener("click",()=>{ askConfirm("Загрузить встроенный пример?","Текущие правки будут потеряны.","Загрузить").then(ok=>{ if(ok){ MODEL=normalize(loadDefault()); SELECTED=null; $("#filelabel").textContent="weather-system.json"; render(); } }); });
+$("#btn-import").addEventListener("click",()=>$("#fileinput").click());
+$("#fileinput").addEventListener("change",e=>{ const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>importJson(r.result,f.name); r.readAsText(f); e.target.value=""; });
+initTheme();
+boot();
+</script>
+
+</body>
+</html>

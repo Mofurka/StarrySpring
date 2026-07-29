@@ -29,6 +29,7 @@ public class SiteAttributeResolver {
                     // i dunno how to better keep this contract between services
                     metadata.put("applicationId", r.getApplicationId());
                     metadata.put("discordId", r.getDiscordId());
+
                 },
                 () -> log.info("{} does not have the connection record", player.uuid()));
     }

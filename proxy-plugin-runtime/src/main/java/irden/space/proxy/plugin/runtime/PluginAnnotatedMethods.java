@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.runtime;
 
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.PluginSessionContext;
+import irden.space.proxy.plugin.api.ProxyBeans;
 import irden.space.proxy.plugin.api.annotations.*;
 
 import java.lang.annotation.Annotation;
@@ -19,6 +20,7 @@ final class PluginAnnotatedMethods {
 
 
     static Method find(Class<?> beanType, Class<? extends Annotation> annotationType) {
+        beanType = ProxyBeans.userClass(beanType);
         List<Method> annotatedMethods = Arrays.stream(beanType.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(annotationType))
                 .toList();

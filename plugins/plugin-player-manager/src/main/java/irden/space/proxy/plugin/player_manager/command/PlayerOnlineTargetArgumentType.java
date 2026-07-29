@@ -69,7 +69,12 @@ public final class PlayerOnlineTargetArgumentType implements ArgumentType<Player
         }
 
         return playerManagerApi.searchPlayers(prefix, 25, true).stream()
-                .map(Player::name)
+                .map(s -> {
+                    if (s.name().split(" ").length > 1) {
+                        return "\"" + s.name() + "\"";
+                    }
+                    return s.name();
+                })
                 .distinct()
                 .toList();
     }

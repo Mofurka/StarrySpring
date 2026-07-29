@@ -7,7 +7,7 @@ public class SameAccountTransferException extends BankingException {
     public SameAccountTransferException(UUID accountId) {
         super(
                 "Cannot transfer money to the same account: "
-                + accountId
+                        + accountId
         );
     }
 }

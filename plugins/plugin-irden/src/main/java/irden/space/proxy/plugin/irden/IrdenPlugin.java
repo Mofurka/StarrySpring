@@ -2,9 +2,6 @@ package irden.space.proxy.plugin.irden;
 
 import irden.space.proxy.plugin.api.PluginDefinition;
 import irden.space.proxy.plugin.api.ProxyPlugin;
-import irden.space.proxy.plugin.api.annotations.OnLoad;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +10,8 @@ import org.springframework.stereotype.Component;
         name = "Irden Plugin",
         version = "1.0.0",
         author = "https://github.com/Mofurka",
-        dependsOn = {"command-handler", "player-manager"},
-        description = ""
+        dependsOn = {"command-handler", "player-manager", "discord-bot", "general", "star-custom-chat"},
+        description = "Irden gavno ebanoe"
 )
 @Component
 @EnableConfigurationProperties({IrdenConfig.class})

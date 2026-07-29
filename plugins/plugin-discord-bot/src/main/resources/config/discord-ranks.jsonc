@@ -1,10 +1,11 @@
 [
   {
-    "name" : "Host",
-    "roleId" : 1506509194797252691 // TechSup on test server
+    "name": "Host",
+    "roleId": 1506509194797252691
+    // TechSup on test server
   },
   {
-    "name" : "HostSupport",
-    "roleId" : 1506509194797252691
+    "name": "HostSupport",
+    "roleId": 1506509194797252691
   }
 ]

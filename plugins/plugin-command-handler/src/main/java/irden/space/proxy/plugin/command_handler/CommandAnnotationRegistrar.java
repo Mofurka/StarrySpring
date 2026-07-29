@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.command_handler;
 import irden.space.proxy.plugin.api.PluginAnnotationRegistrar;
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.PluginDescriptor;
+import irden.space.proxy.plugin.api.ProxyBeans;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,14 +14,14 @@ public class CommandAnnotationRegistrar implements PluginAnnotationRegistrar {
 
     @Override
     public boolean supports(Class<?> pluginType) {
-        return Arrays.stream(pluginType.getDeclaredMethods())
+        return Arrays.stream(ProxyBeans.userClass(pluginType).getDeclaredMethods())
                 .anyMatch(method -> method.isAnnotationPresent(ChatCommand.class));
     }
 
     @Override
     public void register(Object bean, PluginDescriptor owner, PluginContext context) {
         context.onRemove(() -> CommandRegistry.global().unregisterByPluginId(owner.id()));
-        Arrays.stream(bean.getClass().getDeclaredMethods())
+        Arrays.stream(ProxyBeans.userClass(bean).getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(ChatCommand.class))
                 .forEach(method -> register(bean, owner, method));
     }

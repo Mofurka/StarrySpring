@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.planet_backup;
 import irden.space.proxy.plugin.native_server_lifespan.ServerLifespan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedOutputStream;
@@ -23,6 +24,7 @@ import java.util.zip.ZipOutputStream;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnBean({ServerLifespan.class})
 public class PlanetBackupService {
 
     private static final DateTimeFormatter TIMESTAMP =
@@ -32,6 +34,13 @@ public class PlanetBackupService {
     private final ServerLifespan serverLifespan;
     private final ReentrantLock lock = new ReentrantLock();
 
+    private static long lastModifiedMillis(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toMillis();
+        } catch (IOException e) {
+            return 0L;
+        }
+    }
 
     public Path backupNow() throws IOException {
         if (!lock.tryLock()) {
@@ -144,13 +153,5 @@ public class PlanetBackupService {
         Path gameDirectory = serverLifespan.gameDirectory();
         Path base = gameDirectory != null ? gameDirectory : Path.of("").toAbsolutePath();
         return base.resolve(path).normalize();
-    }
-
-    private static long lastModifiedMillis(Path path) {
-        try {
-            return Files.getLastModifiedTime(path).toMillis();
-        } catch (IOException e) {
-            return 0L;
-        }
     }
 }

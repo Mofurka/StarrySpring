@@ -7,6 +7,19 @@
           <package value="irden.space.boot" />
         </packages>
       </persistence-unit>
+      <persistence-unit moduleName="server-boot" name="Default">
+        <packages>
+          <package value="irden.space.boot" />
+        </packages>
+      </persistence-unit>
+      <persistence-unit moduleName="plugin-player-manager" name="Default" />
+      <persistence-unit moduleName="plugin-ban-manager" name="Default" />
+      <persistence-unit moduleName="plugin-site-connector" name="Default">
+        <packages>
+          <package value="irden.space.proxy.plugin.site.web.client" />
+        </packages>
+      </persistence-unit>
+      <persistence-unit moduleName="plugin-irden" name="Default" />
     </persistence-units>
   </component>
 </project>

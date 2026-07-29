@@ -5,10 +5,14 @@ import lombok.Getter;
 @Getter
 public class EntityMessageFailedException extends RuntimeException {
 
-    /** Имя сообщения, на которое пришла ошибка. */
+    /**
+     * Имя сообщения, на которое пришла ошибка.
+     */
     private final String messageName;
 
-    /** Текст ошибки от сущности. */
+    /**
+     * Текст ошибки от сущности.
+     */
     private final String error;
 
     public EntityMessageFailedException(String messageName, String error) {

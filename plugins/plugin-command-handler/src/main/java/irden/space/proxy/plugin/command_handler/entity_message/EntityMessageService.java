@@ -17,12 +17,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Component
 @Slf4j
@@ -41,13 +36,17 @@ public class EntityMessageService {
     });
 
 
-    /** Отправить сообщение на entityId игрока (от имени сервера, с таймаутом по умолчанию). */
+    /**
+     * Отправить сообщение на entityId игрока (от имени сервера, с таймаутом по умолчанию).
+     */
     public CompletableFuture<VariantValue> sendToEntity(
             PluginSessionContext session, int entityId, String message, VariantValue... args) {
         return send(session, new EntityIdTarget(entityId), message, args);
     }
 
-    /** Отправить сообщение на unique entity uuid (от имени сервера, с таймаутом по умолчанию). */
+    /**
+     * Отправить сообщение на unique entity uuid (от имени сервера, с таймаутом по умолчанию).
+     */
     public CompletableFuture<VariantValue> sendToUuid(
             PluginSessionContext session, String entityUuid, String message, VariantValue... args) {
         return send(session, new UniqueEntityIdTarget(entityUuid), message, args);
@@ -62,7 +61,7 @@ public class EntityMessageService {
      * Полная форма: можно задать id соединения-отправителя и таймаут ожидания ответа.
      *
      * @return future с телом успешного ответа; падает с {@link EntityMessageFailedException}
-     *         или {@link EntityMessageTimeoutException}
+     * или {@link EntityMessageTimeoutException}
      */
     public CompletableFuture<VariantValue> send(
             PluginSessionContext session,
@@ -125,7 +124,7 @@ public class EntityMessageService {
             }
             request.timeoutTask().cancel(false);
             request.future().completeExceptionally(
-                    new EntityMessageFailedException(request.message(), "session closed"));
+                    new EntityMessageSessionClosedException(request.message(), "session closed"));
             return true;
         });
     }

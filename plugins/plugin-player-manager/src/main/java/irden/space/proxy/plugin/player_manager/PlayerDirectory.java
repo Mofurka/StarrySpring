@@ -29,6 +29,7 @@ public final class PlayerDirectory {
     public List<Player> onlinePlayers() {
         return players.getAll();
     }
+
     public Optional<Player> findPlayer(String identifier, boolean loggedIn) {
         boolean isStarUuid = identifier.matches("^[0-9a-fA-F]{32}$");
         boolean isClientId = identifier.matches("^\\d+$");
@@ -55,9 +56,9 @@ public final class PlayerDirectory {
         Stream<Player> source = loggedIn
                 ? players.getAll().stream()
                 : Stream.concat(
-                        players.getAll().stream(),
-                        playerRepository.findAll().stream().map(this::toOfflinePlayer)
-                );
+                players.getAll().stream(),
+                playerRepository.findAll().stream().map(this::toOfflinePlayer)
+        );
 
         Map<String, Player> uniquePlayers = source
                 .filter(Objects::nonNull)
@@ -91,9 +92,7 @@ public final class PlayerDirectory {
     }
 
     public Optional<Player> getPlayerByClientId(int clientId) {
-        return players.getAll().stream()
-                .filter(player -> player.clientId() == clientId)
-                .findFirst();
+        return Optional.ofNullable(players.getByClientId(clientId));
     }
 
     public Optional<Player> getPlayerBySessionId(String sessionId) {
@@ -109,11 +108,13 @@ public final class PlayerDirectory {
         return playerRepository.findFirstByName(name).map(this::toOfflinePlayer);
     }
 
+    public Optional<Player> getPlayerByEntityId(int entityId) {
+        return Optional.ofNullable(players.getByEntityId(entityId));
+    }
+
     public Optional<Player> getPlayerByUuid(String uuid, boolean loggedIn) {
         if (loggedIn) {
-            return players.getAll().stream()
-                    .filter(player -> player.uuid().toString().equals(uuid))
-                    .findFirst();
+            return Optional.ofNullable(players.getByUuid(uuid));
         }
         return playerRepository.findByPlayerUuid(uuid).map(this::toOfflinePlayer);
     }

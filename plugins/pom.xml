@@ -1,5 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -29,12 +29,7 @@
         </dependency>
         <dependency>
             <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-star-custom-chat-interceptor</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-debug-logger</artifactId>
+            <artifactId>plugin-star-custom-chat</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>
@@ -78,14 +73,14 @@
             <version>1.0.0</version>
         </dependency>
 
+
     </dependencies>
 
     <modules>
-        <module>plugin-debug-logger</module>
         <module>plugin-command-handler</module>
         <module>plugin-player-manager</module>
         <module>plugin-discord-bot</module>
-        <module>plugin-star-custom-chat-interceptor</module>
+        <module>plugin-star-custom-chat</module>
         <module>plugin-runtime-admin</module>
         <module>plugin-ban-manager</module>
         <module>plugin-general</module>

@@ -28,10 +28,20 @@ public class ApiKeyAuthenticator implements RestAuthenticator {
 
     private AutoCloseable registration;
 
+    private static boolean constantTimeEquals(String expected, String presented) {
+        if (presented == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                presented.getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
     @OnLoad
     public void register() {
         if (config.inboundApiKey() == null || config.inboundApiKey().isBlank()) {
-            log.warn("site-connector.inbound-api-key is empty — inbound API-key auth will reject every request");
+            log.warn("site-connector.inbound-api-key is empty - inbound API-key auth will reject every request");
         }
         registration = authenticatorRegistry.register(this);
         log.info("Registered inbound API-key authenticator");
@@ -63,15 +73,5 @@ public class ApiKeyAuthenticator implements RestAuthenticator {
         }
 
         return AuthenticationResult.success("site-integration", Set.of("ROLE_SITE"));
-    }
-
-    private static boolean constantTimeEquals(String expected, String presented) {
-        if (presented == null) {
-            return false;
-        }
-        return MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8),
-                presented.getBytes(StandardCharsets.UTF_8)
-        );
     }
 }

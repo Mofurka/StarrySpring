@@ -28,22 +28,6 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
 
     private final PluginRuntimeService runtimeService;
 
-
-    @ChatCommand(value = "plugin", description = "Manage runtime plugins")
-    public CommandSpec pluginCommand() {
-        return literal("plugin")
-                .then(literal("list").permission(PluginRuntimeAdminPermissions.LIST.permission())
-                        .executes(context -> context.reply(formatPlugins(runtimeService.plugins()))))
-                .then(literal("info").permission(PluginRuntimeAdminPermissions.INFO.permission())
-                        .then(argument("pluginId", PluginArgumentType.pluginName(this))
-                                .executes(context -> context.reply(
-                                        formatPluginInfo(context.get("pluginId", String.class), runtimeService.plugins())))))
-                .then(operation("start", PluginRuntimeAdminPermissions.START, runtimeService::startPlugin))
-                .then(operation("stop", PluginRuntimeAdminPermissions.STOP, runtimeService::stopPlugin))
-                .then(operation("reload", PluginRuntimeAdminPermissions.RELOAD, runtimeService::reloadPlugin))
-                .build();
-    }
-
     static String formatPluginInfo(String pluginId, List<PluginRuntimeView> plugins) {
         PluginRuntimeView view = plugins.stream()
                 .filter(candidate -> candidate.descriptor().id().equals(pluginId))
@@ -85,6 +69,21 @@ public final class PluginRuntimeAdminPlugin implements ProxyPlugin {
                         .append("] v")
                         .append(view.descriptor().version()));
         return result.toString();
+    }
+
+    @ChatCommand(value = "plugin", description = "Manage runtime plugins")
+    public CommandSpec pluginCommand() {
+        return literal("plugin")
+                .then(literal("list").permission(PluginRuntimeAdminPermissions.LIST.permission())
+                        .executes(context -> context.reply(formatPlugins(runtimeService.plugins()))))
+                .then(literal("info").permission(PluginRuntimeAdminPermissions.INFO.permission())
+                        .then(argument("pluginId", PluginArgumentType.pluginName(this))
+                                .executes(context -> context.reply(
+                                        formatPluginInfo(context.get("pluginId", String.class), runtimeService.plugins())))))
+                .then(operation("start", PluginRuntimeAdminPermissions.START, runtimeService::startPlugin))
+                .then(operation("stop", PluginRuntimeAdminPermissions.STOP, runtimeService::stopPlugin))
+                .then(operation("reload", PluginRuntimeAdminPermissions.RELOAD, runtimeService::reloadPlugin))
+                .build();
     }
 
     private LiteralBuilder operation(

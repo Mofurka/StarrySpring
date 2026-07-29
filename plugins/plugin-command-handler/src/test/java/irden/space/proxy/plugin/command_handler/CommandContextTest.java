@@ -16,6 +16,10 @@ class CommandContextTest {
     private static final CommandContextKey<TestSender> TEST_SENDER_KEY =
             CommandContextKey.of("testSender", TestSender.class);
 
+    private static PacketInterceptionContext packetContext(String sessionId) {
+        return new PacketInterceptionContext(new TestSessionContext(sessionId), null, null, PacketDirection.TO_SERVER);
+    }
+
     @Test
     void shouldStoreResolvedValuesSeparatelyFromArguments() {
         CommandContext context = CommandContext.builder()
@@ -32,10 +36,6 @@ class CommandContextTest {
         assertEquals("Moderator", context.get(TEST_SENDER_KEY).orElseThrow().name());
         assertEquals("Moderator", context.sender(TestSender.class).orElseThrow().name());
         assertTrue(context.has(TEST_SENDER_KEY));
-    }
-
-    private static PacketInterceptionContext packetContext(String sessionId) {
-        return new PacketInterceptionContext(new TestSessionContext(sessionId), null, null, PacketDirection.TO_SERVER);
     }
 
     private record TestSender(String name) {

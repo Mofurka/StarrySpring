@@ -4,22 +4,24 @@ import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.PluginDefinition;
 import irden.space.proxy.plugin.api.ProxyPlugin;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
-import irden.space.proxy.plugin.api.annotations.OnStart;
 import irden.space.proxy.plugin.command_handler.CommandContextResolver;
 import irden.space.proxy.plugin.command_handler.CommandHandlerPlugin;
+import irden.space.proxy.plugin.discord.config.DiscordBotConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @PluginDefinition(
         id = "discord-bot",
         name = "Discord Bot Plugin",
         version = "1.0.0",
-        dependsOn = {"command-handler", "player-manager"},
+        dependsOn = {"command-handler", "player-manager", "general"},
         author = "https://github.com/Mofurka",
         description = "A plugin for discord bot. WIP"
 )
 @Component
+@EnableConfigurationProperties({DiscordBotConfiguration.class})
 public final class DiscordBotPlugin implements ProxyPlugin {
     private static final Logger log = LoggerFactory.getLogger(DiscordBotPlugin.class);
     private final CommandHandlerPlugin commandHandler;
@@ -46,9 +48,4 @@ public final class DiscordBotPlugin implements ProxyPlugin {
         pluginContext.onRemove(() -> this.commandHandler.removeContextResolver(discordExecutorPlayerResolver));
     }
 
-    @OnStart
-    public void handleStart() {
-        log.info("Starting plugin '{}'", descriptor().id());
-        botRunner.start();
-    }
 }

@@ -102,7 +102,6 @@ public class BanService {
     }
 
 
-
     private BanOperationResult banPlayer(
             String targetPlayer,
             String bannedBy,
@@ -129,9 +128,8 @@ public class BanService {
         banRecordRepository.save(banRecord);
         player.kick(banFormatUtils.formatBanMessage(reason, permanent, expiresAt));
 
-        return new BanOperationResult(true, banFormatUtils.get("ban.operation.success.player",player.name(), reason));
+        return new BanOperationResult(true, banFormatUtils.get("ban.operation.success.player", player.name(), reason));
     }
-
 
 
     private boolean isIpAddress(String target) {

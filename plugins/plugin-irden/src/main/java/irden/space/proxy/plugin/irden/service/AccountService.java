@@ -1,12 +1,14 @@
 package irden.space.proxy.plugin.irden.service;
 
-import irden.space.proxy.plugin.irden.persistence.model.AccountEntity;
-import irden.space.proxy.plugin.irden.persistence.model.AccountOwnerType;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountStatus;
 import irden.space.proxy.plugin.irden.persistence.repository.AccountRepository;
 import irden.space.proxy.plugin.irden.service.exception.AccountAlreadyExistsException;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,7 +70,7 @@ public class AccountService {
             AccountOwnerType ownerType,
             String ownerId,
             String accountCode
-    ) throws IllegalArgumentException {
+    ) throws AccountNotFoundException {
         String normalizedOwnerId =
                 AccountEntity.normalizeOwnerId(ownerId);
 
@@ -81,7 +83,7 @@ public class AccountService {
                         normalizedOwnerId,
                         normalizedAccountCode
                 )
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new AccountNotFoundException(
                         "Account not found: ownerType=%s, ownerId=%s, accountCode=%s"
                                 .formatted(
                                         ownerType,
@@ -89,6 +91,31 @@ public class AccountService {
                                         normalizedAccountCode
                                 )
                 ));
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<AccountEntity> getTopAccountsByBalance(
+            AccountOwnerType ownerType,
+            int limit
+    ) {
+        return accountRepository.findByOwnerTypeAndStatusOrderByBalanceDesc(
+                ownerType,
+                AccountStatus.ACTIVE,
+                PageRequest.of(0, limit)
+        );
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<AccountEntity> getAccountsByOwnerTypeAndCode(
+            AccountOwnerType ownerType,
+            String accountCode
+    ) {
+        return accountRepository.findByOwnerTypeAndAccountCodeOrderByOwnerName(
+                ownerType,
+                AccountEntity.normalizeAccountCode(accountCode)
+        );
     }
 
     @Transactional(readOnly = true)

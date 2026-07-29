@@ -1,19 +1,17 @@
 package irden.space.proxy.plugin.general;
 
-import irden.space.proxy.plugin.command_handler.*;
-import irden.space.proxy.plugin.command_handler.color.Color;
-import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
+import irden.space.proxy.plugin.command_handler.ChatCommand;
+import irden.space.proxy.plugin.command_handler.CommandSpec;
+import irden.space.proxy.plugin.command_handler.IntegerArgumentType;
+import irden.space.proxy.plugin.command_handler.StringArgumentType;
+import irden.space.proxy.plugin.general.permissions.ChatPermissions;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -59,7 +57,7 @@ public class GeneralCommands {
                                     } else name = "Unknown";
                                     var timer = ctx.getOrDefault("timer", Integer.class, 5);
                                     ctx.reply("Server shutdown initiated in %s seconds".formatted(timer));
-                                    generalUtils.shutdownServer(name, timer);
+                                    CompletableFuture.runAsync(() -> generalUtils.shutdownServer(name, timer));
                                 }
                         )
                 )

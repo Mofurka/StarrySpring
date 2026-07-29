@@ -100,19 +100,19 @@ public class PlayerAccessService {
         refreshOnlinePermissions(playerUuid);
     }
 
-    public void grantPermissionToPlayer(String playerUuid, String permissionRule, String changedBy) {
+    public void grantPermissionToPlayer(String playerUuid, String permissionRule, String changedBy) throws IllegalStateException {
         ensurePlayerAccessMutable(playerUuid);
         playerPermissionOverrideRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), true, changedBy);
         refreshOnlinePermissions(playerUuid);
     }
 
-    public void revokePermissionFromPlayer(String playerUuid, String permissionRule, String changedBy) {
+    public void revokePermissionFromPlayer(String playerUuid, String permissionRule, String changedBy) throws IllegalStateException {
         ensurePlayerAccessMutable(playerUuid);
         playerPermissionOverrideRepository.savePermissionOverride(playerUuid, normalizePermissionRule(permissionRule), false, changedBy);
         refreshOnlinePermissions(playerUuid);
     }
 
-    public void clearPermissionOverride(String playerUuid, String permissionRule) {
+    public void clearPermissionOverride(String playerUuid, String permissionRule) throws IllegalStateException {
         ensurePlayerAccessMutable(playerUuid);
         playerPermissionOverrideRepository.deletePermissionOverride(playerUuid, normalizePermissionRule(permissionRule));
         refreshOnlinePermissions(playerUuid);
@@ -188,7 +188,7 @@ public class PlayerAccessService {
         return permissionRule.trim();
     }
 
-    private void ensurePlayerAccessMutable(String playerUuid) {
+    private void ensurePlayerAccessMutable(String playerUuid) throws IllegalStateException {
         if (roleManager.isOwner(playerUuid)) {
             throw new IllegalStateException("Owner roles and permissions cannot be modified");
         }

@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.player_manager.model;
 
 import irden.space.proxy.plugin.api.PermissionView;
 import irden.space.proxy.plugin.api.PluginSessionContext;
+import irden.space.proxy.plugin.player_manager.model.player_position.PlayerPosition;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.chat_header.ChatHeader;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
@@ -13,7 +14,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import org.intellij.lang.annotations.PrintFormat;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -24,20 +24,22 @@ import static io.micrometer.common.util.StringUtils.isBlank;
 @Builder
 public class Player {
     private final StarUuid uuid;
-    private String name;
-    private String nickname;
-    private String namePrefix;
     private final String account;
     @Builder.Default
     private final int clientId = 0;
     @Builder.Default
     private final int entityId = 0;
     private final String ipAddress;
-    private final String sessionId;
     @Builder.Default
     private final LocalDateTime lastSeen = LocalDateTime.now();
     private final PluginSessionContext sessionContext;
     private final Map<String, Object> metadata = new ConcurrentHashMap<>();
+    private String name;
+    private String nickname;
+    private String namePrefix;
+
+    @Builder.Default
+    private PlayerPosition position =  new PlayerPosition();
 
     public String name() {
         return name;
@@ -47,6 +49,9 @@ public class Player {
         this.name = name;
     }
 
+    public PlayerPosition position() {
+        return position;
+    }
 
     public StarUuid uuid() {
         return uuid;
@@ -68,9 +73,6 @@ public class Player {
         return ipAddress;
     }
 
-    public String sessionId() {
-        return sessionId;
-    }
 
     public String nickname() {
         return isBlank(nickname) ? name : nickname;

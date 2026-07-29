@@ -8,5 +8,5 @@ public record LinkPlayerRequest(
         @NotBlank String uuid,
         @NotBlank String name,
         @NotBlank String secret
-){
+) {
 }

@@ -17,6 +17,6 @@ public class SiteConnectorSchemaInitializer {
     @OnLoad
     public void migrate() {
         log.info("Running site connector database migrations");
-        PluginLiquibaseRunner.run(dataSource, "db/changelog/site-connector-changelog.xml");
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/site-connector-changelog.xml", getClass().getClassLoader());
     }
 }

@@ -11,6 +11,11 @@ public interface PlayerManagerApi {
 
     Optional<Player> findPlayer(String identifier, boolean loggedIn);
 
+    // Only online player have the client and entity id.
+    Optional<Player> findByClientId(int clientId);
+
+    Optional<Player> findByEntityId(int entityId);
+
     Optional<Player> findPlayerByUuid(String uuid, boolean loggedIn);
 
     List<Player> searchPlayers(String prefix, int limit, boolean loggedIn);

@@ -1,8 +1,8 @@
 package irden.space.proxy.plugin.irden.service;
 
-import irden.space.proxy.plugin.irden.persistence.model.AccountEntity;
-import irden.space.proxy.plugin.irden.persistence.model.AccountTransactionEntity;
-import irden.space.proxy.plugin.irden.persistence.model.AccountTransactionType;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountTransactionEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountTransactionType;
 import irden.space.proxy.plugin.irden.persistence.repository.AccountRepository;
 import irden.space.proxy.plugin.irden.persistence.repository.AccountTransactionRepository;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
@@ -14,7 +14,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
@@ -252,12 +251,12 @@ public class AccountTransactionService {
 
         boolean sameOperation =
                 transaction.getType() == expectedType
-                && transaction.getAmount() == expectedAmount
-                && Objects.equals(
+                        && transaction.getAmount() == expectedAmount
+                        && Objects.equals(
                         actualFromAccountId,
                         expectedFromAccountId
                 )
-                && Objects.equals(
+                        && Objects.equals(
                         actualToAccountId,
                         expectedToAccountId
                 );
@@ -271,9 +270,9 @@ public class AccountTransactionService {
 
     /**
      * Блокирует два счёта всегда в одинаковом порядке.
-     *
+     * <p>
      * Это уменьшает вероятность deadlock при переводах:
-     *
+     * <p>
      * поток 1: A -> B
      * поток 2: B -> A
      */

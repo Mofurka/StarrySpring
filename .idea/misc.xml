@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="EntryPointsManager">
-    <list size="8">
+    <list size="9">
       <item index="0" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnConnectionSuccess" />
       <item index="1" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnDisconnected" />
       <item index="2" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnDisconnecting" />
       <item index="3" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnLoad" />
-      <item index="4" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnStop" />
-      <item index="5" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.PacketHandler" />
-      <item index="6" class="java.lang.String" itemvalue="irden.space.proxy.plugin.command_handler.ChatCommand" />
-      <item index="7" class="java.lang.String" itemvalue="irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler" />
+      <item index="4" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnStart" />
+      <item index="5" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.OnStop" />
+      <item index="6" class="java.lang.String" itemvalue="irden.space.proxy.plugin.api.annotations.PacketHandler" />
+      <item index="7" class="java.lang.String" itemvalue="irden.space.proxy.plugin.command_handler.ChatCommand" />
+      <item index="8" class="java.lang.String" itemvalue="irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler" />
     </list>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
@@ -19,6 +20,15 @@
         <option value="$PROJECT_DIR$/pom.xml" />
       </list>
     </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/plugins/plugin-debug-logger/pom.xml" />
+        <option value="$PROJECT_DIR$/plugins/plugin-player-positioning/pom.xml" />
+      </set>
+    </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_25" default="true" project-jdk-name="temurin-25" project-jdk-type="JavaSDK" />
+  <component name="ProjectType">
+    <option name="id" value="jpab" />
+  </component>
 </project>

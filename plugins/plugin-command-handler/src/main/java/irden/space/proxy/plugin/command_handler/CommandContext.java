@@ -142,7 +142,7 @@ public record CommandContext(PacketInterceptionContext packetContext, String com
         return Optional.empty();
     }
 
-    public void reply(@PrintFormat String formatMessage, @NotNull Object... args){
+    public void reply(@PrintFormat String formatMessage, @NotNull Object... args) {
         reply(String.format(formatMessage, args));
     }
 
@@ -150,19 +150,19 @@ public record CommandContext(PacketInterceptionContext packetContext, String com
         session().sendToClient(PacketType.CHAT_RECEIVE, CommandMessages.systemMessage(message));
     }
 
-    public void reply(ChatReceive  message) {
+    public void reply(ChatReceive message) {
         session().sendToClient(PacketType.CHAT_RECEIVE, message);
     }
 
     public static final class Builder {
 
+        private final Map<String, Object> arguments = new LinkedHashMap<>();
+        private final Map<CommandContextKey<?>, Object> values = new LinkedHashMap<>();
         private PacketInterceptionContext packetContext;
         private String commandName;
         private String rawInput = "";
         private String argumentsLine = "";
         private List<String> rawArguments = List.of();
-        private final Map<String, Object> arguments = new LinkedHashMap<>();
-        private final Map<CommandContextKey<?>, Object> values = new LinkedHashMap<>();
 
         private Builder() {
         }

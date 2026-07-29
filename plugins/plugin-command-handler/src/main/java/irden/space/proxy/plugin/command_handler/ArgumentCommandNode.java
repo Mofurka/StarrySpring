@@ -24,11 +24,6 @@ public record ArgumentCommandNode<T>(String name, String description, ArgumentTy
         this.executor = executor;
     }
 
-    @Override
-    public List<Permission> requiredPermissions() {
-        return List.of();
-    }
-
     private static String normalizeName(String name) {
         Objects.requireNonNull(name, "name");
         String normalized = name.trim();
@@ -42,5 +37,10 @@ public record ArgumentCommandNode<T>(String name, String description, ArgumentTy
         }
 
         return normalized;
+    }
+
+    @Override
+    public List<Permission> requiredPermissions() {
+        return List.of();
     }
 }

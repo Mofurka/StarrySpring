@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="
           http://www.liquibase.org/xml/ns/dbchangelog
           https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
@@ -39,6 +39,10 @@
             <column name="created_at" type="java.sql.Types.TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+
+            <column name="last_seen" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
 
@@ -73,8 +77,8 @@
 
         <createIndex
                 schemaName="${playerManagerSchema}"
-                     tableName="player_roles"
-                     indexName="idx_player_manager_player_roles_uuid">
+                tableName="player_roles"
+                indexName="idx_player_manager_player_roles_uuid">
             <column name="player_uuid"/>
         </createIndex>
     </changeSet>

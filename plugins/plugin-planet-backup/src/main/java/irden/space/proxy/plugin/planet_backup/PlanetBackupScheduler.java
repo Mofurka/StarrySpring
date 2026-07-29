@@ -2,8 +2,10 @@ package irden.space.proxy.plugin.planet_backup;
 
 import irden.space.proxy.plugin.api.annotations.OnLoad;
 import irden.space.proxy.plugin.api.annotations.OnStop;
+import irden.space.proxy.plugin.native_server_lifespan.ServerLifespan;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnBean({ServerLifespan.class})
 public class PlanetBackupScheduler {
 
     private final PlanetBackupConfig config;

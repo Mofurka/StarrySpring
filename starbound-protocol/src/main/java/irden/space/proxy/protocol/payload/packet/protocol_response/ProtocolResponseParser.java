@@ -10,14 +10,16 @@ public class ProtocolResponseParser implements PacketParser<ProtocolResponse> {
     @Override
     public ProtocolResponse parse(BinaryReader reader) {
         int serverResponse = reader.readUnsignedByte();
-        VariantValue info = VariantCodec.INSTANCE.read(reader);
+        VariantValue info = reader.hasRemaining() ? VariantCodec.INSTANCE.read(reader) : null;
         return new ProtocolResponse(serverResponse, info);
     }
 
     @Override
     public byte[] write(BinaryWriter writer, ProtocolResponse payload) {
         writer.writeByte(payload.serverResponse());
-        VariantCodec.INSTANCE.write(writer, payload.info());
+        if (payload.info() != null) {
+            VariantCodec.INSTANCE.write(writer, payload.info());
+        }
         return finish(writer);
     }
 }

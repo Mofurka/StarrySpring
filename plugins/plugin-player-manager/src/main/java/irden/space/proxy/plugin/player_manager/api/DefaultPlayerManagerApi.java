@@ -27,6 +27,16 @@ public final class DefaultPlayerManagerApi implements PlayerManagerApi {
     }
 
     @Override
+    public Optional<Player> findByClientId(int clientId) {
+        return playerDirectory.getPlayerByClientId(clientId);
+    }
+
+    @Override
+    public Optional<Player> findByEntityId(int entityId) {
+        return playerDirectory.getPlayerByEntityId(entityId);
+    }
+
+    @Override
     public Optional<Player> findPlayerByUuid(String uuid, boolean loggedIn) {
         return playerDirectory.getPlayerByUuid(uuid, loggedIn);
     }

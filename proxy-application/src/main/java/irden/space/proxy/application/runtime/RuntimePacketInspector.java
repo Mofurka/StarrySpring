@@ -43,12 +43,11 @@ public class RuntimePacketInspector {
                 long durationNanos = System.nanoTime() - startTime;
                 if (log.isDebugEnabled()) {
                     log.debug(
-                            "[{}] parsed packet type={} in {} ms. Payload size={} MB, parsed={}",
+                            "[{}] parsed packet type={} in {} ms. Payload size={} MB",
                             direction,
                             envelope.packetType(),
                             durationNanos / 1_000_000L,
-                            String.format("%.2f", envelope.payload().length / (1024.0 * 1024.0)),
-                            parsed
+                            String.format("%.2f", envelope.payload().length / (1024.0 * 1024.0))
                     );
                 }
                 if (durationNanos > SLOW_PARSE_THRESHOLD_NANOS) {

@@ -1,9 +1,11 @@
 package irden.space.proxy.protocol.util;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
 import irden.space.proxy.protocol.codec.variant.*;
 import lombok.experimental.UtilityClass;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.*;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -11,6 +13,8 @@ import java.util.Map;
 
 @UtilityClass
 public final class MapVariantUtils {
+    private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
+
 
     public static VariantValue get(MapVariantValue map, String... deepKeys) {
         if (deepKeys == null || deepKeys.length == 0) {
@@ -107,7 +111,7 @@ public final class MapVariantUtils {
 
         ObjectNode result;
         if (jsonNode.isObject()) {
-            result = jsonNode.deepCopy();
+            result = jsonNode.deepCopy().asObject();
         } else {
             result = JsonNodeFactory.instance.objectNode();
         }
@@ -117,7 +121,7 @@ public final class MapVariantUtils {
             VariantValue variantValue = entry.getValue();
 
             if (result.has(key) && result.get(key).isObject()
-                && variantValue instanceof MapVariantValue nestedMap) {
+                    && variantValue instanceof MapVariantValue nestedMap) {
                 result.set(key, merge(result.get(key), nestedMap));
             } else {
                 result.set(key, variantToJsonNode(variantValue));
@@ -138,7 +142,7 @@ public final class MapVariantUtils {
             case BooleanVariantValue(boolean boolValue) -> BooleanNode.valueOf(boolValue);
             case IntVariantValue(int intValue) -> IntNode.valueOf(intValue);
             case DoubleVariantValue(double doubleValue) -> DoubleNode.valueOf(doubleValue);
-            case StringVariantValue(String stringValue) -> TextNode.valueOf(stringValue);
+            case StringVariantValue(String stringValue) -> StringNode.valueOf(stringValue);
             case ListVariantValue(VariantValue[] listValues) -> {
                 ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
                 for (VariantValue item : listValues) {
@@ -156,48 +160,59 @@ public final class MapVariantUtils {
         };
     }
 
+    public static VariantValue objectToVariant(Object object) {
+        return jsonNodeToVariant(JSON_MAPPER.valueToTree(object));
+    }
+
     public static VariantValue jsonNodeToVariant(JsonNode node) {
-        if (node == null || node.isNull()) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
             return NullVariantValue.INSTANCE;
         }
 
         if (node.isBoolean()) {
-            return new BooleanVariantValue(node.asBoolean());
+            return new BooleanVariantValue(node.booleanValue());
         }
+
         if (node.isInt()) {
-            return new IntVariantValue(node.asInt());
+            return new IntVariantValue(node.intValue());
         }
-        if (node.isDouble() || node.isFloat()) {
-            return new DoubleVariantValue(node.asDouble());
-        }
+
         if (node.isLong()) {
-            // Конвертируем long в int (может быть потеря данных)
-            return new IntVariantValue(node.asInt());
+            return new IntVariantValue((int) node.longValue());
         }
-        if (node.isTextual()) {
-            return new StringVariantValue(node.asText());
+
+        if (node.isFloatingPointNumber()) {
+            /*
+             * Обработает FloatNode, DoubleNode и DecimalNode.
+             */
+            return new DoubleVariantValue(node.doubleValue());
         }
+
+        if (node.isString()) {
+            return new StringVariantValue(node.stringValue());
+        }
+
         if (node.isArray()) {
             VariantValue[] values = new VariantValue[node.size()];
-            for (int i = 0; i < node.size(); i++) {
-                values[i] = jsonNodeToVariant(node.get(i));
+
+            int index = 0;
+            for (JsonNode element : node.values()) {
+                values[index++] = jsonNodeToVariant(element);
             }
-//            for (JsonNode element : node) {
-//                values.add(jsonNodeToVariant(element));
-//            }
+
             return new ListVariantValue(values);
         }
+
         if (node.isObject()) {
             Map<String, VariantValue> map = new LinkedHashMap<>();
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> entry = fields.next();
-                map.put(entry.getKey(), jsonNodeToVariant(entry.getValue()));
-            }
+
+            node.forEachEntry((name, value) ->
+                    map.put(name, jsonNodeToVariant(value))
+            );
+
             return new MapVariantValue(map);
         }
 
         return NullVariantValue.INSTANCE;
     }
-
 }

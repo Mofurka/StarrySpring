@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 import java.util.Optional;
 
 
@@ -37,7 +38,7 @@ public class BanConnectionHandler {
         );
         if (optionalBanRecord.isPresent()) {
             BanRecordEntity activeBanRecord = optionalBanRecord.get();
-            var  message = banFormatUtils.formatBanMessage(activeBanRecord.getReason(), activeBanRecord.isPermanent(), activeBanRecord.getExpiresAt());
+            var message = banFormatUtils.formatBanMessage(activeBanRecord.getReason(), activeBanRecord.isPermanent(), activeBanRecord.getExpiresAt());
 
             log.info("Blocked connection from {} (UUID: {}) due to active ban. Reason: {}",
                     clientConnect.playerName(), clientConnect.playerUuid(), activeBanRecord.getReason());

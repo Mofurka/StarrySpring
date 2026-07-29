@@ -8,20 +8,23 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.Objects;
 
 public final class PluginLiquibaseRunner {
 
     private PluginLiquibaseRunner() {
     }
 
-    public static void run(DataSource dataSource, String changelogPath) {
+
+    public static void run(DataSource dataSource, String changelogPath, ClassLoader resourceClassLoader) {
+        Objects.requireNonNull(resourceClassLoader, "resourceClassLoader");
         try (Connection connection = dataSource.getConnection()) {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
 
             Liquibase liquibase = new Liquibase(
                     changelogPath,
-                    new ClassLoaderResourceAccessor(),
+                    new ClassLoaderResourceAccessor(resourceClassLoader),
                     database
             );
 

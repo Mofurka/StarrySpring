@@ -15,6 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class CommandParserTest {
 
+    private static PacketInterceptionContext packetContext(String sessionId) {
+        return new PacketInterceptionContext(new TestSessionContext(sessionId), null, null, PacketDirection.TO_SERVER);
+    }
+
     @Test
     void shouldPassParsingContextToArgumentTypes() {
         CommandSpec spec = literal("audit")
@@ -38,10 +42,6 @@ class CommandParserTest {
         CommandParseResult.Success success = assertInstanceOf(CommandParseResult.Success.class, result);
 
         assertEquals("session-42:Alice:warning", success.arguments().get("note"));
-    }
-
-    private static PacketInterceptionContext packetContext(String sessionId) {
-        return new PacketInterceptionContext(new TestSessionContext(sessionId), null, null, PacketDirection.TO_SERVER);
     }
 
     private static final class ContextAwareArgumentType implements ArgumentType<String> {

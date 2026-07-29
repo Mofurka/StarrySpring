@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @PluginDefinition(
@@ -82,44 +83,47 @@ public class CommandHandlerPlugin implements ProxyPlugin {
                 registeredCommand.ownerPluginId()
         );
 
+        CompletableFuture.runAsync(() -> executeAsync(context.session(), registeredCommand, argumentContext, parsedCommand));
+        return PacketDecision.cancel();
+    }
+
+    private void executeAsync(PluginSessionContext session, RegisteredCommand registeredCommand, CommandArgumentContext argumentContext, ParsedCommand parsedCommand) {
         CommandParseResult parseResult = commandParser.parse(
                 registeredCommand.root(),
                 argumentContext,
                 parsedCommand.tokens()
         );
         if (parseResult instanceof CommandParseResult.Error(String message)) {
-            context.session().sendToClient(
+            session.sendToClient(
                     PacketType.CHAT_RECEIVE,
                     CommandMessages.systemMessage(message)
             );
-            return PacketDecision.cancel();
+            return;
         }
 
         CommandParseResult.Success success = (CommandParseResult.Success) parseResult;
 
-        if (!hasRequiredPermissions(context.session(), success.matchedNodes())) {
-            context.session().sendToClient(
+        if (!hasRequiredPermissions(session, success.matchedNodes())) {
+            session.sendToClient(
                     PacketType.CHAT_RECEIVE,
                     CommandMessages.systemMessage("You do not have permission to use this command.")
             );
-            return PacketDecision.cancel();
+            return;
         }
 
         try {
             CommandContext commandContext = createCommandContext(argumentContext, success.arguments());
             success.executor().execute(commandContext);
-            return PacketDecision.cancel();
         } catch (RuntimeException e) {
             log.error("Failed to execute command '/{}'", registeredCommand.name(), e);
 
-            context.session().sendToClient(
+            session.sendToClient(
                     PacketType.CHAT_RECEIVE,
                     CommandMessages.systemMessage("Command '/" + registeredCommand.name() + "' failed: " + e.getMessage())
             );
-
-            return PacketDecision.cancel();
         }
     }
+
 
     private ParsedCommand parse(String commandLine) {
         String[] parts = commandLine.split("\\s+", 2);
