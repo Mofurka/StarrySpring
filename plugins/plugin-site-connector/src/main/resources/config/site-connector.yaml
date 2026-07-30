@@ -1,6 +1,0 @@
-site-connector:
-  api-key: ""
-  base-url: ""
-  connect-timeout: 3
-  read-timeout: 3
-  inbound-api-key: ""

@@ -65,6 +65,14 @@ public class GeneralUtils {
 
     public void kickAll(String message) {
         playerManagerApi.onlinePlayers().forEach(p -> p.kick(message));
+        while (!playerManagerApi.onlinePlayers().isEmpty()) {
+            try {
+                Thread.sleep(1_000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public void handleWhoCommand(CommandContext ctx) {

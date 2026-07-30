@@ -49,11 +49,6 @@
         </dependency>
         <dependency>
             <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-site-connector</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
             <artifactId>plugin-native-server-lifespan</artifactId>
             <version>1.0.0</version>
         </dependency>
@@ -84,7 +79,6 @@
         <module>plugin-runtime-admin</module>
         <module>plugin-ban-manager</module>
         <module>plugin-general</module>
-        <module>plugin-site-connector</module>
         <module>plugin-native-server-lifespan</module>
         <module>plugin-planet-backup</module>
         <module>plugin-launcher</module>

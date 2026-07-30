@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <property name="irdenSchema" value="irden"/>
+
+    <changeSet id="site-connector-002-create-record" author="Mofurka">
+        <createTable
+                tableName="player_attributes"
+                schemaName="${irdenSchema}">
+
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="player_uuid" type="varchar(32)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="application_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="discord_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+
+</databaseChangeLog>
