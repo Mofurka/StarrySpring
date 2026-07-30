@@ -20,16 +20,16 @@ public enum PlayerFirstNetStateCodec implements BinaryCodec<PlayerNetState> {
         if (!fullUpdate) {
             throw new IllegalStateException("Expected full update for PlayerFirstNetState");
         }
-        netState.state(VlqUnsignedCodec.INSTANCE.read(storeDataReader));
+        netState.state(VlqUnsignedCodec.INSTANCE.readInt(storeDataReader));
         netState.shifting(storeDataReader.readBoolean());
         StarVec2F mousePos = StarVec2FCodec.INSTANCE.readFixedPointBased(storeDataReader, 0.003125f);
         netState.xMousePos(mousePos.x());
         netState.yMousePos(mousePos.y());
         netState.humanoidIdentity(HumanoidIdentityCodec.INSTANCE.read(storeDataReader));
         netState.damageTeam(DamageTeamCodec.INSTANCE.read(storeDataReader));
-        netState.landed(VlqUnsignedCodec.INSTANCE.read(storeDataReader));
+        netState.landed(VlqUnsignedCodec.INSTANCE.readInt(storeDataReader));
         netState.chatMessage(StarStringCodec.INSTANCE.read(storeDataReader));
-        netState.newChatMessage(VlqUnsignedCodec.INSTANCE.read(storeDataReader));
+        netState.newChatMessage(VlqUnsignedCodec.INSTANCE.readInt(storeDataReader));
         netState.emote(StarStringCodec.INSTANCE.read(storeDataReader));
         netState.inventory(PlayerInventoryCodec.INSTANCE.read(storeDataReader));
         storeDataReader.readRemainingBytes();

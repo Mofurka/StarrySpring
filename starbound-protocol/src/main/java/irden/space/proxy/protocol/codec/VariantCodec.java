@@ -17,7 +17,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
             case 1 -> NullVariantValue.INSTANCE;
             case 2 -> new DoubleVariantValue(reader.readDouble64BE());
             case 3 -> new BooleanVariantValue(reader.readBoolean());
-            case 4 -> new IntVariantValue(VlqCodec.INSTANCE.read(reader));
+            case 4 -> new IntVariantValue(VlqCodec.INSTANCE.readInt(reader));
             case 5 -> new StringVariantValue(StarStringCodec.INSTANCE.read(reader));
             case 6 -> new ListVariantValue(readList(reader)); // tuple
             case 7 -> new MapVariantValue(readMap(reader));
@@ -59,13 +59,13 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
     }
 
     public VariantValue[] readList(BinaryReader reader) {
-//        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+//        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
 //        List<VariantValue> result = new ArrayList<>(size);
 //        for (int i = 0; i < size; i++) {
 //            result.add(read(reader));
 //        }
 //        return result;
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         VariantValue[] result = new VariantValue[size];
         for (int i = 0; i < size; i++) {
             result[i] = read(reader);
@@ -85,7 +85,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
     }
 
     public Map<String, VariantValue> readMap(BinaryReader reader) {
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         Map<String, VariantValue> result = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
             String key = StarStringCodec.INSTANCE.read(reader);

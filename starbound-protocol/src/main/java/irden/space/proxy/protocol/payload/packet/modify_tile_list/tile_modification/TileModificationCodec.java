@@ -13,7 +13,7 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
 
     @Override
     public TileModification read(BinaryReader reader) {
-        int type = VlqUnsignedCodec.INSTANCE.read(reader); // type
+        int type = VlqUnsignedCodec.INSTANCE.readInt(reader); // type
         return switch (type) {
             case 1 -> readPlaceMaterial(reader);
             case 2 -> readPlaceMod(reader);

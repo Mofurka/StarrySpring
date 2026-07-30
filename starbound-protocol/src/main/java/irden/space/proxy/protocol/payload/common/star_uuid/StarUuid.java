@@ -45,7 +45,6 @@ public final class StarUuid {
     }
 
     public UUID toJavaUuid() {
-//        return UUID.fromString(toString());
         long mostSigBits = 0;
         long leastSigBits = 0;
         for (int i = 0; i < 8; i++) {

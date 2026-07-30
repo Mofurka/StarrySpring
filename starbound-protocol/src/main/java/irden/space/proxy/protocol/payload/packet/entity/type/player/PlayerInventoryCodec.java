@@ -41,7 +41,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
         StarItemDescriptor cursorItem = StarItemDescriptorCodec.INSTANCE.read(reader);
         StarItemDescriptor trashSlot = StarItemDescriptorCodec.INSTANCE.read(reader);
 
-        int currenciesMapSize = VlqUnsignedCodec.INSTANCE.read(reader); // currencies
+        int currenciesMapSize = VlqUnsignedCodec.INSTANCE.readInt(reader); // currencies
         Map<String, Long> stringMap = LinkedHashMap.newLinkedHashMap(currenciesMapSize);
         for (int i = 0; i < currenciesMapSize; i++) {
             String key = StarStringCodec.INSTANCE.read(reader);
@@ -49,7 +49,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
             stringMap.put(key, ammount);
         }
 
-        int customBarState = VlqUnsignedCodec.INSTANCE.read(reader); // state
+        int customBarState = VlqUnsignedCodec.INSTANCE.readInt(reader); // state
         final int customBarIndexes = 6;
         final int customBarSize = 2;
         Map<Integer, Map<Integer, CustomBarLink>> customBar = LinkedHashMap.newLinkedHashMap(customBarIndexes);
@@ -174,7 +174,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
                     }
 
 
-                    var stateIndexVlq = VlqCodec.INSTANCE.read(reader);
+                    var stateIndexVlq = VlqCodec.INSTANCE.readInt(reader);
 
                     boolean startedEvent = reader.readBoolean();
                     int l = 1;
@@ -224,7 +224,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
                     var active = reader.readBoolean();
                     var offset = StarVec2FCodec.INSTANCE.readFixedPointBased(reader, 0.0125f);
                     var color = StarRect4FCodec.INSTANCE.read(reader);
-                    var pointAngle = VlqCodec.INSTANCE.read(reader) * 0.01f;
+                    var pointAngle = VlqCodec.INSTANCE.readInt(reader) * 0.01f;
                     int l = 1;
                 }
             }
@@ -244,7 +244,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
                     var volumeRampTime = reader.readFloat32BE();
                     var pitchMultiplierTarget = reader.readFloat32BE();
                     var pitchMultiplierRampTime = reader.readFloat32BE();
-                    var loopCount = VlqCodec.INSTANCE.read(reader);
+                    var loopCount = VlqCodec.INSTANCE.readInt(reader);
                     int l = 1;
                 }
             }

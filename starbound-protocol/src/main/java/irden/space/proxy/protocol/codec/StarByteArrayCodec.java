@@ -5,7 +5,7 @@ public enum StarByteArrayCodec implements BinaryCodec<byte[]> {
 
     @Override
     public byte[] read(BinaryReader reader) {
-        int length = VlqUnsignedCodec.INSTANCE.read(reader);
+        int length = VlqUnsignedCodec.INSTANCE.readInt(reader);
         return reader.readBytes(length);
     }
 

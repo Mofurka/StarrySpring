@@ -10,7 +10,7 @@ public class PongParser implements PacketParser<Pong> {
     public Pong parse(BinaryReader reader) {
         reader.readBoolean(); //trash
         if (reader.openProtocolVersion() >= 0) {
-            return new Pong(VlqUnsignedCodec.INSTANCE.read(reader));
+            return new Pong(VlqUnsignedCodec.INSTANCE.readInt(reader));
         }
         return new Pong(0);
     }

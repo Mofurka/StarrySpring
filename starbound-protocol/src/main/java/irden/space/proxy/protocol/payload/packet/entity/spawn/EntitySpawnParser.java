@@ -14,7 +14,7 @@ public class EntitySpawnParser implements PacketParser<Entity> {
     @Override
     public Entity parse(BinaryReader reader) {
         EntityType entityType = EntityTypeCodec.INSTANCE.read(reader);
-        VlqUnsignedCodec.INSTANCE.read(reader); // payload size
+        VlqUnsignedCodec.INSTANCE.readInt(reader); // payload size
         return switch (entityType) {
             case PLANT -> null;
             case OBJECT -> ObjectEntitySpawnCodec.INSTANCE.read(reader);

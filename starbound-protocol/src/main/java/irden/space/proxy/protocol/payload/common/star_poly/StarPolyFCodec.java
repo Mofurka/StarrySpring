@@ -12,7 +12,7 @@ public enum StarPolyFCodec implements BinaryCodec<StarPolyF> {
 
     @Override
     public StarPolyF read(BinaryReader reader) {
-        int verticesCount = VlqUnsignedCodec.INSTANCE.read(reader);
+        int verticesCount = VlqUnsignedCodec.INSTANCE.readInt(reader);
         StarVec2F[] vertices = new StarVec2F[verticesCount];
         for (int i = 0; i < verticesCount; i++) {
             // PolyF сериализуется как writeContainer(vertexes): VLQ-длина + каждая вершина через

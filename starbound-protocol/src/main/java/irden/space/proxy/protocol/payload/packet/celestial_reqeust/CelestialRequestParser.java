@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class CelestialRequestParser implements PacketParser<CelestialRequest> {
     @Override
     public CelestialRequest parse(BinaryReader reader) {
-        int size = VlqUnsignedCodec.INSTANCE.read(reader); // list size
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader); // list size
         var request = new ArrayList<StarEither<StarVec2I, StarVec3I>>();
         for (int i = 0; i < size; i++) {
             if (reader.readBoolean()) {

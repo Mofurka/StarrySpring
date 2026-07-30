@@ -13,13 +13,13 @@ public enum WorldChunksCodec implements BinaryCodec<WorldChunks> {
 
     @Override
     public WorldChunks read(BinaryReader reader) {
-        int length = VlqUnsignedCodec.INSTANCE.read(reader);
+        int length = VlqUnsignedCodec.INSTANCE.readInt(reader);
         List<WorldChunks.Chunk> content = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
-            int firstLength = VlqUnsignedCodec.INSTANCE.read(reader);
+            int firstLength = VlqUnsignedCodec.INSTANCE.readInt(reader);
             byte[] first = reader.readBytes(firstLength);
             byte separator = (byte) reader.readUnsignedByte();
-            int secondLength = VlqUnsignedCodec.INSTANCE.read(reader);
+            int secondLength = VlqUnsignedCodec.INSTANCE.readInt(reader);
             byte[] second = reader.readBytes(secondLength);
             content.add(new WorldChunks.Chunk(first, separator, second));
         }

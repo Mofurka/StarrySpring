@@ -25,7 +25,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         VariantValue worldProperties = VariantCodec.INSTANCE.read(reader);
 
         Map<Short, Float> dungeonIdGravity = new HashMap<>();
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         for (int i = 0; i < size; i++) {
             short dungeonId = reader.readInt16BE(); // DungeonId
             float gravity = reader.readFloat32BE();
@@ -33,7 +33,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         }
         
         Map<Short, Boolean> dungeonIdBreathable = new HashMap<>();
-        size = VlqUnsignedCodec.INSTANCE.read(reader);
+        size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         for (int i = 0; i < size; i++) {
             short dungeonId = reader.readInt16BE(); // DungeonId
             boolean breathable = reader.readBoolean();
@@ -41,7 +41,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
         }
         
         List<Short> protectedDungeonIds = new ArrayList<>();
-        size = VlqUnsignedCodec.INSTANCE.read(reader);
+        size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         for (int i = 0; i < size; i++) {
             protectedDungeonIds.add(reader.readInt16BE());
         }

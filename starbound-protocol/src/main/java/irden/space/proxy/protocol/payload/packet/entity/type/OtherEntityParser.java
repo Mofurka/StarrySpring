@@ -9,7 +9,7 @@ public enum OtherEntityParser implements BinaryCodec<OtherEntity> {
     public OtherEntity read(BinaryReader reader) {
         StarByteArrayCodec.INSTANCE.read(reader);// we dont know what is this, so we will just read and ignore it for now
         StarByteArrayCodec.INSTANCE.read(reader);// we dont know what is this, so we will just read and ignore it for now
-        int entityId = VlqUnsignedCodec.INSTANCE.read(reader);
+        int entityId = VlqUnsignedCodec.INSTANCE.readInt(reader);
         return new OtherEntity(entityId);
     }
 

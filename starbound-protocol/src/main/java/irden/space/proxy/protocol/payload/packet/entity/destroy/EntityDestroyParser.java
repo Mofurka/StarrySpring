@@ -9,7 +9,7 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class EntityDestroyParser implements PacketParser<EntityDestroy> {
     @Override
     public EntityDestroy parse(BinaryReader reader) {
-        int entityId = VlqUnsignedCodec.INSTANCE.read(reader);
+        int entityId = VlqUnsignedCodec.INSTANCE.readInt(reader);
         byte[] finalNetState = StarByteArrayCodec.INSTANCE.read(reader);
         boolean death = reader.readBoolean();
         return new EntityDestroy(entityId, finalNetState, death);

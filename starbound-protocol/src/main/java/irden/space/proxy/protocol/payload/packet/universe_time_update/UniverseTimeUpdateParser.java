@@ -9,7 +9,7 @@ public class UniverseTimeUpdateParser implements PacketParser<UniverseTimeUpdate
 
     @Override
     public UniverseTimeUpdate parse(BinaryReader reader) {
-        double universeTime = VlqUnsignedCodec.INSTANCE.read(reader);
+        double universeTime = VlqUnsignedCodec.INSTANCE.readInt(reader);
         return new UniverseTimeUpdate(universeTime);
     }
 

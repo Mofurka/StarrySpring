@@ -39,7 +39,7 @@ public enum EphemeralStatusEffectCodec implements BinaryCodec<EphemeralStatusEff
     }
 
     public List<EphemeralStatusEffect> readList(BinaryReader reader) {
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         List<EphemeralStatusEffect> effects = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             effects.add(read(reader));

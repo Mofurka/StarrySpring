@@ -3,8 +3,10 @@ package irden.space.proxy.protocol.codec;
 public enum VlqUnsignedCodec implements BinaryCodec<Integer> {
     INSTANCE;
 
-    @Override
-    public Integer read(BinaryReader reader) {
+    /**
+     * Примитивный путь без боксинга — использовать в горячих кодеках (EntityUpdate, variant, строки).
+     */
+    public int readInt(BinaryReader reader) {
         int value = 0;
         while (true) {
             int b = reader.readUnsignedByte();
@@ -13,6 +15,11 @@ public enum VlqUnsignedCodec implements BinaryCodec<Integer> {
                 return value;
             }
         }
+    }
+
+    @Override
+    public Integer read(BinaryReader reader) {
+        return readInt(reader);
     }
 
     @Override

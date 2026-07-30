@@ -11,7 +11,7 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
 
     @Override
     public ConnectSuccess parse(BinaryReader reader) {
-        int clientId =  VlqUnsignedCodec.INSTANCE.read(reader);
+        int clientId =  VlqUnsignedCodec.INSTANCE.readInt(reader);
         StarUuid serverUuid =  StarUuidCodec.INSTANCE.read(reader); // useless piece of shit
         int planetOrbitalLevels =  reader.readInt32BE();
         int satelliteOrbitalLevels =  reader.readInt32BE();

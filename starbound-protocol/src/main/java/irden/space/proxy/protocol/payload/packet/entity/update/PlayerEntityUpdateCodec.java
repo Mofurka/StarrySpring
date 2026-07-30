@@ -41,21 +41,21 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
         }
 
         while (reader.hasRemaining()) {
-            var magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
+            var magicNumber = VlqUnsignedCodec.INSTANCE.readInt(reader);
             if (magicNumber <= 0) {
                 break;
             }
 
             switch (magicNumber) {
-                case 1 -> player.state(VlqUnsignedCodec.INSTANCE.read(reader));
+                case 1 -> player.state(VlqUnsignedCodec.INSTANCE.readInt(reader));
                 case 2 -> player.shifting(reader.readBoolean());
-                case 3 -> player.xMousePos(VlqCodec.INSTANCE.read(reader) * 0.003125f);
-                case 4 -> player.yMousePos(VlqCodec.INSTANCE.read(reader) * 0.003125f);
+                case 3 -> player.xMousePos(VlqCodec.INSTANCE.readInt(reader) * 0.003125f);
+                case 4 -> player.yMousePos(VlqCodec.INSTANCE.readInt(reader) * 0.003125f);
                 case 5 -> player.humanoidIdentity(HumanoidIdentityCodec.INSTANCE.read(reader));
                 case 6 -> player.damageTeam(DamageTeamCodec.INSTANCE.read(reader));
-                case 7 -> player.landed(VlqUnsignedCodec.INSTANCE.read(reader));
+                case 7 -> player.landed(VlqUnsignedCodec.INSTANCE.readInt(reader));
                 case 8 -> player.chatMessage(StarStringCodec.INSTANCE.read(reader));
-                case 9 -> player.newChatMessage(VlqUnsignedCodec.INSTANCE.read(reader));
+                case 9 -> player.newChatMessage(VlqUnsignedCodec.INSTANCE.readInt(reader));
                 case 10 -> player.emote(StarStringCodec.INSTANCE.read(reader));
                 case 11 -> player.inventory(readInventory(reader));
                 case 15 -> player.movementController(readMcontroller(reader));
@@ -138,18 +138,18 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
     public MovementController readMcontroller(BinaryReader reader) {
         var mc = MovementController.builder();
         while (true) {
-            int magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
+            int magicNumber = VlqUnsignedCodec.INSTANCE.readInt(reader);
             if (magicNumber == 0 || magicNumber > 16) {
                 break;
             }
             switch (magicNumber) {
                 case 1 -> mc.collisionPoly(StarPolyFCodec.INSTANCE.read(reader));
                 case 2 -> mc.mass(reader.readFloat32BE());
-                case 3 -> mc.xPosition(VlqCodec.INSTANCE.read(reader) * 0.0125f);
-                case 4 -> mc.yPosition(VlqCodec.INSTANCE.read(reader) * 0.0125f);
-                case 5 -> mc.xVelocity(VlqCodec.INSTANCE.read(reader) * 0.00625f);
-                case 6 -> mc.yVelocity(VlqCodec.INSTANCE.read(reader) * 0.00625f);
-                case 7 -> mc.rotation(VlqCodec.INSTANCE.read(reader) * 0.01f);
+                case 3 -> mc.xPosition(VlqCodec.INSTANCE.readInt(reader) * 0.0125f);
+                case 4 -> mc.yPosition(VlqCodec.INSTANCE.readInt(reader) * 0.0125f);
+                case 5 -> mc.xVelocity(VlqCodec.INSTANCE.readInt(reader) * 0.00625f);
+                case 6 -> mc.yVelocity(VlqCodec.INSTANCE.readInt(reader) * 0.00625f);
+                case 7 -> mc.rotation(VlqCodec.INSTANCE.readInt(reader) * 0.01f);
                 case 8 -> mc.colliding(reader.readBoolean());
                 case 9 -> mc.collisionStuck(reader.readBoolean());
                 case 10 -> mc.nullColliding(reader.readBoolean());
@@ -174,7 +174,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
     private Optional<StarPair<Integer, Integer>> readSurfaceMovingCollision(BinaryReader reader) {
         if (reader.readBoolean()) {
             var entityId = reader.readInt32BE();
-            var collisionIndex = VlqUnsignedCodec.INSTANCE.read(reader);
+            var collisionIndex = VlqUnsignedCodec.INSTANCE.readInt(reader);
             return Optional.of(new StarPair<>(entityId, collisionIndex));
         } else {
             return Optional.empty();
@@ -206,7 +206,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
         int inspectionToolIndex = paintToolIndex + 1;               // 241
 
         while (true) {
-            int magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
+            int magicNumber = VlqUnsignedCodec.INSTANCE.readInt(reader);
             if (magicNumber == 0) {
                 break;
             }
@@ -236,7 +236,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
             }
             // Currencies (223)
             else if (magicNumber == currenciesIndex) {
-                int currenciesMapSize = VlqUnsignedCodec.INSTANCE.read(reader);
+                int currenciesMapSize = VlqUnsignedCodec.INSTANCE.readInt(reader);
                 Map<String, Long> currencies = LinkedHashMap.newLinkedHashMap(currenciesMapSize);
                 for (int i = 0; i < currenciesMapSize; i++) {
                     String key = StarStringCodec.INSTANCE.read(reader);
@@ -247,7 +247,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
             }
             // Custom bar group (224)
             else if (magicNumber == customBarGroupIndex) {
-                pi.customBarState(VlqUnsignedCodec.INSTANCE.read(reader));
+                pi.customBarState(VlqUnsignedCodec.INSTANCE.readInt(reader));
             }
             // Custom bar slots (225-236)
             else if (magicNumber > customBarGroupIndex && magicNumber <= customBarEnd) {
@@ -279,7 +279,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
     }
 
     public List<StarPair<String, String>> readEffectEmitter(BinaryReader reader) {
-        int listSize = VlqUnsignedCodec.INSTANCE.read(reader);
+        int listSize = VlqUnsignedCodec.INSTANCE.readInt(reader);
         List<StarPair<String, String>> starPairList = new ArrayList<>(listSize);
         for (int i = 0; i < listSize; i++) {
             String key = StarStringCodec.INSTANCE.read(reader);
@@ -292,7 +292,7 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
     public EffectsAnimator readEffectsAnimator(BinaryReader reader) {
         var ea = EffectsAnimator.builder();
         while (reader.hasRemaining()) {
-            int magicNumber = VlqUnsignedCodec.INSTANCE.read(reader);
+            int magicNumber = VlqUnsignedCodec.INSTANCE.readInt(reader);
             if (magicNumber == 0) {
                 break;
             }

@@ -20,7 +20,7 @@ public enum TileModificationListCodec implements BinaryCodec<TileModificationLis
 
     @Override
     public TileModificationList read(BinaryReader reader) {
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);// list size
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);// list size
         List<StarPair<StarVec2I, TileModification>> modifications = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             modifications.add(starPairCodec.read(reader));

@@ -11,7 +11,7 @@ public enum ProjectileSpawnEntityCodec implements BinaryCodec<ProjectileEntity> 
     public ProjectileEntity read(BinaryReader reader) {
         var name = StarStringCodec.INSTANCE.read(reader);
         var parameters = VariantCodec.INSTANCE.read(reader);
-        var entityId = VlqUnsignedCodec.INSTANCE.read(reader);
+        var entityId = VlqUnsignedCodec.INSTANCE.readInt(reader);
         var trackSourceEntity = reader.readBoolean();
         var initialSpeed = reader.readFloat32BE();
         var powerMultiplier = reader.readFloat32BE();

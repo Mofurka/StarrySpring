@@ -21,7 +21,7 @@ public enum PlayerEntityCreateCodec implements BinaryCodec<PlayerEntity> {
         HumanoidIdentity humanoidIdentity = HumanoidIdentityCodec.INSTANCE.read(storeDataReader);
 
         PlayerNetState firstNetState = PlayerFirstNetStateCodec.INSTANCE.read(reader); // We need to parse it soon, but its pretty hard due to dynamical inventory. We need to know the scheme first
-        int entityId = VlqCodec.INSTANCE.read(reader);
+        int entityId = VlqCodec.INSTANCE.readInt(reader);
         return new PlayerEntity(uuid, description, modeType, humanoidIdentity, firstNetState, entityId);
     }
 

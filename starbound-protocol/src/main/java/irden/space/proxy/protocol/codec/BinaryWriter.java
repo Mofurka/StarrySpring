@@ -2,19 +2,21 @@ package irden.space.proxy.protocol.codec;
 
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public final class BinaryWriter {
-    private final ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private byte[] buffer;
+    private int position;
     private final int openProtocolVersion;
 
     public BinaryWriter() {
-        this.openProtocolVersion = PacketParser.LEGACY_PROTOCOL_VERSION;
+        this(PacketParser.LEGACY_PROTOCOL_VERSION);
     }
 
     public BinaryWriter(int openProtocolVersion) {
         this.openProtocolVersion = openProtocolVersion;
+        this.buffer = new byte[64];
     }
 
     public int openProtocolVersion() {
@@ -22,7 +24,8 @@ public final class BinaryWriter {
     }
 
     public void writeByte(int value) {
-        output.write(value & 0xFF);
+        ensureCapacity(1);
+        buffer[position++] = (byte) (value & 0xFF);
     }
 
     public void writeBoolean(boolean value) {
@@ -30,24 +33,32 @@ public final class BinaryWriter {
     }
 
     public void writeBytes(byte[] bytes) {
-        output.write(bytes, 0, bytes.length);
+        ensureCapacity(bytes.length);
+        System.arraycopy(bytes, 0, buffer, position, bytes.length);
+        position += bytes.length;
     }
 
     public void writeInt16BE(short value) {
-        writeByte((value >>> 8) & 0xFF);
-        writeByte(value & 0xFF);
+        ensureCapacity(2);
+        buffer[position] = (byte) ((value >>> 8) & 0xFF);
+        buffer[position + 1] = (byte) (value & 0xFF);
+        position += 2;
     }
 
     public void writeUInt16BE(int value) {
-        writeByte((value >>> 8) & 0xFF);
-        writeByte(value & 0xFF);
+        ensureCapacity(2);
+        buffer[position] = (byte) ((value >>> 8) & 0xFF);
+        buffer[position + 1] = (byte) (value & 0xFF);
+        position += 2;
     }
 
     public void writeUInt32BE(int value) {
-        writeByte((value >>> 24) & 0xFF);
-        writeByte((value >>> 16) & 0xFF);
-        writeByte((value >>> 8) & 0xFF);
-        writeByte(value & 0xFF);
+        ensureCapacity(4);
+        buffer[position] = (byte) ((value >>> 24) & 0xFF);
+        buffer[position + 1] = (byte) ((value >>> 16) & 0xFF);
+        buffer[position + 2] = (byte) ((value >>> 8) & 0xFF);
+        buffer[position + 3] = (byte) (value & 0xFF);
+        position += 4;
     }
 
     public void writeInt32BE(long value) {
@@ -55,14 +66,16 @@ public final class BinaryWriter {
     }
 
     public void writeInt64BE(long value) {
-        writeByte((int) ((value >>> 56) & 0xFF));
-        writeByte((int) ((value >>> 48) & 0xFF));
-        writeByte((int) ((value >>> 40) & 0xFF));
-        writeByte((int) ((value >>> 32) & 0xFF));
-        writeByte((int) ((value >>> 24) & 0xFF));
-        writeByte((int) ((value >>> 16) & 0xFF));
-        writeByte((int) ((value >>> 8) & 0xFF));
-        writeByte((int) (value & 0xFF));
+        ensureCapacity(8);
+        buffer[position] = (byte) ((value >>> 56) & 0xFF);
+        buffer[position + 1] = (byte) ((value >>> 48) & 0xFF);
+        buffer[position + 2] = (byte) ((value >>> 40) & 0xFF);
+        buffer[position + 3] = (byte) ((value >>> 32) & 0xFF);
+        buffer[position + 4] = (byte) ((value >>> 24) & 0xFF);
+        buffer[position + 5] = (byte) ((value >>> 16) & 0xFF);
+        buffer[position + 6] = (byte) ((value >>> 8) & 0xFF);
+        buffer[position + 7] = (byte) (value & 0xFF);
+        position += 8;
     }
 
     public void writeFloat32BE(float value) {
@@ -78,6 +91,17 @@ public final class BinaryWriter {
     }
 
     public byte[] toByteArray() {
-        return output.toByteArray();
+        return Arrays.copyOf(buffer, position);
+    }
+
+    private void ensureCapacity(int additional) {
+        int required = position + additional;
+        if (required > buffer.length) {
+            int newLength = buffer.length;
+            do {
+                newLength <<= 1;
+            } while (newLength < required);
+            buffer = Arrays.copyOf(buffer, newLength);
+        }
     }
 }

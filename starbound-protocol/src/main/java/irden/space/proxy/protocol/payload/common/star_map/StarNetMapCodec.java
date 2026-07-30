@@ -41,7 +41,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      */
     @Override
     public Map<A, B> read(BinaryReader reader) {
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         Map<A, B> map = LinkedHashMap.newLinkedHashMap(Math.max(size, 0));
 
         for (int i = 0; i < size; i++) {
@@ -77,7 +77,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
         Map<A, B> map = new LinkedHashMap<>(baseMap);
 
         while (true) {
-            int code = VlqUnsignedCodec.INSTANCE.read(reader);
+            int code = VlqUnsignedCodec.INSTANCE.readInt(reader);
 
             if (code == DELTA_END) {
                 break;
@@ -99,7 +99,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      */
     public void readDeltaInto(BinaryReader reader, Map<A, B> target) {
         while (true) {
-            int code = VlqUnsignedCodec.INSTANCE.read(reader);
+            int code = VlqUnsignedCodec.INSTANCE.readInt(reader);
 
             if (code == DELTA_END) {
                 return;

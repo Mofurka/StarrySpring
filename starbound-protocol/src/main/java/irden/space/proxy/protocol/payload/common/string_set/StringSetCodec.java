@@ -7,7 +7,7 @@ public enum StringSetCodec implements BinaryCodec<StringSet> {
 
     @Override
     public StringSet read(BinaryReader reader) {
-        int size = VlqUnsignedCodec.INSTANCE.read(reader);
+        int size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         String[] strings = new String[size];
         for (int i = 0; i < size; i++) {
             strings[i] = StarStringCodec.INSTANCE.read(reader);

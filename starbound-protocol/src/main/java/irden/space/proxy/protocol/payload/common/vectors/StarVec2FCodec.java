@@ -24,8 +24,8 @@ public enum StarVec2FCodec implements BinaryCodec<StarVec2F> {
 
     public StarVec2F readFixedPointBased(BinaryReader reader, float scale) { // Оптимизаторы блин
         return new StarVec2F(
-                VlqCodec.INSTANCE.read(reader) * scale,
-                VlqCodec.INSTANCE.read(reader) * scale
+                VlqCodec.INSTANCE.readInt(reader) * scale,
+                VlqCodec.INSTANCE.readInt(reader) * scale
         );
     }
 

@@ -2,23 +2,23 @@ package irden.space.proxy.protocol.codec;
 
 import irden.space.proxy.protocol.payload.registry.PacketParser;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 
 public final class BinaryReader {
-    private final ByteArrayInputStream input;
+    private final byte[] data;
+    private int position;
     private final int openProtocolVersion;
 
     public BinaryReader(byte[] data, int openProtocolVersion) {
-        this.input = new ByteArrayInputStream(data);
+        this.data = data;
         this.openProtocolVersion = openProtocolVersion;
     }
 
-    public BinaryReader (byte[] data) {
-        this.input = new ByteArrayInputStream(data);
-        this.openProtocolVersion = PacketParser.LEGACY_PROTOCOL_VERSION;
+    public BinaryReader(byte[] data) {
+        this(data, PacketParser.LEGACY_PROTOCOL_VERSION);
     }
 
     public int openProtocolVersion() {
@@ -26,56 +26,56 @@ public final class BinaryReader {
     }
 
     public int remaining() {
-        return input.available();
+        return data.length - position;
     }
 
     public boolean hasRemaining() {
-        return input.available() > 0;
+        return position < data.length;
     }
 
     public int readUnsignedByte() {
-        int value = input.read();
-        if (value == -1) {
+        if (position >= data.length) {
             throw new IllegalStateException("Unexpected end of data while reading unsigned byte");
         }
-        return value;
+        return data[position++] & 0xFF;
     }
-
 
     public boolean readBoolean() {
         return readUnsignedByte() != 0;
     }
 
     public byte[] readBytes(int length) {
-        byte[] result;
-        try {
-            result = input.readNBytes(length);
-        } catch (IOException e) {
-            throw new IllegalStateException("Unexpected error while reading bytes", e);
+        if (length < 0) {
+            throw new IllegalArgumentException("Negative length: " + length);
         }
-        if (result.length != length) throw new IllegalStateException("Unexpected end of stream");
-        return result;
+        if (length > remaining()) {
+            throw new IllegalStateException("Unexpected end of stream");
+        }
+        int from = position;
+        position += length;
+        return Arrays.copyOfRange(data, from, position);
     }
 
     public short readInt16BE() {
-        int high = readUnsignedByte();
-        int low = readUnsignedByte();
-        return (short) ((high << 8) | low);
+        return (short) readUInt16BE();
     }
 
     public int readUInt16BE() {
-        int high = readUnsignedByte();
-        int low = readUnsignedByte();
-        return (high << 8) | low;
+        ensure(2);
+        int value = ((data[position] & 0xFF) << 8)
+                | (data[position + 1] & 0xFF);
+        position += 2;
+        return value;
     }
 
-
     public int readInt32BE() {
-        int b1 = readUnsignedByte();
-        int b2 = readUnsignedByte();
-        int b3 = readUnsignedByte();
-        int b4 = readUnsignedByte();
-        return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+        ensure(4);
+        int value = ((data[position] & 0xFF) << 24)
+                | ((data[position + 1] & 0xFF) << 16)
+                | ((data[position + 2] & 0xFF) << 8)
+                | (data[position + 3] & 0xFF);
+        position += 4;
+        return value;
     }
 
     public long readUInt32BE() {
@@ -83,20 +83,21 @@ public final class BinaryReader {
     }
 
     public long readInt64BE() {
-        long b1 = readUnsignedByte();
-        long b2 = readUnsignedByte();
-        long b3 = readUnsignedByte();
-        long b4 = readUnsignedByte();
-        long b5 = readUnsignedByte();
-        long b6 = readUnsignedByte();
-        long b7 = readUnsignedByte();
-        long b8 = readUnsignedByte();
-        return (b1 << 56) | (b2 << 48) | (b3 << 40) | (b4 << 32) | (b5 << 24) | (b6 << 16) | (b7 << 8) | b8;
+        ensure(8);
+        long value = ((long) (data[position] & 0xFF) << 56)
+                | ((long) (data[position + 1] & 0xFF) << 48)
+                | ((long) (data[position + 2] & 0xFF) << 40)
+                | ((long) (data[position + 3] & 0xFF) << 32)
+                | ((long) (data[position + 4] & 0xFF) << 24)
+                | ((long) (data[position + 5] & 0xFF) << 16)
+                | ((long) (data[position + 6] & 0xFF) << 8)
+                | (data[position + 7] & 0xFF);
+        position += 8;
+        return value;
     }
 
     public float readFloat32BE() {
-        int intBits = readInt32BE();
-        return Float.intBitsToFloat(intBits);
+        return Float.intBitsToFloat(readInt32BE());
     }
 
     public double readDouble64BE() {
@@ -109,6 +110,14 @@ public final class BinaryReader {
     }
 
     public byte[] readRemainingBytes() {
-        return input.readAllBytes();
+        int from = position;
+        position = data.length;
+        return Arrays.copyOfRange(data, from, position);
+    }
+
+    private void ensure(int count) {
+        if (count > remaining()) {
+            throw new IllegalStateException("Unexpected end of stream");
+        }
     }
 }
