@@ -34,7 +34,7 @@ public class IrdenFightHandler {
 
     private final PlayerManagerApi playerManagerApi;
     private final EntityMessageService entityMessageService;
-    private final FightSnapshotRecordRepository  fightSnapshotRecordRepository;
+    private final FightSnapshotRecordRepository fightSnapshotRecordRepository;
 
     //TODO: Убрать дубликаты
 

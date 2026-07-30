@@ -124,9 +124,6 @@ public final class RoleManager {
         return List.copyOf(resolvedRoleNames);
     }
 
-    private record RolesSnapshot(StarryRoles config, Map<String, StarryRole> rolesByName) {
-    }
-
     private StarryRoles loadOrCreateConfig() {
         try {
             Path parent = configPath.getParent();
@@ -223,6 +220,9 @@ public final class RoleManager {
                 PermissionRegistry.registerIfAbsent(permissionRule);
             }
         }
+    }
+
+    private record RolesSnapshot(StarryRoles config, Map<String, StarryRole> rolesByName) {
     }
 
 }

@@ -10,6 +10,50 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PluginManagerTest {
 
+    private static final Map<PluginCandidate, ProxyPlugin> TEST_PLUGINS =
+            Collections.synchronizedMap(new IdentityHashMap<>());
+
+    private static PluginRuntimeView pluginView(PluginManager manager, String pluginId) {
+        return manager.plugins().stream()
+                .filter(view -> view.descriptor().id().equals(pluginId))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static List<PluginCandidate> candidates(ProxyPlugin... plugins) {
+        return java.util.Arrays.stream(plugins)
+                .map(plugin -> {
+                    PluginCandidate candidate = new PluginCandidate(
+                            plugin.getClass().asSubclass(ProxyPlugin.class),
+                            plugin.descriptor()
+                    );
+                    TEST_PLUGINS.put(candidate, plugin);
+                    return candidate;
+                })
+                .toList();
+    }
+
+    private static ProxyPlugin pluginFor(PluginCandidate candidate) {
+        ProxyPlugin plugin = TEST_PLUGINS.get(candidate);
+        if (plugin == null) {
+            throw new IllegalStateException("No test plugin instance for " + candidate.descriptor().id());
+        }
+        return plugin;
+    }
+
+    private static PluginContainerFactory testContainers() {
+        return (candidate, context, dependencies) -> new PluginContainer() {
+            @Override
+            public ProxyPlugin plugin() {
+                return pluginFor(candidate);
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+    }
+
     @Test
     void loadAndStartLogsAgainstResolvedDependencyOrder() {
         List<String> lifecycleEvents = new ArrayList<>();
@@ -573,13 +617,6 @@ class PluginManagerTest {
         manager.stopAll();
     }
 
-    private static PluginRuntimeView pluginView(PluginManager manager, String pluginId) {
-        return manager.plugins().stream()
-                .filter(view -> view.descriptor().id().equals(pluginId))
-                .findFirst()
-                .orElseThrow();
-    }
-
     @Test
     void exposesLoadedAndStoppedPluginsThroughRuntimeApi() {
         TestPlugin core = new TestPlugin("core", List.of(), new ArrayList<>());
@@ -611,43 +648,6 @@ class PluginManagerTest {
         );
 
         manager.stopAll();
-    }
-
-    private static final Map<PluginCandidate, ProxyPlugin> TEST_PLUGINS =
-            Collections.synchronizedMap(new IdentityHashMap<>());
-
-    private static List<PluginCandidate> candidates(ProxyPlugin... plugins) {
-        return java.util.Arrays.stream(plugins)
-                .map(plugin -> {
-                    PluginCandidate candidate = new PluginCandidate(
-                            plugin.getClass().asSubclass(ProxyPlugin.class),
-                            plugin.descriptor()
-                    );
-                    TEST_PLUGINS.put(candidate, plugin);
-                    return candidate;
-                })
-                .toList();
-    }
-
-    private static ProxyPlugin pluginFor(PluginCandidate candidate) {
-        ProxyPlugin plugin = TEST_PLUGINS.get(candidate);
-        if (plugin == null) {
-            throw new IllegalStateException("No test plugin instance for " + candidate.descriptor().id());
-        }
-        return plugin;
-    }
-
-    private static PluginContainerFactory testContainers() {
-        return (candidate, context, dependencies) -> new PluginContainer() {
-            @Override
-            public ProxyPlugin plugin() {
-                return pluginFor(candidate);
-            }
-
-            @Override
-            public void close() {
-            }
-        };
     }
 
     private static class TestPlugin implements ProxyPlugin {

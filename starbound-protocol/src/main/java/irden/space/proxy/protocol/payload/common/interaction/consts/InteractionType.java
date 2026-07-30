@@ -20,10 +20,6 @@ public enum InteractionType {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static InteractionType fromId(int id) {
         for (InteractionType hitType : values()) {
             if (hitType.id == id) {
@@ -31,5 +27,9 @@ public enum InteractionType {
             }
         }
         throw new IllegalArgumentException("Unknown HitType id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

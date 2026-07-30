@@ -1,7 +1,6 @@
 package irden.space.proxy.plugin.runtime;
 
 
-
 import irden.space.proxy.plugin.api.ProxyPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

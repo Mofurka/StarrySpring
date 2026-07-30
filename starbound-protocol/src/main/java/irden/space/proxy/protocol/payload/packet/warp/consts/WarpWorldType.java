@@ -12,17 +12,17 @@ public enum WarpWorldType {
         this.id = id;
     }
 
+    public static WarpWorldType fromId(int id) {
+        for (WarpWorldType type : values()) {
+            if (type.id == id) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown WarpWorldType id: " + id);
+    }
+
     public int id() {
         return id;
     }
-
-        public static WarpWorldType fromId(int id) {
-            for (WarpWorldType type : values()) {
-                if (type.id == id) {
-                    return type;
-                }
-            }
-            throw new IllegalArgumentException("Unknown WarpWorldType id: " + id);
-        }
 
 }

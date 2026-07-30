@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.discord;
 
 import irden.space.proxy.plugin.discord.config.DiscordBotConfiguration;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 

@@ -8,6 +8,7 @@ import irden.space.proxy.protocol.payload.common.vectors.StarVec2FCodec;
 
 public enum InteractRequestCodec implements BinaryCodec<InteractRequest> {
     INSTANCE;
+
     @Override
     public InteractRequest read(BinaryReader reader) {
         int entityId = reader.readInt32BE();

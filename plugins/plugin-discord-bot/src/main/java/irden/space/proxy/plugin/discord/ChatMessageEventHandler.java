@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ChatMessageEventHandler {
-    private final DiscordBotMessageService  discordBotMessageService;
+    private final DiscordBotMessageService discordBotMessageService;
 
     @EventListener
     @Async

@@ -18,10 +18,6 @@ public enum EntityType {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static EntityType fromId(int id) {
         for (EntityType type : values()) {
             if (type.id == id) {
@@ -29,5 +25,9 @@ public enum EntityType {
             }
         }
         throw new IllegalArgumentException("Unknown EntityType id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

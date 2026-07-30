@@ -23,9 +23,6 @@ public record PlaceMaterial(
             this.id = id;
         }
 
-        public int id() {
-            return id;
-        }
         public static TileCollisionOverride fromId(int id) {
             for (TileCollisionOverride collisionOverride : values()) {
                 if (collisionOverride.id == id) {
@@ -33,6 +30,10 @@ public record PlaceMaterial(
                 }
             }
             throw new IllegalArgumentException("Unknown TileCollisionOverride id: " + id);
+        }
+
+        public int id() {
+            return id;
         }
     }
 }

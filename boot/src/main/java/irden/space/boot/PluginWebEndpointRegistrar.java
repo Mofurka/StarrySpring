@@ -13,11 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 final class PluginWebEndpointRegistrar {
 
@@ -29,6 +25,17 @@ final class PluginWebEndpointRegistrar {
 
     PluginWebEndpointRegistrar(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
+    }
+
+    private static Method resolveDetectHandlerMethods() {
+        try {
+            Method method = AbstractHandlerMethodMapping.class.getDeclaredMethod("detectHandlerMethods", Object.class);
+            method.setAccessible(true);
+            return method;
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(
+                    "Spring MVC AbstractHandlerMethodMapping.detectHandlerMethods(Object) is unavailable", e);
+        }
     }
 
     void registerControllers(String pluginId, Collection<Object> beans, PluginContext scopedContext) {
@@ -110,16 +117,5 @@ final class PluginWebEndpointRegistrar {
 
     private boolean isController(Class<?> type) {
         return AnnotatedElementUtils.hasAnnotation(type, Controller.class);
-    }
-
-    private static Method resolveDetectHandlerMethods() {
-        try {
-            Method method = AbstractHandlerMethodMapping.class.getDeclaredMethod("detectHandlerMethods", Object.class);
-            method.setAccessible(true);
-            return method;
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(
-                    "Spring MVC AbstractHandlerMethodMapping.detectHandlerMethods(Object) is unavailable", e);
-        }
     }
 }

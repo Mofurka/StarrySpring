@@ -20,7 +20,7 @@ public enum ItemDropEntitySpawnCodec implements BinaryCodec<ItemDropEntity> {
         boolean eternal = reader.readBoolean();
         EpochTimer epochTimer = EpochTimerCodec.INSTANCE.read(reader);// despawn timer, we will ignore it for now
         GameTimer intangibleTimer = GameTimerCodec.INSTANCE.read(reader);// despawn timer, we will ignore it for now
-        return new ItemDropEntity(itemDescriptor,eternal, epochTimer, intangibleTimer, null);
+        return new ItemDropEntity(itemDescriptor, eternal, epochTimer, intangibleTimer, null);
     }
 
     @Override

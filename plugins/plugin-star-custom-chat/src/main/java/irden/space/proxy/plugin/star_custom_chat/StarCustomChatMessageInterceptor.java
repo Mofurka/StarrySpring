@@ -10,9 +10,7 @@ import irden.space.proxy.plugin.star_custom_chat.constants.SCCConstants;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatFightData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatProximityData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatSH;
-import irden.space.proxy.protocol.codec.variant.MapVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
-import irden.space.proxy.protocol.codec.variant.Variants;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.entity.type.Entity;
@@ -22,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 

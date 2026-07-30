@@ -1,10 +1,8 @@
 package irden.space.proxy.protocol.assets.pak;
 
 import irden.space.proxy.protocol.assets.item.ActiveItem;
-import tools.jackson.core.JsonParser;
 import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -26,6 +24,37 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
         this.enabled = enabled;
         this.archives = List.copyOf(archives);
         this.excludedExtensions = normalizeExtensions(excludedExtensions);
+    }
+
+    private static Set<String> normalizeExtensions(Collection<String> rawExtensions) {
+        if (rawExtensions == null || rawExtensions.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String extension : rawExtensions) {
+            if (extension == null || extension.isBlank()) {
+                continue;
+            }
+            String trimmed = extension.trim().toLowerCase(Locale.ROOT);
+            normalized.add(trimmed.startsWith(".") ? trimmed : "." + trimmed);
+        }
+        return Collections.unmodifiableSet(normalized);
+    }
+
+    private static String normalizePath(String path) {
+        return path.toLowerCase(Locale.ROOT);
+    }
+
+    public static List<Path> toPaths(Collection<String> paths) {
+        if (paths == null || paths.isEmpty()) {
+            return List.of();
+        }
+        List<Path> parsed = new ArrayList<>(paths.size());
+        for (String path : paths) {
+            parsed.add(Path.of(path));
+        }
+        return List.copyOf(parsed);
     }
 
     @Override
@@ -53,7 +82,7 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
                 }
                 byte[] data = repository.readAsset(normalizedPath);
                 loaded.put(normalizedPath, data);
-                
+
                 if (normalizedPath.endsWith(".activeitem")) {
                     try {
                         JsonNode jsonNode = OBJECT_MAPPER.readTree(data);
@@ -139,36 +168,5 @@ public final class InMemoryGameAssetStore implements GameAssetStore {
             }
         }
         return false;
-    }
-
-    private static Set<String> normalizeExtensions(Collection<String> rawExtensions) {
-        if (rawExtensions == null || rawExtensions.isEmpty()) {
-            return Collections.emptySet();
-        }
-
-        Set<String> normalized = new LinkedHashSet<>();
-        for (String extension : rawExtensions) {
-            if (extension == null || extension.isBlank()) {
-                continue;
-            }
-            String trimmed = extension.trim().toLowerCase(Locale.ROOT);
-            normalized.add(trimmed.startsWith(".") ? trimmed : "." + trimmed);
-        }
-        return Collections.unmodifiableSet(normalized);
-    }
-
-    private static String normalizePath(String path) {
-        return path.toLowerCase(Locale.ROOT);
-    }
-
-    public static List<Path> toPaths(Collection<String> paths) {
-        if (paths == null || paths.isEmpty()) {
-            return List.of();
-        }
-        List<Path> parsed = new ArrayList<>(paths.size());
-        for (String path : paths) {
-            parsed.add(Path.of(path));
-        }
-        return List.copyOf(parsed);
     }
 }

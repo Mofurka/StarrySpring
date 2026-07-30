@@ -1,10 +1,6 @@
 package irden.space.proxy.protocol.codec.variant;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Фабрики и хелперы для {@link VariantValue} - чтобы не собирать варианты руками.

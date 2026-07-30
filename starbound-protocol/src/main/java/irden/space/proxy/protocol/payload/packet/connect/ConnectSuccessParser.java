@@ -11,15 +11,15 @@ public class ConnectSuccessParser implements PacketParser<ConnectSuccess> {
 
     @Override
     public ConnectSuccess parse(BinaryReader reader) {
-        int clientId =  VlqUnsignedCodec.INSTANCE.readInt(reader);
-        StarUuid serverUuid =  StarUuidCodec.INSTANCE.read(reader); // useless piece of shit
-        int planetOrbitalLevels =  reader.readInt32BE();
-        int satelliteOrbitalLevels =  reader.readInt32BE();
-        int chunkSize =  reader.readInt32BE();
-        int xyMin =  reader.readInt32BE();
-        int xyMax =  reader.readInt32BE();
-        int zMin =  reader.readInt32BE();
-        int zMax =  reader.readInt32BE();
+        int clientId = VlqUnsignedCodec.INSTANCE.readInt(reader);
+        StarUuid serverUuid = StarUuidCodec.INSTANCE.read(reader); // useless piece of shit
+        int planetOrbitalLevels = reader.readInt32BE();
+        int satelliteOrbitalLevels = reader.readInt32BE();
+        int chunkSize = reader.readInt32BE();
+        int xyMin = reader.readInt32BE();
+        int xyMax = reader.readInt32BE();
+        int zMin = reader.readInt32BE();
+        int zMax = reader.readInt32BE();
         return new ConnectSuccess(
                 clientId,
                 serverUuid,

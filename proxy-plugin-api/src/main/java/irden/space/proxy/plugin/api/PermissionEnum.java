@@ -4,16 +4,6 @@ import java.util.Objects;
 
 public interface PermissionEnum {
 
-    String permissionNode();
-
-    default Permission permission() {
-        return PermissionRegistry.getPermission(permissionNode());
-    }
-
-    default void registerDefaults() {
-        registerDefaults(getClass().asSubclass(PermissionEnum.class));
-    }
-
     static void registerDefaults(Iterable<Class<? extends PermissionEnum>> permissionTypes) {
         Objects.requireNonNull(permissionTypes, "permissionTypes");
 
@@ -39,5 +29,15 @@ public interface PermissionEnum {
             }
             PermissionRegistry.registerIfAbsent(permissionEnum.permissionNode());
         }
+    }
+
+    String permissionNode();
+
+    default Permission permission() {
+        return PermissionRegistry.getPermission(permissionNode());
+    }
+
+    default void registerDefaults() {
+        registerDefaults(getClass().asSubclass(PermissionEnum.class));
     }
 }

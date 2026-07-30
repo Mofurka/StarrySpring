@@ -16,6 +16,25 @@ public class StarMaybeCodec<T> implements BinaryCodec<Optional<T>> {
         this.innerCodec = innerCodec;
     }
 
+    public static <T> StarMaybeCodec<T> of(BinaryCodec<T> codec) {
+        return new StarMaybeCodec<>(codec);
+    }
+
+    public static <T> StarMaybeCodec<T> of(Function<BinaryReader, T> reader,
+                                           BiConsumer<BinaryWriter, T> writer) {
+        return new StarMaybeCodec<>(new BinaryCodec<T>() {
+            @Override
+            public T read(BinaryReader binaryReader) {
+                return reader.apply(binaryReader);
+            }
+
+            @Override
+            public void write(BinaryWriter binaryWriter, T value) {
+                writer.accept(binaryWriter, value);
+            }
+        });
+    }
+
     @Override
     public Optional<T> read(BinaryReader reader) {
         boolean isPresent = reader.readBoolean();
@@ -34,25 +53,5 @@ public class StarMaybeCodec<T> implements BinaryCodec<Optional<T>> {
         } else {
             writer.writeBoolean(false);
         }
-    }
-
-
-    public static <T> StarMaybeCodec<T> of(BinaryCodec<T> codec) {
-        return new StarMaybeCodec<>(codec);
-    }
-
-    public static <T> StarMaybeCodec<T> of(Function<BinaryReader, T> reader,
-                                           BiConsumer<BinaryWriter, T> writer) {
-        return new StarMaybeCodec<>(new BinaryCodec<T>() {
-            @Override
-            public T read(BinaryReader binaryReader) {
-                return reader.apply(binaryReader);
-            }
-
-            @Override
-            public void write(BinaryWriter binaryWriter, T value) {
-                writer.accept(binaryWriter, value);
-            }
-        });
     }
 }

@@ -8,12 +8,12 @@ import irden.space.proxy.protocol.payload.registry.PacketParser;
 public class StepUpdateParser implements PacketParser<StepUpdate> {
     @Override
     public StepUpdate parse(BinaryReader reader) {
-         if (reader.openProtocolVersion() == -1) {
-             int steps = VlqUnsignedCodec.INSTANCE.readInt(reader);
-             return new StepUpdate(
-                        steps / 60.0
-             );
-         }
+        if (reader.openProtocolVersion() == -1) {
+            int steps = VlqUnsignedCodec.INSTANCE.readInt(reader);
+            return new StepUpdate(
+                    steps / 60.0
+            );
+        }
         return new StepUpdate(
                 reader.readDouble64BE()
         );

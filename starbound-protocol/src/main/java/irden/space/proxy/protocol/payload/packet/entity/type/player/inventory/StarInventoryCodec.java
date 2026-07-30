@@ -12,7 +12,7 @@ public enum StarInventoryCodec implements BinaryCodec<StarInventorySlot> {
         return switch (variant) {
             case 0 -> {
                 var equipmentSlot = EquipmentSlot.fromId(reader.readUnsignedByte());
-                yield  new InventoryEquipmentSlot(equipmentSlot);
+                yield new InventoryEquipmentSlot(equipmentSlot);
             }
             case 1 -> {
                 String bagName = StarStringCodec.INSTANCE.read(reader);// bag name

@@ -87,10 +87,9 @@ public class PlayerPositionTracker {
                 case ORBITED -> null; // спуск на орбитируемую планету - координаты из world_start
                 case RETURN -> null;  // обработано в applyWarp
             };
-            case ToPlayerWarpAction(var playerIdHex) ->
-                    playerManagerApi.findPlayerByUuid(playerIdHex.toHex(), true)
-                            .map(target -> target.position().getCurrentLocation())
-                            .orElse(null);
+            case ToPlayerWarpAction(var playerIdHex) -> playerManagerApi.findPlayerByUuid(playerIdHex.toHex(), true)
+                    .map(target -> target.position().getCurrentLocation())
+                    .orElse(null);
             case ToWorldWarpAction(WorldTarget target) -> switch (target) {
                 case CelestialWorldTarget(var coordinates, _) ->
                         new CelestialWorld(coordinates.location(), coordinates.worldPlanetId(), coordinates.worldSatelliteId());

@@ -54,9 +54,9 @@ class Pf4jPluginLoaderTest {
                     jar,
                     "plugin.properties",
                     """
-                    plugin.id=external-test-container
-                    plugin.version=1.0.0
-                    """
+                            plugin.id=external-test-container
+                            plugin.version=1.0.0
+                            """
                             .getBytes(StandardCharsets.UTF_8)
             );
             writeEntry(

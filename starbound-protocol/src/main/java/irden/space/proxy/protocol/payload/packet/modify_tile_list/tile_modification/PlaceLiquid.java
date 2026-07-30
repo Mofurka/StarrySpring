@@ -3,5 +3,5 @@ package irden.space.proxy.protocol.payload.packet.modify_tile_list.tile_modifica
 public record PlaceLiquid(
         int liquidId,
         float liquidLevel
-) implements TileModification{
+) implements TileModification {
 }

@@ -11,16 +11,16 @@ public enum ChatSentMode {
         this.id = id;
     }
 
+    public static ChatSentMode fromId(int id) {
+        for (ChatSentMode mode : values()) {
+            if (mode.id == id) {
+                return mode;
+            }
+        }
+        throw new IllegalArgumentException("Invalid ChatSentMode id: " + id);
+    }
+
     public int id() {
         return id;
     }
-
-        public static ChatSentMode fromId(int id) {
-            for (ChatSentMode mode : values()) {
-                if (mode.id == id) {
-                    return mode;
-                }
-            }
-            throw new IllegalArgumentException("Invalid ChatSentMode id: " + id);
-        }
 }

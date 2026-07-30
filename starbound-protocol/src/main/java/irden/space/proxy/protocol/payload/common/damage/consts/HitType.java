@@ -13,10 +13,6 @@ public enum HitType {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static HitType fromId(int id) {
         for (HitType hitType : values()) {
             if (hitType.id == id) {
@@ -24,5 +20,9 @@ public enum HitType {
             }
         }
         throw new IllegalArgumentException("Unknown HitType id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

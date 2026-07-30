@@ -53,6 +53,7 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
             return Optional.empty();
         }
     }
+
     private void writeMaterialHue(BinaryWriter writer, Optional<Integer> materialHue) {
         if (materialHue.isPresent()) {
             writer.writeBoolean(true);
@@ -62,8 +63,7 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
         }
     }
 
-    private PlaceMaterial readPlaceMaterial(BinaryReader reader)
-    {
+    private PlaceMaterial readPlaceMaterial(BinaryReader reader) {
         int layerByte = reader.readUnsignedByte();
         TileLayer layer;
         PlaceMaterial.TileCollisionOverride collisionOverride;
@@ -80,6 +80,7 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
         Optional<Integer> materialHue = readMaterialHue(reader);
         return new PlaceMaterial(layer, materialId, materialHue, collisionOverride);
     }
+
     private void writePlaceMaterial(BinaryWriter writer, PlaceMaterial value) {
         int layerByte = switch (value.layer()) {
             case BACKGROUND -> 0;
@@ -92,6 +93,7 @@ public enum TileModificationCodec implements BinaryCodec<TileModification> {
         writer.writeInt16BE(value.materialId());
         writeMaterialHue(writer, value.materialHue());
     }
+
     private PlaceMod readPlaceMod(BinaryReader reader) {
         TileLayer tileLayer = TileLayer.fromId(reader.readUnsignedByte());
         short mod = reader.readInt16BE();

@@ -37,7 +37,6 @@ public class PluginRuntimeConfiguration {
     }
 
 
-
     @Bean
     public PluginManager pluginManager(
             PluginLoader pluginLoader,

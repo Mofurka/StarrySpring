@@ -44,6 +44,18 @@ public class SwitchableSessionTransport implements SessionTransport {
         this.writeMode = requireSupportedMode(initialMode);
     }
 
+    private static Map<SessionTransportMode, SessionTransportCodec> defaultCodecs() {
+        Map<SessionTransportMode, SessionTransportCodec> codecs = new EnumMap<>(SessionTransportMode.class);
+        register(codecs, new PlainSessionTransportCodec());
+        register(codecs, new ZstdSessionTransportCodec());
+        return codecs;
+    }
+
+    private static void register(Map<SessionTransportMode, SessionTransportCodec> codecs,
+                                 SessionTransportCodec codec) {
+        codecs.put(codec.mode(), codec);
+    }
+
     @Override
     public PacketEnvelope read(InputStream inputStream, PacketDirection direction) throws IOException {
         return packetReader.read(resolveReadSource(inputStream), direction);
@@ -167,17 +179,5 @@ public class SwitchableSessionTransport implements SessionTransport {
         }
 
         return codec;
-    }
-
-    private static Map<SessionTransportMode, SessionTransportCodec> defaultCodecs() {
-        Map<SessionTransportMode, SessionTransportCodec> codecs = new EnumMap<>(SessionTransportMode.class);
-        register(codecs, new PlainSessionTransportCodec());
-        register(codecs, new ZstdSessionTransportCodec());
-        return codecs;
-    }
-
-    private static void register(Map<SessionTransportMode, SessionTransportCodec> codecs,
-                                 SessionTransportCodec codec) {
-        codecs.put(codec.mode(), codec);
     }
 }

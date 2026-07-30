@@ -34,15 +34,17 @@ import java.util.Objects;
  */
 public final class PluginJpaInitializer {
 
-    private static final Logger log = LoggerFactory.getLogger(PluginJpaInitializer.class);
-
     static final String ENTITY_MANAGER_FACTORY_BEAN = "entityManagerFactory";
     static final String TRANSACTION_MANAGER_BEAN = "transactionManager";
-
+    private static final Logger log = LoggerFactory.getLogger(PluginJpaInitializer.class);
     private final ApplicationContext rootContext;
 
     public PluginJpaInitializer(ApplicationContext rootContext) {
         this.rootContext = Objects.requireNonNull(rootContext, "rootContext");
+    }
+
+    private static void markAsInfrastructure(BeanDefinition beanDefinition) {
+        beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
     }
 
     public void apply(AnnotationConfigApplicationContext pluginContext, PluginCandidate candidate) {
@@ -115,11 +117,6 @@ public final class PluginJpaInitializer {
                 },
                 PluginJpaInitializer::markAsInfrastructure
         );
-    }
-
-
-    private static void markAsInfrastructure(BeanDefinition beanDefinition) {
-        beanDefinition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
     }
 
     private void registerRepositories(AnnotationConfigApplicationContext pluginContext, String basePackage) {

@@ -35,52 +35,6 @@ public final class SbAsset6Archive implements Closeable {
         }
     }
 
-    public Map<String, Object> metadata() {
-        return metadata;
-    }
-
-    public Set<String> listPaths() {
-        return Collections.unmodifiableSet(index.keySet());
-    }
-
-    public boolean contains(String path) {
-        return index.containsKey(normalize(path));
-    }
-
-    public Optional<byte[]> findAsset(String path) throws IOException {
-        PakIndexEntry entry = index.get(normalize(path));
-        if (entry == null) {
-            return Optional.empty();
-        }
-        return Optional.of(read(entry));
-    }
-
-    public byte[] readAsset(String path) throws IOException {
-        PakIndexEntry entry = index.get(normalize(path));
-        if (entry == null) {
-            throw new IllegalArgumentException("Asset not found: " + path);
-        }
-        return read(entry);
-    }
-
-    @Override
-    public void close() throws IOException {
-        file.close();
-    }
-
-    private byte[] read(PakIndexEntry entry) throws IOException {
-        if (entry.length() > Integer.MAX_VALUE) {
-            throw new IllegalStateException("Asset is too large to be read into a byte[]: " + entry.length());
-        }
-
-        byte[] data = new byte[(int) entry.length()];
-        synchronized (file) {
-            file.seek(entry.offset());
-            file.readFully(data);
-        }
-        return data;
-    }
-
     private static SbAsset6Archive load(RandomAccessFile file) throws IOException {
         byte[] headerMagic = new byte[8];
         file.readFully(headerMagic);
@@ -131,5 +85,51 @@ public final class SbAsset6Archive implements Closeable {
 
     private static String normalize(String path) {
         return path.toLowerCase(Locale.ROOT);
+    }
+
+    public Map<String, Object> metadata() {
+        return metadata;
+    }
+
+    public Set<String> listPaths() {
+        return Collections.unmodifiableSet(index.keySet());
+    }
+
+    public boolean contains(String path) {
+        return index.containsKey(normalize(path));
+    }
+
+    public Optional<byte[]> findAsset(String path) throws IOException {
+        PakIndexEntry entry = index.get(normalize(path));
+        if (entry == null) {
+            return Optional.empty();
+        }
+        return Optional.of(read(entry));
+    }
+
+    public byte[] readAsset(String path) throws IOException {
+        PakIndexEntry entry = index.get(normalize(path));
+        if (entry == null) {
+            throw new IllegalArgumentException("Asset not found: " + path);
+        }
+        return read(entry);
+    }
+
+    @Override
+    public void close() throws IOException {
+        file.close();
+    }
+
+    private byte[] read(PakIndexEntry entry) throws IOException {
+        if (entry.length() > Integer.MAX_VALUE) {
+            throw new IllegalStateException("Asset is too large to be read into a byte[]: " + entry.length());
+        }
+
+        byte[] data = new byte[(int) entry.length()];
+        synchronized (file) {
+            file.seek(entry.offset());
+            file.readFully(data);
+        }
+        return data;
     }
 }

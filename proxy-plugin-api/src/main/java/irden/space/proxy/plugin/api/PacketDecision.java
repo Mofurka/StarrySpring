@@ -10,18 +10,6 @@ public sealed interface PacketDecision
         DropPacketDecision,
         ReplacePacketDecision {
 
-    default boolean isForward() {
-        return this instanceof ForwardPacketDecision;
-    }
-
-    default boolean isDrop() {
-        return this instanceof DropPacketDecision;
-    }
-
-    default boolean isReplace() {
-        return this instanceof ReplacePacketDecision;
-    }
-
     static ForwardPacketDecision forward() {
         return ForwardPacketDecision.INSTANCE;
     }
@@ -50,5 +38,17 @@ public sealed interface PacketDecision
             @NotNull PacketEnvelope defaultValue
     ) {
         return new ReplacePacketDecision(defaultValue);
+    }
+
+    default boolean isForward() {
+        return this instanceof ForwardPacketDecision;
+    }
+
+    default boolean isDrop() {
+        return this instanceof DropPacketDecision;
+    }
+
+    default boolean isReplace() {
+        return this instanceof ReplacePacketDecision;
     }
 }

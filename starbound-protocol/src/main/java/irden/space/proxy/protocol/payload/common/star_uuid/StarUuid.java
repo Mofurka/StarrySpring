@@ -16,16 +16,31 @@ public final class StarUuid {
         this.value = value.clone();
     }
 
+    public static StarUuid fromHex(String hex) {
+        return new StarUuid(HexUtils.fromHex(hex));
+    }
+
+    public static StarUuid fromJavaUuid(UUID uuid) {
+        byte[] bytes = new byte[16];
+        long mostSigBits = uuid.getMostSignificantBits();
+        long leastSigBits = uuid.getLeastSignificantBits();
+        for (int i = 7; i >= 0; i--) {
+            bytes[i] = (byte) (mostSigBits & 0xFF);
+            mostSigBits >>= 8;
+        }
+        for (int i = 15; i >= 8; i--) {
+            bytes[i] = (byte) (leastSigBits & 0xFF);
+            leastSigBits >>= 8;
+        }
+        return new StarUuid(bytes);
+    }
+
     public byte[] bytes() {
         return value.clone();
     }
 
     public String toHex() {
         return HexUtils.toHex(value);
-    }
-
-    public static StarUuid fromHex(String hex) {
-        return new StarUuid(HexUtils.fromHex(hex));
     }
 
     @Override
@@ -54,21 +69,6 @@ public final class StarUuid {
             leastSigBits = (leastSigBits << 8) | (value[i] & 0xFF);
         }
         return new UUID(mostSigBits, leastSigBits);
-    }
-
-    public static StarUuid fromJavaUuid(UUID uuid) {
-        byte[] bytes = new byte[16];
-        long mostSigBits = uuid.getMostSignificantBits();
-        long leastSigBits = uuid.getLeastSignificantBits();
-        for (int i = 7; i >= 0; i--) {
-            bytes[i] = (byte) (mostSigBits & 0xFF);
-            mostSigBits >>= 8;
-        }
-        for (int i = 15; i >= 8; i--) {
-            bytes[i] = (byte) (leastSigBits & 0xFF);
-            leastSigBits >>= 8;
-        }
-        return new StarUuid(bytes);
     }
 
 }

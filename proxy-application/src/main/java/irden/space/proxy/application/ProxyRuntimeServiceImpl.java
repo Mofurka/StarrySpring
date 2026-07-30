@@ -29,7 +29,7 @@ import java.net.SocketException;
 public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
     private static final Logger log = LoggerFactory.getLogger(ProxyRuntimeServiceImpl.class);
-
+    private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
     private final SessionRegistry sessionRegistry;
     private final ProxyServerProperties properties;
     private final PacketParserRegistry packetParserRegistry = new PacketParserRegistry();
@@ -38,8 +38,6 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
     private final PacketInterceptionService packetInterceptionService;
     private final PluginSessionLifecycleService pluginSessionLifecycleService;
     private final SessionPermissionService sessionPermissionService;
-    private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
-
     private volatile boolean running;
     private ServerSocket serverSocket;
     private Thread acceptThread;

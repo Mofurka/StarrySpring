@@ -11,23 +11,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class PluginManager implements PluginSessionLifecycleService, PluginRuntimeService {
 
     private static final Logger log = LoggerFactory.getLogger(PluginManager.class);
-
+    private static final String PHASE_LOAD = "LOAD";
+    private static final String PHASE_START = "START";
+    private static final String PHASE_STOP = "STOP";
+    private static final String PHASE_RELOAD = "RELOAD";
     private final PluginLoader pluginLoader;
     private final PluginDependencyResolver dependencyResolver;
     private final PacketInterceptorRegistry interceptorRegistry;
     private final PluginContext pluginContext;
     private final PluginContainerFactory containerFactory;
     private final SessionPermissionService sessionPermissionService;
-
     private final CopyOnWriteArrayList<PluginContainer> loadedPlugins = new CopyOnWriteArrayList<>();
     private final Map<String, PluginRuntimeState> pluginStates = new HashMap<>();
     private final Map<String, PluginFailure> pluginFailures = new HashMap<>();
     private final Map<String, PluginCandidate> loadedCandidates = new HashMap<>();
-
-    private static final String PHASE_LOAD = "LOAD";
-    private static final String PHASE_START = "START";
-    private static final String PHASE_STOP = "STOP";
-    private static final String PHASE_RELOAD = "RELOAD";
 
 
     public PluginManager(

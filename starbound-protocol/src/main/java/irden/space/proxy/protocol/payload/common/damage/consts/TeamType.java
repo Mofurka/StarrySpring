@@ -1,6 +1,6 @@
 package irden.space.proxy.protocol.payload.common.damage.consts;
 
-public enum     TeamType {
+public enum TeamType {
     NULL(1),
     FRIENDLY(2),
     ENEMY(3),
@@ -17,10 +17,6 @@ public enum     TeamType {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static TeamType fromId(int id) {
         for (TeamType hitType : values()) {
             if (hitType.id == id) {
@@ -28,5 +24,9 @@ public enum     TeamType {
             }
         }
         throw new IllegalArgumentException("Unknown HitType id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

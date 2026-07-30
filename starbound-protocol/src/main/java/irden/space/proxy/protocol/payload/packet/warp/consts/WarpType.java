@@ -11,10 +11,6 @@ public enum WarpType {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static WarpType fromId(int id) {
         for (WarpType type : values()) {
             if (type.id == id) {
@@ -22,5 +18,9 @@ public enum WarpType {
             }
         }
         throw new IllegalArgumentException("Unknown WarpType id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

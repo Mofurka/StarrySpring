@@ -250,6 +250,7 @@ public class PacketForwarder implements Runnable {
         }
         return upstream.getOutputStream();
     }
+
     private void applyNegotiatedSessionState(PacketInspectionResult inspection) {
         if (inspection.negotiatedOpenProtocolVersion() != null) {
             session.setOpenProtocolVersion(inspection.negotiatedOpenProtocolVersion());

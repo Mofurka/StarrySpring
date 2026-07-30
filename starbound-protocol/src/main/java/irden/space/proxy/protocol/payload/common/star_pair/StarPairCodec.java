@@ -4,7 +4,7 @@ import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 
-public class StarPairCodec<A,B> implements BinaryCodec<StarPair<A,B>>{
+public class StarPairCodec<A, B> implements BinaryCodec<StarPair<A, B>> {
     private final BinaryCodec<A> firstCodec;
     private final BinaryCodec<B> secondCodec;
 

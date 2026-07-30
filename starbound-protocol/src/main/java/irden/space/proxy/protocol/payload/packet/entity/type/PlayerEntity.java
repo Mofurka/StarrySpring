@@ -6,7 +6,7 @@ import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetSta
 import lombok.Builder;
 
 @Builder
-public record PlayerEntity (
+public record PlayerEntity(
         StarUuid uuid,
         String description,
         int modeType,

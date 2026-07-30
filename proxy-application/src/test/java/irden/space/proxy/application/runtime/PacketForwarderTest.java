@@ -74,20 +74,20 @@ class PacketForwarderTest {
     private record RecordingSessionLifecycleService(List<String> events) implements PluginSessionLifecycleService {
 
         @Override
-            public void onConnectionSuccess(PluginSessionContext context) {
-                events.add("connection-success-unexpected:" + context.sessionId());
-            }
-
-            @Override
-            public void onDisconnecting(PluginSessionContext context) {
-                events.add("disconnecting:" + context.sessionId());
-            }
-
-            @Override
-            public void onDisconnected(PluginSessionContext context) {
-                events.add("disconnected:" + context.sessionId());
-            }
+        public void onConnectionSuccess(PluginSessionContext context) {
+            events.add("connection-success-unexpected:" + context.sessionId());
         }
+
+        @Override
+        public void onDisconnecting(PluginSessionContext context) {
+            events.add("disconnecting:" + context.sessionId());
+        }
+
+        @Override
+        public void onDisconnected(PluginSessionContext context) {
+            events.add("disconnected:" + context.sessionId());
+        }
+    }
 
     private static final class RecordingSessionRegistry implements SessionRegistry {
         private final List<String> events;

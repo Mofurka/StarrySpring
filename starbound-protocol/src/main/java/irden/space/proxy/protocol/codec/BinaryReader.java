@@ -9,8 +9,8 @@ import java.util.Arrays;
 
 public final class BinaryReader {
     private final byte[] data;
-    private int position;
     private final int openProtocolVersion;
+    private int position;
 
     public BinaryReader(byte[] data, int openProtocolVersion) {
         this.data = data;

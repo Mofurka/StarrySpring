@@ -15,10 +15,6 @@ public enum ChatReceiveMode {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static ChatReceiveMode fromId(int id) {
         for (ChatReceiveMode mode : values()) {
             if (mode.id == id) {
@@ -26,6 +22,10 @@ public enum ChatReceiveMode {
             }
         }
         throw new IllegalArgumentException("Unknown ChatReceiveMode id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 
 }

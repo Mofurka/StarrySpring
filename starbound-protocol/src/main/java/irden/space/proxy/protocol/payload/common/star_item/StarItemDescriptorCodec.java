@@ -5,6 +5,7 @@ import irden.space.proxy.protocol.codec.variant.VariantValue;
 
 public enum StarItemDescriptorCodec implements BinaryCodec<StarItemDescriptor> {
     INSTANCE;
+
     @Override
     public StarItemDescriptor read(BinaryReader reader) {
         String name = StarStringCodec.INSTANCE.read(reader);

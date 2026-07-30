@@ -6,9 +6,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public final class BinaryWriter {
+    private final int openProtocolVersion;
     private byte[] buffer;
     private int position;
-    private final int openProtocolVersion;
 
     public BinaryWriter() {
         this(PacketParser.LEGACY_PROTOCOL_VERSION);

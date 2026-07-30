@@ -27,6 +27,13 @@ public class PlayerStatisticService {
     private final Map<PeriodKey, Accumulator> accumulators =
             new ConcurrentHashMap<>();
 
+    private static int countWords(String message) {
+        String trimmed = message.strip();
+        if (trimmed.isEmpty()) {
+            return 0;
+        }
+        return trimmed.split("\\s+").length;
+    }
 
     public void recordMessage(String uuid, String message) {
         if (uuid == null || message == null) {
@@ -38,7 +45,6 @@ public class PlayerStatisticService {
 
         accumulatorFor(uuid).addMessage(words, characters);
     }
-
 
     public void recordInGameTime(String uuid, long seconds) {
         if (uuid == null || seconds <= 0) {
@@ -101,14 +107,6 @@ public class PlayerStatisticService {
         accumulators.entrySet().removeIf(entry ->
                 !entry.getKey().isSamePeriod(today)
                         && entry.getValue().peek().isEmpty());
-    }
-
-    private static int countWords(String message) {
-        String trimmed = message.strip();
-        if (trimmed.isEmpty()) {
-            return 0;
-        }
-        return trimmed.split("\\s+").length;
     }
 
     private record PeriodKey(String playerUuid, int year, Month month) {

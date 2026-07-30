@@ -18,6 +18,7 @@ public enum PlayerInventoryCodec implements BinaryCodec<PlayerInventory> {
             VlqUnsignedCodec.INSTANCE,
             VlqUnsignedCodec.INSTANCE
     );
+
     @Override
     public PlayerInventory read(BinaryReader reader) {
         final int protocolVersion = reader.openProtocolVersion();

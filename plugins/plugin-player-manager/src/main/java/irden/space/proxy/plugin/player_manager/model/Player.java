@@ -39,7 +39,7 @@ public class Player {
     private String namePrefix;
 
     @Builder.Default
-    private PlayerPosition position =  new PlayerPosition();
+    private PlayerPosition position = new PlayerPosition();
 
     public String name() {
         return name;

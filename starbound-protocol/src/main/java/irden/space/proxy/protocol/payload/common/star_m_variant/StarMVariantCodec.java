@@ -7,7 +7,7 @@ import irden.space.proxy.protocol.codec.BinaryWriter;
 public class StarMVariantCodec implements BinaryCodec<StarMVariant> {
     private final BinaryCodec<?>[] codecs;
 
-    public StarMVariantCodec(BinaryCodec<?> ... codecs) {
+    public StarMVariantCodec(BinaryCodec<?>... codecs) {
         this.codecs = codecs;
     }
 
@@ -28,16 +28,16 @@ public class StarMVariantCodec implements BinaryCodec<StarMVariant> {
 
     @Override
     public void write(BinaryWriter writer, StarMVariant value) {
-            int variant = value.variant();
-            if (variant == 0) {
-                writer.writeByte(0);
-                return;
-            }
-            if (variant > codecs.length) {
-                throw new IllegalStateException("Unknown variant: " + variant);
-            }
-            BinaryCodec codec = codecs[variant - 1];
-            writer.writeByte(variant);
-            codec.write(writer, value.value());
+        int variant = value.variant();
+        if (variant == 0) {
+            writer.writeByte(0);
+            return;
+        }
+        if (variant > codecs.length) {
+            throw new IllegalStateException("Unknown variant: " + variant);
+        }
+        BinaryCodec codec = codecs[variant - 1];
+        writer.writeByte(variant);
+        codec.write(writer, value.value());
     }
 }

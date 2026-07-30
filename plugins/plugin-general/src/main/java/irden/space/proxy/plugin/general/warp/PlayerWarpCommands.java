@@ -70,12 +70,12 @@ public class PlayerWarpCommands {
         var toLocation = to.position().getCurrentLocation();
 
         if (fromLocation instanceof CelestialWorld fromCelestial && toLocation instanceof CelestialWorld toCelestial && fromCelestial.equals(toCelestial)) {
-                entityMessageService.sendToEntity(from.sessionContext(), from.entityId(), "warp", Variants.of(
-                        "Nowhere=" + to.position().getX().intValue() + "." + to.position().getY().intValue()
-                ));
-                ctx.reply("Warp has been sent!");
-                return;
-            }
+            entityMessageService.sendToEntity(from.sessionContext(), from.entityId(), "warp", Variants.of(
+                    "Nowhere=" + to.position().getX().intValue() + "." + to.position().getY().intValue()
+            ));
+            ctx.reply("Warp has been sent!");
+            return;
+        }
 
         WorldTarget worldTarget = switch (toLocation) {
             case CelestialWorld(var location, var planet, var satellite) -> {

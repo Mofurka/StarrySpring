@@ -18,7 +18,7 @@ public class StarMapCodec implements BinaryCodec<Map<?, ?>> {
     }
 
     @Override
-    public Map<?,?> read(BinaryReader reader) {
+    public Map<?, ?> read(BinaryReader reader) {
         int mapSize = VlqUnsignedCodec.INSTANCE.readInt(reader);
         LinkedHashMap<Object, Object> objectObjectLinkedHashMap = LinkedHashMap.newLinkedHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {

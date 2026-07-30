@@ -1,7 +1,6 @@
 package irden.space.proxy.plugin.runtime;
 
 import irden.space.proxy.plugin.api.*;
-import irden.space.proxy.plugin.api.DefaultPluginSessionContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

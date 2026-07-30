@@ -19,10 +19,11 @@ public enum SystemLocationCodec implements BinaryCodec<SystemLocation> {
     public SystemLocation read(BinaryReader reader) {
         int type = reader.readUnsignedByte();
         return switch (type) {
-            case 0 -> UniverseSystemLocation.INSTANCE; // When flyship is in the universe, it doesn't have a location, so this is used as a placeholder
+            case 0 ->
+                    UniverseSystemLocation.INSTANCE; // When flyship is in the universe, it doesn't have a location, so this is used as a placeholder
             case 1 -> {
                 CelestialCoordinates read = CelestialCoordinatesCodec.INSTANCE.read(reader);
-                yield  new CelestialSystemLocation(read);
+                yield new CelestialSystemLocation(read);
             }
             case 2 -> {
                 CelestialCoordinates read1 = CelestialCoordinatesCodec.INSTANCE.read(reader);

@@ -31,7 +31,7 @@ public class WorldStartParser implements PacketParser<WorldStart> {
             float gravity = reader.readFloat32BE();
             dungeonIdGravity.put(dungeonId, gravity);
         }
-        
+
         Map<Short, Boolean> dungeonIdBreathable = new HashMap<>();
         size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         for (int i = 0; i < size; i++) {
@@ -39,13 +39,13 @@ public class WorldStartParser implements PacketParser<WorldStart> {
             boolean breathable = reader.readBoolean();
             dungeonIdBreathable.put(dungeonId, breathable);
         }
-        
+
         List<Short> protectedDungeonIds = new ArrayList<>();
         size = VlqUnsignedCodec.INSTANCE.readInt(reader);
         for (int i = 0; i < size; i++) {
             protectedDungeonIds.add(reader.readInt16BE());
         }
-        
+
         int connectionId = reader.readUInt16BE();
         boolean localInterpolationMode = reader.readBoolean();
 

@@ -29,6 +29,5 @@ public record PlayerNetState(
         List<StarPair<String, String>> effectEmitters,
         EffectsAnimator effectsAnimator
         // Incompleted
-)
-{
+) {
 }

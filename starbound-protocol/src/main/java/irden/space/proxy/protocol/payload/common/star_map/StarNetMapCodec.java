@@ -35,7 +35,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      *   changeType: u8
      *   change payload
      * </pre>
-     *
+     * <p>
      * Even though a normal full snapshot usually contains only SetChange,
      * OpenStarbound technically reads generic changes here, so we support all of them.
      */
@@ -54,11 +54,11 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
     /**
      * Convenience method:
      * reads a delta stream against an empty base map.
-     *
+     * <p>
      * Safe when:
      * - the sender emits full reloads, or
      * - you know there are only additive/overwrite changes.
-     *
+     * <p>
      * For true incremental synchronization use {@link #readDelta(BinaryReader, Map)}.
      */
     public Map<A, B> readDelta(BinaryReader reader) {
@@ -67,7 +67,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
 
     /**
      * Reads a delta stream and applies it to a copy of {@code baseMap}.
-     *
+     * <p>
      * Delta format:
      * - 0 = end
      * - 1 = full reload, followed by {@link #read(BinaryReader)}
@@ -143,7 +143,7 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
      * <pre>
      * 0
      * </pre>
-     *
+     * <p>
      * Useful if outer code has already decided to emit the field and now needs
      * a syntactically valid empty body.
      */
@@ -168,15 +168,15 @@ public class StarNetMapCodec<A, B> implements BinaryCodec<Map<A, B>> {
 
     /**
      * Writes an incremental delta from oldMap to newMap.
-     *
+     * <p>
      * Returns true if anything was written, false if maps are equal and nothing
      * was emitted at all.
-     *
+     * <p>
      * Protocol:
      * - each individual change is encoded as:
-     *     2 + one change record
+     * 2 + one change record
      * - after the last change an ending 0 is written
-     *
+     * <p>
      * This mirrors OpenStarbound NetElementMapWrapper::writeNetDelta().
      */
     public boolean writeDelta(BinaryWriter writer, Map<A, B> oldMap, Map<A, B> newMap) {

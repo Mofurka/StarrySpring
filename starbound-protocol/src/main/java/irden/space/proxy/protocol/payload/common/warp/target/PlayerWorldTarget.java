@@ -6,5 +6,5 @@ import irden.space.proxy.protocol.payload.packet.warp.consts.SpawnTarget;
 public record PlayerWorldTarget(
         StarUuid shipUuid,
         SpawnTarget spawnTarget
-) implements WorldTarget{
+) implements WorldTarget {
 }

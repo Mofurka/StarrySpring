@@ -9,10 +9,10 @@ import java.util.Objects;
 
 @Builder
 public record ChatReceive(
-    ChatHeader header,
-    String name,
-    String message,
-    VariantValue[] data
+        ChatHeader header,
+        String name,
+        String message,
+        VariantValue[] data
 ) {
     @Override
     public boolean equals(Object obj) {

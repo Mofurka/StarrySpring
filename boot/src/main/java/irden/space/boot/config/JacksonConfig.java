@@ -10,7 +10,7 @@ public class JacksonConfig {
 
     @Bean
     public JsonMapper jsonMapper() {
-        return  new JsonMapper();
+        return new JsonMapper();
     }
 
 

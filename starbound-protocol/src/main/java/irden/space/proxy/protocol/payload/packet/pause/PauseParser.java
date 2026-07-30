@@ -9,9 +9,9 @@ public class PauseParser implements PacketParser<Pause> {
     public Pause parse(BinaryReader reader) {
         boolean pause = reader.readBoolean();
         float timescale = 0.0f;
-            if (reader.openProtocolVersion() >= 0) {
-                timescale = reader.readFloat32BE();
-            }
+        if (reader.openProtocolVersion() >= 0) {
+            timescale = reader.readFloat32BE();
+        }
         return new Pause(
                 pause, timescale
         );

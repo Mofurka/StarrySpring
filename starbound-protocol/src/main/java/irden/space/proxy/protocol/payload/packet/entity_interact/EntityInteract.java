@@ -6,7 +6,7 @@ import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 public record EntityInteract(
         InteractRequest interactRequest,
         StarUuid requestId
-        ) {
+) {
 
 
 }

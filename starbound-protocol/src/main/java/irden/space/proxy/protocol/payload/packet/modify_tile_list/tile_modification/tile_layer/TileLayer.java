@@ -10,10 +10,6 @@ public enum TileLayer {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static TileLayer fromId(int id) {
         for (TileLayer layer : values()) {
             if (layer.id == id) {
@@ -21,5 +17,9 @@ public enum TileLayer {
             }
         }
         throw new IllegalArgumentException("Invalid TileLayer id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

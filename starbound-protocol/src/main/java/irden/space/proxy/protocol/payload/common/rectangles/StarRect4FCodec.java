@@ -6,6 +6,7 @@ import irden.space.proxy.protocol.codec.BinaryWriter;
 
 public enum StarRect4FCodec implements BinaryCodec<StarRect4F> {
     INSTANCE;
+
     @Override
     public StarRect4F read(BinaryReader reader) {
         float x = reader.readFloat32BE();

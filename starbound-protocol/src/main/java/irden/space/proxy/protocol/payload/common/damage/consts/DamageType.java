@@ -14,10 +14,6 @@ public enum DamageType {
         this.id = id;
     }
 
-    public int id() {
-        return id;
-    }
-
     public static DamageType fromId(int id) {
         for (DamageType type : values()) {
             if (type.id == id) {
@@ -25,5 +21,9 @@ public enum DamageType {
             }
         }
         throw new IllegalArgumentException("Unknown DamageType id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }

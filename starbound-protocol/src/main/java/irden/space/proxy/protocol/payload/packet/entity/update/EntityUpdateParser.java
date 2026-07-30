@@ -18,13 +18,13 @@ public class EntityUpdateParser implements PacketParser<PlayerNetState> {
         for (int i = 0; i < entityCount; i++) {
             int entityId = VlqCodec.INSTANCE.readInt(reader);
             var raw = StarByteArrayCodec.INSTANCE.read(reader);
-                if (entityId == playerEntityId) {
-                    var player = PlayerNetState.builder()
-                            .entityId(entityId)
-                            .connectionId(connectionId);
+            if (entityId == playerEntityId) {
+                var player = PlayerNetState.builder()
+                        .entityId(entityId)
+                        .connectionId(connectionId);
 
-                    return PlayerEntityUpdateCodec.INSTANCE.read(new BinaryReader(raw, reader.openProtocolVersion()), player);
-                }
+                return PlayerEntityUpdateCodec.INSTANCE.read(new BinaryReader(raw, reader.openProtocolVersion()), player);
+            }
         }
         return null;
     }

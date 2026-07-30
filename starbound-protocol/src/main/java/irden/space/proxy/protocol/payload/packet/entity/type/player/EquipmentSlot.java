@@ -24,10 +24,6 @@ public enum EquipmentSlot {
 
     private final int id;
 
-    public int id() {
-        return id;
-    }
-
     EquipmentSlot(int id) {
         this.id = id;
     }
@@ -39,5 +35,9 @@ public enum EquipmentSlot {
             }
         }
         throw new IllegalArgumentException("Unknown EquipmentSlot id: " + id);
+    }
+
+    public int id() {
+        return id;
     }
 }
