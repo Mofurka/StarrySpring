@@ -23,6 +23,9 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,11 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
     private static final Logger log = LoggerFactory.getLogger(ProxyRuntimeServiceImpl.class);
     private static final int SESSION_SOCKET_TIMEOUT_MILLIS = 200;
+    private static final long SESSION_DRAIN_TIMEOUT_MILLIS = 10_000;
+
+    // Активные сессии: нужны, чтобы при остановке закрыть их и дождаться диспатча disconnect-хуков,
+    // пока Spring-контексты плагинов ещё живы (stop() — SmartLifecycle, до destroy-фазы PluginManager.stopAll).
+    private final Map<ProxySessionId, ActiveSession> activeSessions = new ConcurrentHashMap<>();
     private final SessionRegistry sessionRegistry;
     private final ProxyServerProperties properties;
     private final PacketParserRegistry packetParserRegistry = new PacketParserRegistry();
@@ -101,15 +109,58 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
         }
     }
 
-    private void closeServerSocketQuietly() {
-        if (serverSocket == null) {
+    @Override
+    public void drainSessions() {
+        drainActiveSessions();
+    }
+
+    private void drainActiveSessions() {
+        List<ActiveSession> sessions = List.copyOf(activeSessions.values());
+        if (sessions.isEmpty()) {
             return;
         }
 
+        log.info("Closing {} active session(s) before shutdown", sessions.size());
+        for (ActiveSession active : sessions) {
+            closeSocketQuietly(active.context().clientSocket());
+            closeSocketQuietly(active.context().upstreamSocket());
+        }
+
+        long deadline = System.currentTimeMillis() + SESSION_DRAIN_TIMEOUT_MILLIS;
+        for (ActiveSession active : sessions) {
+            joinQuietly(active.clientToServer(), deadline);
+            joinQuietly(active.serverToClient(), deadline);
+        }
+
+        activeSessions.clear();
+    }
+
+    private void closeSocketQuietly(Socket socket) {
+        if (socket == null) {
+            return;
+        }
         try {
-            serverSocket.close();
+            socket.close();
         } catch (Exception e) {
-            log.debug("Failed to close proxy server socket", e);
+            log.debug("Failed to close session socket during shutdown", e);
+        }
+    }
+
+    private void joinQuietly(Thread thread, long deadline) {
+        if (thread == null) {
+            return;
+        }
+        long remaining = deadline - System.currentTimeMillis();
+        if (remaining <= 0) {
+            remaining = 1;
+        }
+        try {
+            thread.join(remaining);
+            if (thread.isAlive()) {
+                log.warn("Session forwarder {} did not finish within shutdown timeout", thread.getName());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -149,6 +200,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
 
             pluginSessionLifecycleService.onConnectionSuccess(createPluginSessionContext(context));
 
+            Runnable onSessionClosed = () -> activeSessions.remove(session.getId());
+
             Thread clientToServer = new Thread(
                     new PacketForwarder(
                             clientIn,
@@ -159,15 +212,15 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             context.clientSideTransport(),
                             packetInspector,
                             packetInterceptionService,
-                            pluginSessionLifecycleService
+                            pluginSessionLifecycleService,
+                            onSessionClosed
                     ),
                     session.getId().uuid() + "-proxy-c2s"
             );
 
-            clientToServer.start();
-
+            Thread serverToClient = null;
             if (upstreamIn != null) {
-                Thread serverToClient = new Thread(
+                serverToClient = new Thread(
                         new PacketForwarder(
                                 upstreamIn,
                                 clientOut,
@@ -177,10 +230,17 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                                 context.upstreamSideTransport(),
                                 packetInspector,
                                 packetInterceptionService,
-                                pluginSessionLifecycleService
+                                pluginSessionLifecycleService,
+                                onSessionClosed
                         ),
                         session.getId().uuid() + "-proxy-s2c"
                 );
+            }
+
+            activeSessions.put(session.getId(), new ActiveSession(context, clientToServer, serverToClient));
+
+            clientToServer.start();
+            if (serverToClient != null) {
                 serverToClient.start();
             }
 
@@ -189,6 +249,25 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
             closeQuietly(upstreamSocket, "upstream", clientSocket);
             closeQuietly(clientSocket, "client", clientSocket);
         }
+    }
+
+    private void closeServerSocketQuietly() {
+        if (serverSocket == null) {
+            return;
+        }
+
+        try {
+            serverSocket.close();
+        } catch (Exception e) {
+            log.debug("Failed to close proxy server socket", e);
+        }
+    }
+
+    private record ActiveSession(
+            ProxySessionRuntimeContext context,
+            Thread clientToServer,
+            Thread serverToClient
+    ) {
     }
 
 

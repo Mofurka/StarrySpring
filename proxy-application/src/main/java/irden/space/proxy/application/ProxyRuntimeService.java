@@ -5,4 +5,6 @@ public interface ProxyRuntimeService {
     void start();
 
     void stop();
+
+    void drainSessions();
 }

@@ -1,5 +1,6 @@
 package irden.space.boot;
 
+import irden.space.proxy.application.ProxyRuntimeService;
 import irden.space.proxy.plugin.runtime.PluginManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.DisposableBean;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class PluginStartupRunner implements CommandLineRunner, DisposableBean {
 
     private final PluginManager pluginManager;
+    private final ProxyRuntimeService proxyRuntimeService;
 
     @Override
     public void run(String... args) {
@@ -21,6 +23,11 @@ public class PluginStartupRunner implements CommandLineRunner, DisposableBean {
 
     @Override
     public void destroy() {
-        pluginManager.stopAll();
+        try {
+            pluginManager.notifyStopping();
+            proxyRuntimeService.drainSessions();
+        } finally {
+            pluginManager.closeContainers();
+        }
     }
 }

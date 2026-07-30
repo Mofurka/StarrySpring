@@ -36,6 +36,7 @@ public class PacketForwarder implements Runnable {
     private final PluginSessionLifecycleService pluginSessionLifecycleService;
     private final String sessionId;
     private final PermissionView permissionView;
+    private final Runnable onClosed;
 
     private volatile PluginSessionContext cachedPluginSessionContext;
     private volatile int cachedOpenProtocolVersion = Integer.MIN_VALUE;
@@ -51,6 +52,24 @@ public class PacketForwarder implements Runnable {
             PacketInterceptionService packetInterceptionService,
             PluginSessionLifecycleService pluginSessionLifecycleService
     ) {
+        this(source, target, sessionRegistry, packetDirection, context, transport,
+                packetInspector, packetInterceptionService, pluginSessionLifecycleService, () -> {
+                });
+    }
+
+    public PacketForwarder(
+            InputStream source,
+            OutputStream target,
+            SessionRegistry sessionRegistry,
+            PacketDirection packetDirection,
+            ProxySessionRuntimeContext context,
+            SwitchableSessionTransport transport,
+            RuntimePacketInspector packetInspector,
+            PacketInterceptionService packetInterceptionService,
+            PluginSessionLifecycleService pluginSessionLifecycleService,
+            Runnable onClosed
+    ) {
+        this.onClosed = onClosed;
         this.context = context;
         this.session = context.session();
         this.source = source;
@@ -383,6 +402,12 @@ public class PacketForwarder implements Runnable {
             }
 
             log.info("Session {} closed and removed", session.getId());
+
+            try {
+                onClosed.run();
+            } catch (Exception e) {
+                log.debug("Session close callback failed for session {}", session.getId(), e);
+            }
         }
     }
 

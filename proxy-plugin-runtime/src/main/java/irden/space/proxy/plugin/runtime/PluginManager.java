@@ -25,6 +25,7 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     private final Map<String, PluginRuntimeState> pluginStates = new HashMap<>();
     private final Map<String, PluginFailure> pluginFailures = new HashMap<>();
     private final Map<String, PluginCandidate> loadedCandidates = new HashMap<>();
+    private final Set<String> notifiedForStop = new HashSet<>();
 
 
     public PluginManager(
@@ -93,8 +94,24 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     public synchronized void stopAll() {
         log.info("Stopping {} plugin(s)", loadedPlugins.size());
         try {
+            notifyStopping();
+        } finally {
+            closeContainers();
+        }
+    }
+
+
+    public synchronized void notifyStopping() {
+        for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
+            runOnStop(loadedPlugins.get(i));
+        }
+    }
+
+
+    public synchronized void closeContainers() {
+        try {
             for (int i = loadedPlugins.size() - 1; i >= 0; i--) {
-                stopContainer(loadedPlugins.get(i));
+                closeContainer(loadedPlugins.get(i));
             }
         } finally {
             loadedPlugins.clear();
@@ -481,33 +498,46 @@ public class PluginManager implements PluginSessionLifecycleService, PluginRunti
     }
 
     private void stopContainer(PluginContainer container) {
+        runOnStop(container);
+        closeContainer(container);
+    }
+
+    private void runOnStop(PluginContainer container) {
         ProxyPlugin plugin = container.plugin();
         String pluginId = plugin.descriptor().id();
+        if (!notifiedForStop.add(pluginId)) {
+            return;
+        }
         log.info("Stopping plugin '{}'", pluginId);
         setState(pluginId, PluginRuntimeState.STOPPING);
         try {
             plugin.onStop();
             container.onStop();
-            log.info("Stopped plugin '{}'", pluginId);
         } catch (RuntimeException e) {
             log.warn("Plugin '{}' failed while stopping", pluginId, e);
             rememberFailure(pluginId, PHASE_STOP, e);
+        }
+    }
+
+    private void closeContainer(PluginContainer container) {
+        ProxyPlugin plugin = container.plugin();
+        String pluginId = plugin.descriptor().id();
+        try {
+            removePluginRegistrations(plugin);
+        } catch (RuntimeException e) {
+            log.warn("Failed to remove registrations for plugin '{}'", pluginId, e);
+            rememberFailure(pluginId, PHASE_STOP, e);
         } finally {
             try {
-                removePluginRegistrations(plugin);
+                container.close();
             } catch (RuntimeException e) {
-                log.warn("Failed to remove registrations for plugin '{}'", pluginId, e);
+                log.warn("Failed to close container for plugin '{}'", pluginId, e);
                 rememberFailure(pluginId, PHASE_STOP, e);
             } finally {
-                try {
-                    container.close();
-                } catch (RuntimeException e) {
-                    log.warn("Failed to close container for plugin '{}'", pluginId, e);
-                    rememberFailure(pluginId, PHASE_STOP, e);
-                } finally {
-                    loadedCandidates.remove(pluginId);
-                    setState(pluginId, PluginRuntimeState.STOPPED);
-                }
+                loadedCandidates.remove(pluginId);
+                notifiedForStop.remove(pluginId);
+                setState(pluginId, PluginRuntimeState.STOPPED);
+                log.info("Stopped plugin '{}'", pluginId);
             }
         }
     }
