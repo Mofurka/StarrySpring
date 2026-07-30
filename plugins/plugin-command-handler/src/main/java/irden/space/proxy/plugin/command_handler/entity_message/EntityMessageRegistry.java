@@ -4,7 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class EntityMessageRegistry {
@@ -13,7 +17,7 @@ public class EntityMessageRegistry {
 
     private static final Logger log = LoggerFactory.getLogger(EntityMessageRegistry.class);
 
-    private final Map<String, RegisteredEntityMessageHandler> handlersByMessage = new LinkedHashMap<>();
+    private final Map<String, RegisteredEntityMessageHandler> handlersByMessage = new ConcurrentHashMap<>();
 
     public static EntityMessageRegistry global() {
         return GLOBAL;
@@ -54,7 +58,7 @@ public class EntityMessageRegistry {
         return handler;
     }
 
-    public synchronized RegisteredEntityMessageHandler find(String message) {
+    public RegisteredEntityMessageHandler find(String message) {
         if (message == null) {
             return null;
         }
@@ -74,7 +78,7 @@ public class EntityMessageRegistry {
         });
     }
 
-    public synchronized Collection<RegisteredEntityMessageHandler> all() {
+    public Collection<RegisteredEntityMessageHandler> all() {
         return List.copyOf(handlersByMessage.values());
     }
 }

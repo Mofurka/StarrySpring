@@ -27,8 +27,7 @@ public final class RoleManager {
 
     private final Path configPath;
     private final PermissionResolver permissionResolver;
-    private StarryRoles rolesConfig;
-    private Map<String, StarryRole> rolesByName = Map.of();
+    private volatile RolesSnapshot snapshot = new RolesSnapshot(null, Map.of());
 
     @Autowired
     public RoleManager(
@@ -56,50 +55,56 @@ public final class RoleManager {
     }
 
     public synchronized void reload() {
-        this.rolesConfig = loadOrCreateConfig();
-        this.rolesByName = buildRoles(this.rolesConfig);
+        StarryRoles config = loadOrCreateConfig();
+        Map<String, StarryRole> roles = buildRoles(config);
+        this.snapshot = new RolesSnapshot(config, roles);
     }
 
-    public synchronized Map<String, StarryRole> rolesByName() {
-        return Map.copyOf(rolesByName);
+    public Map<String, StarryRole> rolesByName() {
+        return Map.copyOf(snapshot.rolesByName());
     }
 
-    public synchronized Optional<StarryRole> findRole(String roleName) {
+    public Optional<StarryRole> findRole(String roleName) {
         if (roleName == null || roleName.isBlank()) {
             return Optional.empty();
         }
 
-        return Optional.ofNullable(rolesByName.get(roleName));
+        return Optional.ofNullable(snapshot.rolesByName().get(roleName));
     }
 
-    public synchronized boolean isOwner(String playerUuid) {
-        String configuredOwnerUuid = rolesConfig.getOwnerUuid();
+    public boolean isOwner(String playerUuid) {
+        String configuredOwnerUuid = snapshot.config().getOwnerUuid();
         return configuredOwnerUuid != null && configuredOwnerUuid.equalsIgnoreCase(playerUuid);
     }
 
-    public synchronized String ownerUuid() {
-        return rolesConfig.getOwnerUuid();
+    public String ownerUuid() {
+        return snapshot.config().getOwnerUuid();
     }
 
-    public synchronized String defaultRoleName() {
-        return rolesConfig.getDefaultAccount();
+    public String defaultRoleName() {
+        return snapshot.config().getDefaultAccount();
     }
 
-    public synchronized List<String> resolveRoleNamesForPlayer(
+    public List<String> resolveRoleNamesForPlayer(
             String playerUuid,
             String accountName,
             Collection<String> assignedRoleNames
     ) {
+        RolesSnapshot current = snapshot;
+        StarryRoles config = current.config();
+        Map<String, StarryRole> roles = current.rolesByName();
+
         LinkedHashSet<String> resolvedRoleNames = new LinkedHashSet<>();
 
-        if (isOwner(playerUuid)) {
+        String configuredOwnerUuid = config.getOwnerUuid();
+        if (configuredOwnerUuid != null && configuredOwnerUuid.equalsIgnoreCase(playerUuid)) {
             resolvedRoleNames.add(OWNER_ROLE_NAME);
             return List.copyOf(resolvedRoleNames);
         }
 
         String preferredRoleName = accountName;
-        if (preferredRoleName == null || preferredRoleName.isBlank() || !rolesByName.containsKey(preferredRoleName)) {
-            preferredRoleName = rolesConfig.getDefaultAccount();
+        if (preferredRoleName == null || preferredRoleName.isBlank() || !roles.containsKey(preferredRoleName)) {
+            preferredRoleName = config.getDefaultAccount();
         }
         if (preferredRoleName != null && !preferredRoleName.isBlank() && !OWNER_ROLE_NAME.equalsIgnoreCase(preferredRoleName)) {
             resolvedRoleNames.add(preferredRoleName);
@@ -110,13 +115,16 @@ public final class RoleManager {
                 if (assignedRoleName != null
                         && !assignedRoleName.isBlank()
                         && !OWNER_ROLE_NAME.equalsIgnoreCase(assignedRoleName)
-                        && rolesByName.containsKey(assignedRoleName)) {
+                        && roles.containsKey(assignedRoleName)) {
                     resolvedRoleNames.add(assignedRoleName);
                 }
             }
         }
 
         return List.copyOf(resolvedRoleNames);
+    }
+
+    private record RolesSnapshot(StarryRoles config, Map<String, StarryRole> rolesByName) {
     }
 
     private StarryRoles loadOrCreateConfig() {

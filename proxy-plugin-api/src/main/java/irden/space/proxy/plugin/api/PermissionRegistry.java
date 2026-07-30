@@ -1,16 +1,17 @@
 package irden.space.proxy.plugin.api;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class PermissionRegistry {
 
-    private static final Map<String, Integer> permissions = new LinkedHashMap<>();
+    private static final Map<String, Integer> permissions = new ConcurrentHashMap<>();
     public static final Permission ALL = registerIfAbsent("all");
 
     private PermissionRegistry() {
     }
 
-    public static synchronized List<Permission> allPermissions() {
+    public static List<Permission> allPermissions() {
         List<Permission> all = new ArrayList<>(permissions.size());
         for (Map.Entry<String, Integer> entry : permissions.entrySet()) {
             all.add(new Permission(entry.getKey(), entry.getValue()));
@@ -55,16 +56,16 @@ public final class PermissionRegistry {
         return id;
     }
 
-    public static synchronized Permission getPermission(String name) {
+    public static Permission getPermission(String name) {
         return new Permission(name, getPermissionId(name));
     }
 
-    public static synchronized boolean contains(String name) {
+    public static boolean contains(String name) {
         validatePermissionName(name);
         return permissions.containsKey(name);
     }
 
-    public static synchronized int getPermissionId(String name) {
+    public static int getPermissionId(String name) {
         validatePermissionName(name);
 
         Integer id = permissions.get(name);
@@ -74,15 +75,15 @@ public final class PermissionRegistry {
         return id;
     }
 
-    public static synchronized int permissionCount() {
+    public static int permissionCount() {
         return permissions.size();
     }
 
-    public static synchronized Map<String, Integer> entries() {
+    public static Map<String, Integer> entries() {
         return Collections.unmodifiableMap(new LinkedHashMap<>(permissions));
     }
 
-    public static synchronized List<Integer> resolveWildcard(String pattern) {
+    public static List<Integer> resolveWildcard(String pattern) {
         validateWildcardPattern(pattern);
 
         String prefix = pattern.substring(0, pattern.length() - 1);

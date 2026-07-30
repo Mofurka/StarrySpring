@@ -6,14 +6,15 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CommandRegistry {
 
     private static final CommandRegistry GLOBAL = new CommandRegistry();
 
     private static final Logger log = LoggerFactory.getLogger(CommandRegistry.class);
-    private final Map<String, RegisteredCommand> commandsByName = new LinkedHashMap<>();
-    private final Map<String, RegisteredCommand> uniqueCommands = new LinkedHashMap<>();
+    private final Map<String, RegisteredCommand> commandsByName = new ConcurrentHashMap<>();
+    private final Map<String, RegisteredCommand> uniqueCommands = new ConcurrentHashMap<>();
 
     public static CommandRegistry global() {
         return GLOBAL;
@@ -74,11 +75,11 @@ public class CommandRegistry {
         return command;
     }
 
-    public synchronized RegisteredCommand find(String name) {
+    public RegisteredCommand find(String name) {
         return commandsByName.get(normalizeLookup(name));
     }
 
-    public synchronized Collection<RegisteredCommand> allCommands() {
+    public Collection<RegisteredCommand> allCommands() {
         return List.copyOf(uniqueCommands.values());
     }
 
@@ -93,7 +94,7 @@ public class CommandRegistry {
         uniqueCommands.clear();
     }
 
-    public synchronized String formatHelp() {
+    public String formatHelp() {
         if (uniqueCommands.isEmpty()) {
             return "No commands registered.";
         }
