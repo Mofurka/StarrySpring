@@ -2,13 +2,12 @@ package irden.space.proxy.plugin.irden.integration.web.client.storages;
 
 import irden.space.proxy.plugin.irden.integration.web.client.constants.IrdenAppRoutes;
 import irden.space.proxy.plugin.irden.integration.web.client.exceptions.IrdenAppClientException;
-import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageAttributes;
-import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageIdParam;
-import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageItem;
-import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StoragesResponse;
+import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.*;
 import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdParam;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.PostExchange;
 
 public interface IrdenAppStoragesClient {
 
@@ -23,4 +22,9 @@ public interface IrdenAppStoragesClient {
     )
     StoragesResponse<StorageItem> getStorageItemsByStorageId(@PathVariable(StorageIdParam.NAME) StorageIdParam storageIdParam) throws IrdenAppClientException;
 
+
+    @PostExchange(
+            url = IrdenAppRoutes.Storage.REQUEST
+    )
+    void makeTransferRequest(@RequestBody StorageTransferRequest request)  throws IrdenAppClientException;
 }
