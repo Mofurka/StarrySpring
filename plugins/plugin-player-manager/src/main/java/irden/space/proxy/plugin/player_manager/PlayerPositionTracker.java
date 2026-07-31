@@ -48,7 +48,7 @@ public class PlayerPositionTracker {
             return PacketDecision.forward();
         }
 
-        Optional<Player> maybePlayer = playerManagerApi.getPlayerBySessionId(ctx.session().sessionId());
+        Optional<Player> maybePlayer = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
         if (maybePlayer.isEmpty()) {
             return PacketDecision.forward();
         }
@@ -106,7 +106,7 @@ public class PlayerPositionTracker {
     @PacketHandler(value = PacketType.WORLD_START, direction = PacketDirection.TO_CLIENT)
     public PacketDecision onWorldStart(PacketInterceptionContext ctx) {
         WorldStart worldStart = ctx.parsedPayload(WorldStart.class);
-        Optional<Player> maybePlayer = playerManagerApi.getPlayerBySessionId(ctx.session().sessionId());
+        Optional<Player> maybePlayer = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
         if (maybePlayer.isEmpty()) {
             return PacketDecision.cancel();
         }

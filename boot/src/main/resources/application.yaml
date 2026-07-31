@@ -41,6 +41,7 @@ logging:
   level:
     root: INFO
     irden.space.proxy.application: INFO
+    org.springframework.web.client.DefaultRestClient: DEBUG
 
 management:
   endpoints:

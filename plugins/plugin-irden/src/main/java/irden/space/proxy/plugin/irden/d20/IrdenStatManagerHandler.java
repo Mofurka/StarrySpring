@@ -51,7 +51,7 @@ public class IrdenStatManagerHandler {
             return;
         }
 
-        Player sender = playerManagerApi.getPlayerBySessionId(message.session().sessionId()).orElse(null);
+        Player sender = playerManagerApi.findPlayerBySessionId(message.session().sessionId()).orElse(null);
         if (sender == null) {
             log.debug("statmanager message from unknown session {}", message.session().sessionId());
             return;

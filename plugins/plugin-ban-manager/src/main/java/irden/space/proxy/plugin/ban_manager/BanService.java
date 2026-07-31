@@ -66,7 +66,7 @@ public class BanService {
             try {
                 expiresAt = banFormatUtils.parseExpiresAt(durationStr);
             } catch (IllegalArgumentException ex) {
-                return new BanOperationResult(false, banFormatUtils.get("ban.operation.failure.invalid_duration", "1y 2m 3d 5h 6s"));
+                return new BanOperationResult(false, banFormatUtils.get("ban.operation.failure.invalid_duration", "1w 2d 3h 4m 5s"));
             }
         }
 

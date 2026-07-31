@@ -24,6 +24,7 @@
       <set>
         <option value="$PROJECT_DIR$/plugins/plugin-debug-logger/pom.xml" />
         <option value="$PROJECT_DIR$/plugins/plugin-player-positioning/pom.xml" />
+        <option value="$PROJECT_DIR$/plugins/plugin-site-connector/pom.xml" />
       </set>
     </option>
   </component>

@@ -83,8 +83,7 @@ public class PlayerWarpCommands {
                 var ue = new SpawnTarget.Position(new StarVec2F(to.position().getX(), to.position().getY()));
                 yield new CelestialWorldTarget(cc, ue);
             }
-            case InstanceWorld(var worldName, var instanceUuid) ->
-                    new UniqueWorldTarget(worldName, instanceUuid, null, null);
+            case InstanceWorld(var worldName, var instanceUuid) -> new UniqueWorldTarget(worldName, instanceUuid, null, null);
             case PlayerShip(var shipUuid) ->
                     new PlayerWorldTarget(shipUuid, new SpawnTarget.Position(new StarVec2F(to.position().getX(), to.position().getY())));
         };

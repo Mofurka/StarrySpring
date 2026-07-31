@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 )
 @Component
 @EnableConfigurationProperties({IrdenConfig.class})
+
 public final class IrdenPlugin implements ProxyPlugin {
 
 }

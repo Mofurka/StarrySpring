@@ -16,7 +16,7 @@ public final class ExecutorPlayerContextResolver implements CommandContextResolv
 
     @Override
     public void resolve(CommandContext.Builder builder) {
-        playerManagerApi.getPlayerBySessionId(builder.session().sessionId())
+        playerManagerApi.findPlayerBySessionId(builder.session().sessionId())
                 .ifPresent(player -> builder.put(PlayerManagerCommandContextKeys.EXECUTOR_PLAYER, player));
     }
 }

@@ -69,7 +69,7 @@ public class BanFormatUtils {
         }
 
         if (expiresAt.isBefore(now.plusWeeks(1))) {
-            return get("ban.until.this-week", expiresAt.getDayOfWeek(), time);
+            return get("ban.until.this-week", get("ban.until.this-week.names").split(",")[expiresAt.getDayOfWeek().getValue() - 1], time);
         }
 
         if (expiresAt.isBefore(now.plusMonths(1))) {

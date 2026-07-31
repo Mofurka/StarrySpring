@@ -22,5 +22,5 @@ public interface PlayerManagerApi {
 
     List<Player> findAllPlayersByIpAddress(String ipAddress);
 
-    Optional<Player> getPlayerBySessionId(String sessionId);
+    Optional<Player> findPlayerBySessionId(String sessionId);
 }

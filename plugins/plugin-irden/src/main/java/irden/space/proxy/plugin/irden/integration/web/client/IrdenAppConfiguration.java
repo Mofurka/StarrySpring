@@ -11,9 +11,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.support.RestClientAdapter;
-import org.springframework.web.service.invoker.HttpServiceProxyFactory;
-
 
 import java.net.http.HttpClient;
 
@@ -71,16 +68,5 @@ public class IrdenAppConfiguration {
                 .build();
     }
 
-    @Bean
-    IrdenAppClient irdenAppClient(RestClient irdenRestClient) {
-        RestClientAdapter adapter =
-                RestClientAdapter.create(irdenRestClient);
 
-        HttpServiceProxyFactory factory =
-                HttpServiceProxyFactory
-                        .builderFor(adapter)
-                        .build();
-
-        return factory.createClient(IrdenAppClient.class);
-    }
 }

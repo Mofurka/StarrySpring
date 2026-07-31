@@ -52,7 +52,7 @@ public final class DefaultPlayerManagerApi implements PlayerManagerApi {
     }
 
     @Override
-    public Optional<Player> getPlayerBySessionId(String sessionId) {
+    public Optional<Player> findPlayerBySessionId(String sessionId) {
         return playerDirectory.getPlayerBySessionId(sessionId);
     }
 }

@@ -65,7 +65,7 @@ public class StarCustomChatMessageInterceptor {
         try {
             IrdenCustomChatSH customChat =
                     jsonMapper.treeToValue(jsonNode, IrdenCustomChatSH.class);
-            Optional<Player> playerBySessionId = playerManagerApi.getPlayerBySessionId(ctx.session().sessionId());
+            Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
             if (playerBySessionId.isPresent()) {
                 var player = playerBySessionId.get();
                 ChatMessageEvent chatMessageEvent = null;

@@ -39,7 +39,7 @@ public class ChatInterceptor {
     public PacketDecision onChatSent(PacketInterceptionContext ctx) {
         ChatSent chatSent = ctx.parsedPayload(ChatSent.class);
         if (chatSent != null && !chatSent.content().startsWith(COMMAND_PREFIX)) {
-            Optional<Player> playerBySessionId = playerManager.getPlayerBySessionId(ctx.session().sessionId());
+            Optional<Player> playerBySessionId = playerManager.findPlayerBySessionId(ctx.session().sessionId());
             if (playerBySessionId.isPresent()) {
                 var player = playerBySessionId.get();
                 if (chatSent.mode().equals(ChatSentMode.UNIVERSE) && !ctx.session().permissions().has(ChatPermissions.UNIVERSE_CHAT.permission())) {
