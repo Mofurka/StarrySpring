@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class DiscordBotMessageService {
@@ -13,7 +15,9 @@ public class DiscordBotMessageService {
 
     @Async
     public void handleInGameMessage(String message) {
-        discordBotRunner.getBot().sendMessageIntoChannelById(discordBotConfiguration.gameChatChannelId(), message);
+        Optional.ofNullable(discordBotRunner.getBot()).ifPresent(
+                bot -> bot.sendMessageIntoChannelById(discordBotConfiguration.gameChatChannelId(), message));
+
     }
 
 

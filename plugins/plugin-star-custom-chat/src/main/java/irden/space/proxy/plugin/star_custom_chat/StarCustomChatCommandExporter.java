@@ -8,12 +8,49 @@ import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public final class StarCustomChatCommandExporter {
 
     private static final String DEFAULT_DESCRIPTION = "No description.";
 
+    private static final Pattern ARGUMENT_LABEL =
+            Pattern.compile("[\\p{L}\\p{N}_-]+\\??:");
+
     private StarCustomChatCommandExporter() {
+    }
+
+    public static boolean isArgumentLabel(String token) {
+        return token != null && ARGUMENT_LABEL.matcher(token).matches();
+    }
+
+    public static String argumentLabelName(String token) {
+        if (!isArgumentLabel(token)) {
+            return null;
+        }
+        String name = token.substring(0, token.length() - 1);
+        if (name.endsWith("?")) {
+            name = name.substring(0, name.length() - 1);
+        }
+        return name;
+    }
+
+    public static String stripArgumentLabels(String commandLine) {
+        if (commandLine == null || commandLine.isBlank()) {
+            return commandLine;
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (String token : commandLine.trim().split("\\s+")) {
+            if (token.isEmpty() || isArgumentLabel(token)) {
+                continue;
+            }
+            if (!result.isEmpty()) {
+                result.append(' ');
+            }
+            result.append(token);
+        }
+        return result.toString();
     }
 
     public static ListVariantValue export(Collection<RegisteredCommand> commands) {
@@ -122,7 +159,6 @@ public final class StarCustomChatCommandExporter {
     }
 
     private static boolean hasAccess(CommandNode node, PermissionView permissions) {
-        // Узел должен быть и разрешён по правам, и объявлен для игровой поверхности экспорта.
         return node.isExportedTo(CommandSurface.IN_GAME)
                 && (!node.hasRequiredPermissions() || permissions.hasAll(node.requiredPermissions()));
     }
@@ -134,8 +170,8 @@ public final class StarCustomChatCommandExporter {
 
         if (node instanceof ArgumentNode<?> argument) {
             return argument.required()
-                    ? "<" + argument.name() + ">"
-                    : "[" + argument.name() + "]";
+                    ? argument.name() + ":"
+                    : argument.name() + "?:";
         }
 
         return node.name();
