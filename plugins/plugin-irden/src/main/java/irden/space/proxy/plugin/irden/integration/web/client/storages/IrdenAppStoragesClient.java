@@ -3,7 +3,7 @@ package irden.space.proxy.plugin.irden.integration.web.client.storages;
 import irden.space.proxy.plugin.irden.integration.web.client.constants.IrdenAppRoutes;
 import irden.space.proxy.plugin.irden.integration.web.client.exceptions.IrdenAppClientException;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageAttributes;
-import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageId;
+import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageIdParam;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageItem;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StoragesResponse;
 import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdParam;
@@ -19,8 +19,8 @@ public interface IrdenAppStoragesClient {
 
 
     @GetExchange(
-            url = IrdenAppRoutes.Storage.ROOT + StorageId.PATH
+            url = IrdenAppRoutes.Storage.ROOT + StorageIdParam.PATH
     )
-    StoragesResponse<StorageItem> getStorageItemsByStorageId(@PathVariable(StorageId.NAME) StorageId storageId) throws IrdenAppClientException;
+    StoragesResponse<StorageItem> getStorageItemsByStorageId(@PathVariable(StorageIdParam.NAME) StorageIdParam storageIdParam) throws IrdenAppClientException;
 
 }

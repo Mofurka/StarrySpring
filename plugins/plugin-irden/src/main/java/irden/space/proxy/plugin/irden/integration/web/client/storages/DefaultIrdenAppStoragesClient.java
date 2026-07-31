@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.irden.integration.web.client.storages;
 
+import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.StorageIdParamToStringConverter;
 import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdToStringConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -15,7 +16,9 @@ public class DefaultIrdenAppStoragesClient {
 
     // Надо придумать как заставить IDE видить что это бин в этом контексте
     @Bean
-    IrdenAppStoragesClient irdenAppStoragesClient(RestClient irdenRestClient, PlayerAppIdToStringConverter  playerAppIdToStringConverter) {
+    IrdenAppStoragesClient irdenAppStoragesClient(RestClient irdenRestClient,
+                                                  PlayerAppIdToStringConverter  playerAppIdToStringConverter,
+                                                  StorageIdParamToStringConverter storageIdParamToStringConverter) {
         RestClientAdapter adapter =
                 RestClientAdapter.create(irdenRestClient);
 
@@ -24,6 +27,7 @@ public class DefaultIrdenAppStoragesClient {
                 new DefaultFormattingConversionService();
 
         conversionService.addConverter(playerAppIdToStringConverter);
+        conversionService.addConverter(storageIdParamToStringConverter);
 
         HttpServiceProxyFactory factory =
                 HttpServiceProxyFactory
