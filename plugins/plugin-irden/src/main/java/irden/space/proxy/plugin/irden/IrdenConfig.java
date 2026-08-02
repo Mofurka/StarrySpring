@@ -15,7 +15,8 @@ public record IrdenConfig(
     public record WeatherProperties(
             String configLocation,
             Path statePath,
-            String zone
+            String zone,
+            Long announceDiscordChannelId
     ) {
     }
     public record SiteConnectorConfig(

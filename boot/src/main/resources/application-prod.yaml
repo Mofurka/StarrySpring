@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: irden-proxy
+  datasource:
+    url: jdbc:postgresql://postgres:5432/starryspring
+    username: postgres
+    password: postgres
+  liquibase:
+    enabled: false
+  messages:
+    encoding: UTF-8
+    basename: messages
+  web:
+    locale: ru
+
+
+starry:
+  plugins:
+    directory: runtime-plugins
+    # Папка с внешними конфигами плагинов: <config-directory>/<plugin-id>.yaml
+    # её нужно случайно не снести
+    config-directory: config/plugins
+
+
+proxy:
+  listen-host: 0.0.0.0
+  listen-port: 7777
+  upstream-host: localhost
+  upstream-port: 21024
+
+assets:
+  store:
+    enabled: false
+    archives: []
+    excluded-extensions:
+      - .ogg
+      - .png
+      - .wav
+
+logging:
+  level:
+    root: INFO
+    irden.space.proxy.application: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+  endpoint:
+    health:
+      show-details: always

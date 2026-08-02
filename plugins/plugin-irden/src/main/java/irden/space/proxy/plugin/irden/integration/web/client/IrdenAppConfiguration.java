@@ -52,7 +52,7 @@ public class IrdenAppConfiguration {
                                 responseBody = new String(
                                         response.getBody().readAllBytes()
                                 );
-                            } catch (Exception e) {
+                            } catch (Exception _) {
                                 responseBody =
                                         "<failed to read response body>";
                             }

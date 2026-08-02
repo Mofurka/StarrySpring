@@ -9,7 +9,7 @@ public final class PlayerAppIdToStringConverter
         implements Converter<PlayerAppIdParam, String> {
 
     @Override
-    public String convert(@NotNull(message = "Player uuid param cannot be null") PlayerAppIdParam source) {
+    public String convert(@NotNull(message = "Player app id param cannot be null") PlayerAppIdParam source) {
         return Long.toString(source.appId());
     }
 }

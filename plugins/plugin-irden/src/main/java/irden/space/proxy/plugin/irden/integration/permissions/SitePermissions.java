@@ -4,12 +4,13 @@ import irden.space.proxy.plugin.api.PermissionEnum;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 
 @RegisterPluginPermissions
-public enum LinkedPermissions implements PermissionEnum {
-    USER_LINKED("site.user.linked");
+public enum SitePermissions implements PermissionEnum {
+    USER_LINKED("site.user.linked"),
+    IRDEN_STORAGE_AUTO_ACCEPT("site.storage.auto_accept");
 
     private final String permissionNode;
 
-    LinkedPermissions(String permissionNode) {
+    SitePermissions(String permissionNode) {
         this.permissionNode = permissionNode;
     }
 

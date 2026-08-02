@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,19 +72,30 @@ public class GeneralUtils {
         List<Player> players = playerManagerApi.onlinePlayers();
         ctx.sender(Player.class).ifPresent(
                 player -> {
-                    var invisible = !player.permissions().has(ChatPermissions.INVISIBLE_BYPASS.permission());
+
                     var size = players.size();
                     var message = messageUtils.get("chat.who", size);
 
                     if (size > 0) {
-                        String collect = players.stream().map(p -> {
-                                            if (!invisible || p.permissions().has(ChatPermissions.JOIN_ANNOUNCE.permission())) {
-                                                return "[%s] %s".formatted(Color.RED.colorString(String.valueOf(p.clientId())), Color.colorString(p.namePrefix(), p.nickname(), true));
-                                            } else return null;
-                                        }
+                        boolean hasInvisibleBypass = player.permissions()
+                                .has(ChatPermissions.INVISIBLE_BYPASS.permission());
+                        String collect = players.stream()
+                                .filter(p ->
+                                        hasInvisibleBypass
+                                                || p.permissions().has(ChatPermissions.JOIN_ANNOUNCE.permission())
                                 )
-                                .collect(Collectors.joining(","));
-                        message = message + System.lineSeparator() + collect;
+                                .sorted(Comparator.comparingInt(Player::clientId))
+                                .map(p -> "[%s] %s".formatted(
+                                        Color.RED.colorString(String.valueOf(p.clientId())),
+                                        Color.colorString(
+                                                p.namePrefix(),
+                                                p.nickname(),
+                                                true
+                                        )
+                                ))
+                                .collect(Collectors.joining(", "));
+
+                        message += System.lineSeparator() + collect;
                     }
 
 

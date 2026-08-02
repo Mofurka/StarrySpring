@@ -9,6 +9,7 @@ import java.time.Duration;
 public record NativeServerLifespanConfig(
         boolean enabled,
         Path gameDirectoryPath,
+        Long discordAnnounceChannelId,
         Rcon rcon
 ) {
 

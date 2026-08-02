@@ -4,12 +4,16 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.general.events.ChatMessageEvent;
+import irden.space.proxy.plugin.general.events.CleanChatMessageEvent;
 import irden.space.proxy.plugin.general.permissions.ChatPermissions;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
+import irden.space.proxy.protocol.payload.common.chat_header.ChatHeader;
+import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
+import irden.space.proxy.protocol.payload.packet.chat.consts.ChatReceiveMode;
 import irden.space.proxy.protocol.payload.packet.chat.consts.ChatSentMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +34,7 @@ public class ChatInterceptor {
     private final MessageSource messageSource;
     private final PlayerManagerApi playerManager;
     private final ApplicationEventPublisher publisher;
+    private final GeneralUtils generalUtils;
 
     @PacketHandler(
             value = PacketType.CHAT_SENT,
@@ -59,6 +64,16 @@ public class ChatInterceptor {
     @EventListener
     public void onChatSentLogger(ChatMessageEvent event) {
         log.info("[{}][{}]: {}", event.mode(), event.sender().nickname(), event.message());
+    }
+
+    @EventListener
+    public void onCleanChatMessageEvent(CleanChatMessageEvent event) {
+        ChatReceive build = ChatReceive.builder()
+                .header(ChatHeader.builder().mode(ChatReceiveMode.BROADCAST).clientId(0).build())
+                .name(event.sender())
+                .message(event.message())
+                .build();
+        generalUtils.broadcastMessage(build);
     }
 
 }

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
         name = "Irden Plugin",
         version = "1.0.0",
         author = "https://github.com/Mofurka",
-        dependsOn = {"command-handler", "player-manager", "discord-bot", "general", "star-custom-chat"},
+        dependsOn = {"command-handler", "player-manager", "discord-bot", "general", "star-custom-chat", "native-server-lifespan"},
         description = "Irden gavno ebanoe"
 )
 @Component

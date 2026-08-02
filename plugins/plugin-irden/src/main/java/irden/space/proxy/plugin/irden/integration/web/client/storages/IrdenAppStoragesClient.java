@@ -3,7 +3,7 @@ package irden.space.proxy.plugin.irden.integration.web.client.storages;
 import irden.space.proxy.plugin.irden.integration.web.client.constants.IrdenAppRoutes;
 import irden.space.proxy.plugin.irden.integration.web.client.exceptions.IrdenAppClientException;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.*;
-import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdParam;
+import irden.space.proxy.plugin.irden.integration.web.dto.player_discord_id.PlayerDiscordIdParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.service.annotation.GetExchange;
@@ -12,9 +12,9 @@ import org.springframework.web.service.annotation.PostExchange;
 public interface IrdenAppStoragesClient {
 
     @GetExchange(
-            url = IrdenAppRoutes.Storage.FIND + PlayerAppIdParam.PATH
+            url = IrdenAppRoutes.Storage.FIND + PlayerDiscordIdParam.PATH
     )
-    StoragesResponse<StorageAttributes> findStorageByPlayerAppId(@PathVariable(PlayerAppIdParam.NAME) PlayerAppIdParam playerAppIdParam) throws IrdenAppClientException;
+    StoragesResponse<StorageAttributes> findStorageByPlayerDiscordId(@PathVariable(PlayerDiscordIdParam.NAME) PlayerDiscordIdParam playerDiscordIdParam) throws IrdenAppClientException;
 
 
     @GetExchange(

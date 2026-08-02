@@ -117,15 +117,22 @@
         </dependency>
 
 
-        <!--Plugins-->
-        <dependency>
-            <groupId>irden.space</groupId>
-            <artifactId>plugins</artifactId>
-            <version>1.0.0</version>
-            <type>pom</type>
-        </dependency>
 
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <dependencies>
+                <dependency>
+                    <groupId>irden.space</groupId>
+                    <artifactId>plugins</artifactId>
+                    <version>1.0.0</version>
+                    <type>pom</type>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>

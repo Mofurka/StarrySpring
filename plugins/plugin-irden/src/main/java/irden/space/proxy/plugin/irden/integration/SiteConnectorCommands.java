@@ -4,7 +4,7 @@ import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
 import irden.space.proxy.plugin.command_handler.CommandSurface;
 import irden.space.proxy.plugin.command_handler.StringArgumentType;
-import irden.space.proxy.plugin.irden.integration.permissions.LinkedPermissions;
+import irden.space.proxy.plugin.irden.integration.permissions.SitePermissions;
 import irden.space.proxy.plugin.player_manager.PlayerAccessService;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class SiteConnectorCommands {
                                 if (link) {
                                     ctx.reply("Персонаж успешно привязан");
                                     try {
-                                        playerAccessService.grantPermissionToPlayer(sender.get().uuid().toString(), LinkedPermissions.USER_LINKED.permissionNode(), "SITE_LINKER");
+                                        playerAccessService.grantPermissionToPlayer(sender.get().uuid().toString(), SitePermissions.USER_LINKED.permissionNode(), "SITE_LINKER");
                                     } catch (IllegalStateException e) {
                                         log.warn(e.getMessage());
                                     }
@@ -56,7 +56,7 @@ public class SiteConnectorCommands {
                                 if (unlink) {
                                     ctx.reply("Персонаж успешно отвязан!");
                                     try {
-                                        playerAccessService.revokePermissionFromPlayer(sender.get().uuid().toString(), LinkedPermissions.USER_LINKED.permissionNode(), "SITE_LINKER");
+                                        playerAccessService.revokePermissionFromPlayer(sender.get().uuid().toString(), SitePermissions.USER_LINKED.permissionNode(), "SITE_LINKER");
                                     } catch (IllegalStateException e) {
                                         log.warn(e.getMessage());
                                     }
