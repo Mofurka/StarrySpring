@@ -1,4 +1,4 @@
-package irden.space.proxy.protocol.payload.packet.modify_tile_list.tile_modification.tile_layer;
+package irden.space.proxy.protocol.payload.common.tile_layer;
 
 public enum TileLayer {
     FOREGROUND(0),

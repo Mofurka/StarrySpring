@@ -100,7 +100,7 @@ final class Socks5Socket extends Socket {
             if (!isClosed()) {
                 setSoTimeout(previousTimeout);
             }
-        } catch (IOException ignored) {
+        } catch (IOException _) {
             // сокет уже нерабочий, исходное исключение важнее
         }
     }

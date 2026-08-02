@@ -71,6 +71,11 @@
                     <artifactId>plugin-irden</artifactId>
                     <version>1.0.0</version>
                 </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-planet-protect</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
             </dependencies>
         </profile>
     </profiles>
@@ -86,6 +91,7 @@
         <module>plugin-planet-backup</module>
         <module>plugin-launcher</module>
         <module>plugin-irden</module>
+        <module>plugin-planet-protect</module>
     </modules>
 
 </project>

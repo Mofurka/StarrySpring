@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Thread.sleep;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -356,7 +358,25 @@ public class ServerLifespan {
 
     @OnStop
     public void destroy() {
-        stopServer("Server is shutting down");
+        try {
+            var time = 10;
+            generalUtils.broadcastMessage("Server shutdown initiated.");
+            sleep(1_000);
+            for (int i = time; i > 0; i--) {
+                if (i < 10) {
+                    generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
+                } else if (i % 10 == 0) {
+                    generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
+                }
+                sleep(1_000);
+            }
+            String message = "Server is shutting down.";
+            generalUtils.kickAll(message);
+            sleep(3_000);
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+        }
+        stopServer();
     }
 
 }

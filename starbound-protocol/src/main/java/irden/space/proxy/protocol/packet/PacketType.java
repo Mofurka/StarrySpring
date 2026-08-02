@@ -70,7 +70,7 @@ public enum PacketType {
     SYSTEM_SHIP_CREATE(66),
     SYSTEM_SHIP_DESTROY(67),
     SYSTEM_OBJECT_SPAWN(68),
-    REPALCE_TILE_LIST(69),
+    REPLACE_TILE_LIST(69),
     UPDATE_WORLD_TEMPLATE(70);
 
     private final int id;

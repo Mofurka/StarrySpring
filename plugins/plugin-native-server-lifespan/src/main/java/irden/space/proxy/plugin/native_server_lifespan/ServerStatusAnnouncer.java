@@ -90,7 +90,7 @@ public class ServerStatusAnnouncer {
                 .field("Онлайн", serverInfo.running() ? "да" : "нет", true)
                 .field("Время жизни", startedAt == null ? "—" : "<t:%d:R>".formatted(startedAt.getEpochSecond()), true)
                 .field("Последнее обновление статуса:", "<t:%d:R>".formatted(Instant.now().getEpochSecond()), true)
-                .footerText("Если последнее обновление статуса больше 1 минуты, значит сервер лежит, либо дискорд бот не работает.")
+                .footerText("Если последнее обновление статуса больше 1 минуты, значит сервер лежит, либо дискорд бот не работает.\nЭто состояние основного сервера, а не шлюза.")
                 .timestamp(Instant.now())
                 .build();
     }

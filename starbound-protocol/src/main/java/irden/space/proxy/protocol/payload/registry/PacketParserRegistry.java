@@ -5,10 +5,12 @@ import irden.space.proxy.protocol.payload.packet.chat.ChatRecieveParser;
 import irden.space.proxy.protocol.payload.packet.chat.ChatSentParser;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnectParser;
 import irden.space.proxy.protocol.payload.packet.client_disconnect_request.ClientDisconnectRequestParser;
+import irden.space.proxy.protocol.payload.packet.collect_liquid.CollectLiquidParser;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailureParser;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccessParser;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageNotificationParser;
 import irden.space.proxy.protocol.payload.packet.damage.RemoteDamageRequestParser;
+import irden.space.proxy.protocol.payload.packet.damage_tile_group.DamageTileGroupParser;
 import irden.space.proxy.protocol.payload.packet.entity.create.EntityCreateParser;
 import irden.space.proxy.protocol.payload.packet.entity.destroy.EntityDestroyParser;
 import irden.space.proxy.protocol.payload.packet.entity.spawn.EntitySpawnParser;
@@ -18,6 +20,7 @@ import irden.space.proxy.protocol.payload.packet.entity_interact.EntityInteractR
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessageParser;
 import irden.space.proxy.protocol.payload.packet.entity_message_response.EntityMessageResponseParser;
 import irden.space.proxy.protocol.payload.packet.fly_ship.FlyShipParser;
+import irden.space.proxy.protocol.payload.packet.give_item.GiveItemParser;
 import irden.space.proxy.protocol.payload.packet.handshake.HandshakeChallengeParser;
 import irden.space.proxy.protocol.payload.packet.handshake.HandshakeResponseParser;
 import irden.space.proxy.protocol.payload.packet.modify_tile_list.ModifyTileListCodec;
@@ -26,8 +29,15 @@ import irden.space.proxy.protocol.payload.packet.ping_pong.PingParser;
 import irden.space.proxy.protocol.payload.packet.ping_pong.PongParser;
 import irden.space.proxy.protocol.payload.packet.protocol_request.ProtocolRequestParser;
 import irden.space.proxy.protocol.payload.packet.protocol_response.ProtocolResponseParser;
+import irden.space.proxy.protocol.payload.packet.replace_tile_list.ReplaceTileListParser;
+import irden.space.proxy.protocol.payload.packet.request_drop.RequestDropParser;
 import irden.space.proxy.protocol.payload.packet.server_disconnect.ServerDisconnectParser;
 import irden.space.proxy.protocol.payload.packet.step_update.StepUpdateParser;
+import irden.space.proxy.protocol.payload.packet.tile_array_update.TileArrayUpdateParser;
+import irden.space.proxy.protocol.payload.packet.tile_damage_update.TileDamageUpdateParser;
+import irden.space.proxy.protocol.payload.packet.tile_liquid_update.TileLiquidUpdateParser;
+import irden.space.proxy.protocol.payload.packet.tile_modification_failure.TileModificationFailureParser;
+import irden.space.proxy.protocol.payload.packet.tile_update.TileUpdateParser;
 import irden.space.proxy.protocol.payload.packet.universe_time_update.UniverseTimeUpdateParser;
 import irden.space.proxy.protocol.payload.packet.warp.player_warp.PlayerWarpParser;
 import irden.space.proxy.protocol.payload.packet.warp.player_warp_result.PlayerWarpResultParser;
@@ -76,12 +86,12 @@ public class PacketParserRegistry {
         register(PacketType.WORLD_LAYOUT_UPDATE, null);
         register(PacketType.WORLD_PARAMETERS_UPDATE, null);
         register(PacketType.CENTRAL_STRUCTURE_UPDATE, null);
-        register(PacketType.TILE_ARRAY_UPDATE, null);
-        register(PacketType.TILE_UPDATE, null);
-        register(PacketType.TILE_LIQUID_UPDATE, null);
-        register(PacketType.TILE_DAMAGE_UPDATE, null);
-        register(PacketType.TILE_MODIFICATION_FAILURE, null);
-        register(PacketType.GIVE_ITEM, null);
+        register(PacketType.TILE_ARRAY_UPDATE, new TileArrayUpdateParser());
+        register(PacketType.TILE_UPDATE, new TileUpdateParser());
+        register(PacketType.TILE_LIQUID_UPDATE, new TileLiquidUpdateParser());
+        register(PacketType.TILE_DAMAGE_UPDATE, new TileDamageUpdateParser());
+        register(PacketType.TILE_MODIFICATION_FAILURE, new TileModificationFailureParser());
+        register(PacketType.GIVE_ITEM, new GiveItemParser());
         register(PacketType.ENVIRONMENT_UPDATE, null);
         register(PacketType.UPDATE_TILE_PROTECTION, null);
         register(PacketType.SET_DUNGEON_GRAVITY, null);
@@ -92,9 +102,9 @@ public class PacketParserRegistry {
 
         // world client -> world server
         register(PacketType.MODIFY_TILE_LIST, new ModifyTileListCodec());
-        register(PacketType.DAMAGE_TILE_GROUP, null);
-        register(PacketType.COLLECT_LIQUID, null);
-        register(PacketType.REQUEST_DROP, null);
+        register(PacketType.DAMAGE_TILE_GROUP, new DamageTileGroupParser());
+        register(PacketType.COLLECT_LIQUID, new CollectLiquidParser());
+        register(PacketType.REQUEST_DROP, new RequestDropParser());
         register(PacketType.SPAWN_ENTITY, new EntitySpawnParser());
         register(PacketType.CONNECT_WIRE, null);
         register(PacketType.DISCONNECT_ALL_WIRES, null);
@@ -130,7 +140,7 @@ public class PacketParserRegistry {
 
         // OpenStarbound packets
         // client -> server
-        register(PacketType.REPALCE_TILE_LIST, null);
+        register(PacketType.REPLACE_TILE_LIST, new ReplaceTileListParser());
         register(PacketType.UPDATE_WORLD_TEMPLATE, null);
 
     }

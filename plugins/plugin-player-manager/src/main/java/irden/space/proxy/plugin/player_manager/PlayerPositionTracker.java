@@ -5,12 +5,14 @@ import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageService;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.player_position.*;
 import irden.space.proxy.protocol.codec.variant.IntVariantValue;
 import irden.space.proxy.protocol.codec.variant.MapVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
+import irden.space.proxy.protocol.codec.variant.Variants;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.vectors.StarVec2F;
@@ -22,6 +24,7 @@ import irden.space.proxy.protocol.payload.common.warp.action.ToWorldWarpAction;
 import irden.space.proxy.protocol.payload.common.warp.action.WarpAction;
 import irden.space.proxy.protocol.payload.common.warp.target.*;
 import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetState;
+import irden.space.proxy.protocol.payload.packet.warp.player_warp.PlayerWarp;
 import irden.space.proxy.protocol.payload.packet.warp.player_warp_result.PlayerWarpResult;
 import irden.space.proxy.protocol.payload.packet.world_start.WorldStart;
 import irden.space.proxy.protocol.util.MapVariantUtils;
@@ -40,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlayerPositionTracker {
     private static final Map<String, PlayerPosition> playerPositionMap = new ConcurrentHashMap<>();
     private final PlayerManagerApi playerManagerApi;
+    private final EntityMessageService entityMessageService;
 
     @PacketHandler(value = PacketType.PLAYER_WARP_RESULT, direction = PacketDirection.TO_CLIENT)
     public PacketDecision onPlayerWarpResult(PacketInterceptionContext ctx) {
@@ -165,6 +169,29 @@ public class PlayerPositionTracker {
 
         return PacketDecision.forward();
     }
+
+    @PacketHandler(value = PacketType.PLAYER_WARP, direction = PacketDirection.TO_SERVER)
+    public PacketDecision onPlayerWarp(PacketInterceptionContext ctx) {
+        PlayerWarp playerWarp = ctx.parsedPayload(PlayerWarp.class);
+        if (playerWarp.warpAction() instanceof ToPlayerWarpAction(var uuid)) {
+            Optional<Player> optionalPlayer = playerManagerApi.findPlayer(uuid.toString(), false);
+            if (optionalPlayer.isPresent()) {
+                var optionalFrom = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
+                if (optionalFrom.isPresent()) {
+                    Player from = optionalFrom.get();
+                    Player to = optionalPlayer.get();
+                    if (from.position().getCurrentLocation().equals(to.position().getCurrentLocation())) {
+                        PlayerPosition position = to.position();
+                        entityMessageService.sendToEntity(from.sessionContext(), from.entityId(), "warp", Variants.of("Nowhere=%s.%s".formatted(position.getX().intValue(), position.getY().intValue())) );
+                        return PacketDecision.cancel();
+                    }
+                }
+            }
+        }
+        return PacketDecision.forward();
+    }
+
+
 
     @OnDisconnected
     public void onDisconnectingSession(PluginSessionContext session) {
