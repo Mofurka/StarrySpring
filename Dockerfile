@@ -21,9 +21,8 @@ ENV JAVA_OPTS="-Duser.timezone=UTC \
     -XX:+UseZGC \
     -Xms512m \
     -Xmx2g \
-    -XX:+UseStringDeduplication \
-    -server"
+    -XX:+UseStringDeduplication"
 
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/bin/sh", "-c", "exec java $JAVA_OPTS -jar server.jar -server"]
+ENTRYPOINT ["/bin/sh", "-c", "exec java $JAVA_OPTS -jar server.jar"]

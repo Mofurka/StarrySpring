@@ -92,12 +92,12 @@ public class PacketParserRegistry {
         register(PacketType.TILE_DAMAGE_UPDATE, new TileDamageUpdateParser());
         register(PacketType.TILE_MODIFICATION_FAILURE, new TileModificationFailureParser());
         register(PacketType.GIVE_ITEM, new GiveItemParser());
-        register(PacketType.ENVIRONMENT_UPDATE, null);
-        register(PacketType.UPDATE_TILE_PROTECTION, null);
-        register(PacketType.SET_DUNGEON_GRAVITY, null);
-        register(PacketType.SET_DUNGEON_BREATHABLE, null);
-        register(PacketType.SET_PLAYER_START, null);
-        register(PacketType.FIND_UNIQUE_ENTITY_RESPONSE, null);
+//        register(PacketType.ENVIRONMENT_UPDATE, null);
+//        register(PacketType.UPDATE_TILE_PROTECTION, null);
+//        register(PacketType.SET_DUNGEON_GRAVITY, null);
+//        register(PacketType.SET_DUNGEON_BREATHABLE, null);
+//        register(PacketType.SET_PLAYER_START, null);
+//        register(PacketType.FIND_UNIQUE_ENTITY_RESPONSE, null);
         register(PacketType.PONG, new PongParser());
 
         // world client -> world server
@@ -106,11 +106,11 @@ public class PacketParserRegistry {
         register(PacketType.COLLECT_LIQUID, new CollectLiquidParser());
         register(PacketType.REQUEST_DROP, new RequestDropParser());
         register(PacketType.SPAWN_ENTITY, new EntitySpawnParser());
-        register(PacketType.CONNECT_WIRE, null);
-        register(PacketType.DISCONNECT_ALL_WIRES, null);
-        register(PacketType.WORLD_CLIENT_STATE_UPDATE, null);
-        register(PacketType.FIND_UNIQUE_ENTITY, null);
-        register(PacketType.WORLD_START_ACKNOWLEDGE, null);
+//        register(PacketType.CONNECT_WIRE, null);
+//        register(PacketType.DISCONNECT_ALL_WIRES, null);
+//        register(PacketType.WORLD_CLIENT_STATE_UPDATE, null);
+//        register(PacketType.FIND_UNIQUE_ENTITY, null);
+//        register(PacketType.WORLD_START_ACKNOWLEDGE, null);
         register(PacketType.PING, new PingParser());
 
         // system server <-> client
@@ -119,7 +119,7 @@ public class PacketParserRegistry {
         register(PacketType.ENTITY_DESTROY, new EntityDestroyParser());
         register(PacketType.ENTITY_INTERACT, new EntityInteractParser());
         register(PacketType.ENTITY_INTERACT_RESULT, new EntityInteractResultParser());
-        register(PacketType.HIT_REQUEST, null);
+//        register(PacketType.HIT_REQUEST, null);
         register(PacketType.REMOTE_DAMAGE_REQUEST, new RemoteDamageRequestParser());
         register(PacketType.REMOTE_DAMAGE_NOTIFICATION, new RemoteDamageNotificationParser());
         register(PacketType.ENTITY_MESSAGE, new EntityMessageParser());
@@ -128,20 +128,20 @@ public class PacketParserRegistry {
         register(PacketType.STEP_UPDATE, new StepUpdateParser());
 
         // system server -> system client
-        register(PacketType.SYSTEM_WORLD_START, null);
-        register(PacketType.SYSTEM_WORLD_UPDATE, null);
-        register(PacketType.SYSTEM_OBJECT_CREATE, null);
-        register(PacketType.SYSTEM_OBJECT_DESTROY, null);
-        register(PacketType.SYSTEM_SHIP_CREATE, null);
-        register(PacketType.SYSTEM_SHIP_DESTROY, null);
+//        register(PacketType.SYSTEM_WORLD_START, null);
+//        register(PacketType.SYSTEM_WORLD_UPDATE, null);
+//        register(PacketType.SYSTEM_OBJECT_CREATE, null);
+//        register(PacketType.SYSTEM_OBJECT_DESTROY, null);
+//        register(PacketType.SYSTEM_SHIP_CREATE, null);
+//        register(PacketType.SYSTEM_SHIP_DESTROY, null);
 
         // client -> system server
-        register(PacketType.SYSTEM_OBJECT_SPAWN, null);
+//        register(PacketType.SYSTEM_OBJECT_SPAWN, null);
 
         // OpenStarbound packets
         // client -> server
         register(PacketType.REPLACE_TILE_LIST, new ReplaceTileListParser());
-        register(PacketType.UPDATE_WORLD_TEMPLATE, null);
+//        register(PacketType.UPDATE_WORLD_TEMPLATE, null);
 
     }
 

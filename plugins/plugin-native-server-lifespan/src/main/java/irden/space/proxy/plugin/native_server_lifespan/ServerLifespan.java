@@ -130,6 +130,7 @@ public class ServerLifespan {
     }
 
     public synchronized ServerStopResult stopServer(String message) {
+        log.info("Stopping Native Server");
         Process process = serverProcess;
         serverReady = false;
         if (process == null || !process.isAlive()) {
@@ -361,11 +362,11 @@ public class ServerLifespan {
         try {
             var time = 10;
             generalUtils.broadcastMessage("Server shutdown initiated.");
+            log.warn("[Game server] Grace Shutdown");
             sleep(1_000);
             for (int i = time; i > 0; i--) {
-                if (i < 10) {
-                    generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
-                } else if (i % 10 == 0) {
+                if (i < 10 || i % 10 == 0) {
+                    log.warn("[Game server] Grace Shutdown {}", i);
                     generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
                 }
                 sleep(1_000);

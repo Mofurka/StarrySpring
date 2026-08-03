@@ -8,7 +8,8 @@ public class ProtocolRequestParser implements PacketParser<ProtocolRequest> {
 
     @Override
     public ProtocolRequest parse(BinaryReader reader) {
-        return new ProtocolRequest(reader.readUInt32BE());
+        long clientBuild = reader.readUInt32BE();
+        return new ProtocolRequest(clientBuild);
     }
 
     @Override
