@@ -25,7 +25,7 @@ public class EntityMessageInterceptor {
 
     private final EntityMessageService entityMessageService;
 
-    @PacketHandler(value = PacketType.ENTITY_MESSAGE, direction = PacketDirection.TO_SERVER)
+    @PacketHandler(value = PacketType.ENTITY_MESSAGE)
     @SuppressWarnings("unused")
     public PacketDecision onEntityMessage(PacketInterceptionContext context) {
         EntityMessage entityMessage = context.parsedPayload(EntityMessage.class);
@@ -66,7 +66,7 @@ public class EntityMessageInterceptor {
         return PacketDecision.cancel();
     }
 
-    @PacketHandler(value = PacketType.ENTITY_MESSAGE_RESPONSE, direction = PacketDirection.TO_SERVER)
+    @PacketHandler(value = PacketType.ENTITY_MESSAGE_RESPONSE)
     @SuppressWarnings("unused")
     public PacketDecision onEntityMessageResponse(PacketInterceptionContext context) {
         EntityMessageResponse response = context.parsedPayload(EntityMessageResponse.class);
