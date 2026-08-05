@@ -154,7 +154,7 @@ public class WeatherEngine {
             if (!isAllowed(target, period)) {
                 continue;
             }
-            if (isOnCooldown(rule.to(), target, current, currentDefinition)) {
+            if (isOnCooldown(rule.to(), target, current)) {
                 continue;
             }
             if (!conditionEvaluator.matches(
@@ -189,11 +189,11 @@ public class WeatherEngine {
         }
     }
 
+
     private boolean isOnCooldown(
             String targetState,
             WeatherConfig.Definition targetDefinition,
-            WeatherRuntimeState current,
-            WeatherConfig.Definition currentDefinition
+            WeatherRuntimeState current
     ) {
         int cooldown = targetDefinition.cooldownTicks();
         if (cooldown <= 0) {
@@ -201,7 +201,7 @@ public class WeatherEngine {
         }
 
         if (current.stateId().equals(targetState)) {
-            return true;
+            return false;
         }
 
         return current.history()
