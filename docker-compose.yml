@@ -6,6 +6,13 @@ services:
     stop_signal: SIGTERM
     stop_grace_period: 1m
 
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      retries: 10
+      start_period: 10s
+      timeout: 10s
+
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - LOCALE=ru
@@ -14,9 +21,9 @@ services:
       - "7778:7777"
 
     volumes:
-      - ./runtime-plugins:/server/runtime-plugins:ro
-      - ./config:/server/config
-      - ./StarboundServer:/server/game
+      - ./runtime-plugins:/app/runtime-plugins:ro
+      - ./config:/app/config
+      - /home/mofuro/.steam/steam/steamapps/common/Starbound:/app/game
 
     depends_on:
       postgres:
@@ -39,11 +46,9 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - ./db_data:/var/lib/postgresql/data
     networks:
       - irden
 
-volumes:
-  db_data:
 networks:
   irden:

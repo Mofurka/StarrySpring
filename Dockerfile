@@ -1,22 +1,17 @@
 FROM eclipse-temurin:25-jre-noble
-
 LABEL authors="Mofurka"
 
-RUN apt-get update && apt-get install -y \
-    curl \
-    libvorbisfile3 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libvorbisfile3 curl
 
-ARG JAR_FILE=boot/target/*.jar
+WORKDIR /app
 
-WORKDIR /server
+ARG JAR_FILE=target/*.jar
 
-COPY ${JAR_FILE} server.jar
+COPY --chown=application:application ${JAR_FILE} /app/app.jar
 
-ENV JAVA_OPTS="-Duser.timezone=UTC \
-    -XX:+UseContainerSupport \
-    -XX:MaxRAMPercentage=75.0 \
-    -XX:InitialRAMPercentage=50.0 \
+ENV JDK_JAVA_OPTIONS="\
+    -Duser.timezone=UTC \
     --enable-native-access=ALL-UNNAMED \
     -XX:+UseZGC \
     -Xms512m \
@@ -25,4 +20,4 @@ ENV JAVA_OPTS="-Duser.timezone=UTC \
 
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/bin/sh", "-c", "exec java $JAVA_OPTS -jar server.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
