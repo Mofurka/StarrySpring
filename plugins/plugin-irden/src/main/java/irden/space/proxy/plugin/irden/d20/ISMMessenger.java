@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -36,20 +37,24 @@ public class ISMMessenger {
         var discordMessage = "**<%s> [%s]:**".formatted(sender.nickname(), rollMode.toUpperCase()) + "`" + Color.stripColorCodes(message.replace(Placeholders.PLAYER, "").trim()) + "`";
         discordBotMessageService.handleInGameMessage(discordMessage);
         var sccMessage = message.trim().replace(Placeholders.PLAYER, Color.MAGENTA.colorString(sender.nickname()));
-        switch (rollMode) {
-            case RollMode.FIGHT -> {
-                // a lil of O(n), but its nothing in case that there might be only one battle at time, or maybe two, but no more than 2-3. Also, the rolls are quite rare, maybe one in 1 minute
-                var snapshot = fightHandler.findUuidFightSnapshot(sender.uuid().toString());
-                if (snapshot == null) {
-                    return;
+        String[] split = sccMessage.split("\n");
+        Arrays.stream(split).forEach(spl -> {
+            switch (rollMode) {
+                case RollMode.FIGHT -> {
+                    // a lil of O(n), but its nothing in case that there might be only one battle at time, or maybe two, but no more than 2-3. Also, the rolls are quite rare, maybe one in 1 minute
+                    var snapshot = fightHandler.findUuidFightSnapshot(sender.uuid().toString());
+                    if (snapshot == null) {
+                        return;
+                    }
+                    List<String> queue = snapshot.queue();
+                    starCustomChatMessageSender.broadcastMessageToUuids(queue, spl, ChatMode.FIGHT);
                 }
-                List<String> queue = snapshot.queue();
-                starCustomChatMessageSender.broadcastMessageToUuids(queue, sccMessage, ChatMode.FIGHT);
+                case RollMode.LOCAL ->
+                        starCustomChatMessageSender.broadcastMessageToClientIds(clientIds, spl, ChatMode.PROXIMITY);
+                case RollMode.BROADCAST -> generalUtils.broadcastMessage(spl);
+                default -> starCustomChatMessageSender.sendMessageToSCC(sender, "Server", spl, ChatMode.WHISPER);
             }
-            case RollMode.LOCAL ->
-                    starCustomChatMessageSender.broadcastMessageToClientIds(clientIds, sccMessage, ChatMode.PROXIMITY);
-            case RollMode.BROADCAST -> generalUtils.broadcastMessage(sccMessage);
-            default -> starCustomChatMessageSender.sendMessageToSCC(sender, "Server", sccMessage, ChatMode.WHISPER);
-        }
+        });
+
     }
 }

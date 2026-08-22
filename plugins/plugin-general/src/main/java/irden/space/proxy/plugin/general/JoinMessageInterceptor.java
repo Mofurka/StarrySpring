@@ -62,7 +62,6 @@ public class JoinMessageInterceptor {
         this.notifyPlayers(player, joinMsg);
     }
 
-    @Async
     @EventListener
     public void onPlayerDisconnectedEvent(PlayerDisconnectedEvent event) {
         Player player = event.player();

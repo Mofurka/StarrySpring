@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @PluginDefinition(
@@ -83,7 +82,10 @@ public class CommandHandlerPlugin implements ProxyPlugin {
                 registeredCommand.ownerPluginId()
         );
 
-        CompletableFuture.runAsync(() -> executeAsync(context.session(), registeredCommand, argumentContext, parsedCommand));
+
+        Thread.ofVirtual()
+                .name("command-" + registeredCommand.name())
+                .start(() -> executeAsync(context.session(), registeredCommand, argumentContext, parsedCommand));
         return PacketDecision.cancel();
     }
 

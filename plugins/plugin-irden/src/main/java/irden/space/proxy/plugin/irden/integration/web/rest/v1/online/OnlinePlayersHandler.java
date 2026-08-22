@@ -27,6 +27,7 @@ public class OnlinePlayersHandler {
             return players.stream().map(player -> new OnlinePlayerInfoDto(
                             pub ? null : player.uuid().toString(),
                             pub ? null : player.name(),
+                            player.metadata().containsKey("applicationId") ? ((Long) player.metadata().get("applicationId")) : null,
                             player.nickname(),
                             Duration.between(player.lastSeen(), now).toSeconds()
                     )

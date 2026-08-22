@@ -8,7 +8,7 @@ WORKDIR /app
 
 ARG JAR_FILE=target/*.jar
 
-COPY --chown=application:application ${JAR_FILE} /app/app.jar
+COPY  ${JAR_FILE} /app/app.jar
 
 ENV JDK_JAVA_OPTIONS="\
     -Duser.timezone=UTC \

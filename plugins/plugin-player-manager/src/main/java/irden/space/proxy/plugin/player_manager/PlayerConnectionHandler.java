@@ -127,7 +127,7 @@ public class PlayerConnectionHandler {
     @OnDisconnected
     public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
-        sessionPermissionService.clearPermissions(context.sessionId());
+
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.sessionId());
         if (tempPlayer != null) {
             log.info("Player connection attempt failed or was cancelled: name='{}', uuid={}", tempPlayer.name(), tempPlayer.uuid());
@@ -138,5 +138,6 @@ public class PlayerConnectionHandler {
             eventPublisher.publishEvent(new PlayerDisconnectedEvent(context.sessionId(), player));
             log.info("Player disconnected: name='{}', uuid={}", player.name(), player.uuid());
         }
+        sessionPermissionService.clearPermissions(context.sessionId());
     }
 }

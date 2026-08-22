@@ -5,6 +5,8 @@
         <option name="imageTag" value="irden.offline/starry-spring:latest" />
         <option name="buildOnly" value="true" />
         <option name="containerName" value="" />
+        <option name="contextFolderPath" value="boot" />
+        <option name="showCommandPreview" value="true" />
         <option name="sourceFilePath" value="Dockerfile" />
       </settings>
     </deployment>

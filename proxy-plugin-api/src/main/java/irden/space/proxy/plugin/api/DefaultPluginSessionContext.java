@@ -4,12 +4,17 @@ package irden.space.proxy.plugin.api;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.payload.registry.PacketParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
 public class DefaultPluginSessionContext implements PluginSessionContext {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultPluginSessionContext.class);
 
     private final String sessionId;
     private final String clientIp;
@@ -18,7 +23,9 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     private final int openProtocolVersion;
     private final BiConsumer<PacketDirection, PacketEnvelope> packetSender;
     private final PermissionView permissions;
+    private final Runnable sessionCloser;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     public DefaultPluginSessionContext(
             String sessionId,
@@ -46,6 +53,29 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
             BiConsumer<PacketDirection, PacketEnvelope> packetSender,
             PermissionView permissions
     ) {
+        this(
+                sessionId,
+                clientIp,
+                clientZstdEnabled,
+                upstreamZstdEnabled,
+                openProtocolVersion,
+                packetSender,
+                permissions,
+                null
+        );
+    }
+
+    public DefaultPluginSessionContext(
+            String sessionId,
+            String clientIp,
+            boolean clientZstdEnabled,
+            boolean upstreamZstdEnabled,
+            int openProtocolVersion,
+            BiConsumer<PacketDirection, PacketEnvelope> packetSender,
+            PermissionView permissions,
+            Runnable sessionCloser
+    ) {
+        this.sessionCloser = sessionCloser;
         this.sessionId = sessionId;
         this.clientIp = clientIp;
         this.clientZstdEnabled = clientZstdEnabled;
@@ -88,6 +118,21 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     @Override
     public int openProtocolVersion() {
         return openProtocolVersion;
+    }
+
+
+    @Override
+    public void close() {
+        if (sessionCloser == null) {
+            log.debug("Session {} has no closer attached, close() ignored", sessionId);
+            return;
+        }
+
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+
+        sessionCloser.run();
     }
 
     @Override

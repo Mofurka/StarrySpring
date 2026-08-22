@@ -17,6 +17,7 @@ import org.intellij.lang.annotations.PrintFormat;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.micrometer.common.util.StringUtils.isBlank;
@@ -129,7 +130,7 @@ public class Player {
         if (!online()) {
             return;
         }
-        sessionContext.sendToClient(PacketType.CHAT_RECEIVE, message);
+        CompletableFuture.runAsync(() -> sessionContext.sendToClient(PacketType.CHAT_RECEIVE, message));
     }
 
     public void sendMessage(@NotBlank String message) {
@@ -138,7 +139,7 @@ public class Player {
         var header = ChatHeader.builder().mode(ChatReceiveMode.BROADCAST).channel("").clientId(0).build();
         var chatReceive = ChatReceive.builder().header(header).name("Server").message(message).build();
 
-        sessionContext.sendToClient(PacketType.CHAT_RECEIVE, chatReceive);
+        CompletableFuture.runAsync(() -> sessionContext.sendToClient(PacketType.CHAT_RECEIVE, chatReceive));
     }
 
     public void sendMessage(@PrintFormat String formatMessage, Object... args) {

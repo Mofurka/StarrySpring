@@ -1,11 +1,13 @@
 package irden.space.proxy.plugin.irden.service;
 
+import irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountStatus;
 import irden.space.proxy.plugin.irden.persistence.repository.AccountRepository;
 import irden.space.proxy.plugin.irden.service.exception.AccountAlreadyExistsException;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
+import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -91,6 +93,18 @@ public class AccountService {
                                         normalizedAccountCode
                                 )
                 ));
+    }
+
+
+
+    @Transactional(readOnly = true)
+    public AccountEntity getPlayerMainAccount(StarUuid playerUuid)
+            throws AccountNotFoundException {
+        return getAccount(
+                AccountOwnerType.CHARACTER,
+                playerUuid.toString(),
+                PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE
+        );
     }
 
 

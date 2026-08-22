@@ -430,7 +430,8 @@ public class PacketForwarder implements Runnable {
                     session.getUpstreamCompression() == SessionTransportMode.ZSTD,
                     openProtocolVersion,
                     this::sendPacket,
-                    permissionView
+                    permissionView,
+                    context::closeSockets
             );
             cachedOpenProtocolVersion = openProtocolVersion;
             cachedPluginSessionContext = newContext;

@@ -189,8 +189,8 @@ public final class StatManagerMessage {
 
     // ===== transferMoney =====
 
-    public String amount() {
-        return string("amount", null);
+    public Integer amount() {
+        return intOrNull("amount");
     }
 
     // ===== низкоуровневые аксессоры =====

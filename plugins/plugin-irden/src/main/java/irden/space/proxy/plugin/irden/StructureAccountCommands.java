@@ -5,6 +5,8 @@ import irden.space.proxy.plugin.irden.account.StructureAccountArgumentType;
 import irden.space.proxy.plugin.irden.account.StructureAccountType;
 import irden.space.proxy.plugin.irden.permissions.BalancePermissions;
 import irden.space.proxy.plugin.irden.service.AccountService;
+import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
+import irden.space.proxy.plugin.player_manager.command.PlayerTargetArgumentType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,7 @@ public class StructureAccountCommands {
 
     private final StructureAccountCommandsHandler handler;
     private final AccountService accountService;
+    private final PlayerManagerApi playerManagerApi;
 
     @ChatCommand(value = "treasury", description = "Счета объектов: крепости, таверны и т.п.")
     public CommandSpec treasury() {
@@ -38,6 +41,14 @@ public class StructureAccountCommands {
                                 .then(typeAccountAmount(handler::handleWithdraw))
                 )
                 .then(
+                        CommandSpec.literal("pay").description("Перевести со счёта объекта игроку.")
+                                .then(typeAccountPlayerAmount(handler::handlePay))
+                )
+                .then(
+                        CommandSpec.literal("collect").description("Перевести от игрока на счёт объекта.")
+                                .then(typeAccountPlayerAmount(handler::handleCollect))
+                )
+                .then(
                         CommandSpec.literal("list").description("Список счетов выбранного вида.")
                                 .then(
                                         CommandSpec.argument("type", EnumArgumentType.of(StructureAccountType.class))
@@ -45,6 +56,22 @@ public class StructureAccountCommands {
                                 )
                 )
                 .build();
+    }
+
+    private CommandNodeBuilder<?> typeAccountPlayerAmount(CommandExecutor executor) {
+        return CommandSpec.argument("type", EnumArgumentType.of(StructureAccountType.class))
+                .then(
+                        CommandSpec.argument("account", StructureAccountArgumentType.structureAccount(accountService)).description("Имя существующего счёта.")
+                                .then(
+                                        CommandSpec.argument("player", PlayerTargetArgumentType.playerTarget(playerManagerApi))
+                                                .then(
+                                                        CommandSpec.argument("amount", IntegerArgumentType.integer())
+                                                                .then(
+                                                                        CommandSpec.argument("description", StringArgumentType.greedyString()).description("Описание транзакции.").optional().executes(executor)
+                                                                )
+                                                )
+                                )
+                );
     }
 
     private CommandNodeBuilder<?> typeAndName(CommandExecutor executor) {

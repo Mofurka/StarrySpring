@@ -325,7 +325,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                 session.getUpstreamCompression() == SessionTransportMode.ZSTD,
                 session.resolveOpenProtocolVersion(),
                 (direction, envelope) -> sendPacket(context, direction, envelope),
-                permissionView
+                permissionView,
+                context::closeSockets
         );
     }
 

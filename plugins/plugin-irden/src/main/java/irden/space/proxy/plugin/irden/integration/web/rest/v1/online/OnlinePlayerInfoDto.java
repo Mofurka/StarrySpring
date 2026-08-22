@@ -10,6 +10,9 @@ public record OnlinePlayerInfoDto(
         @JsonProperty("raw_name")
         String rawName,
 
+        @JsonProperty("application_id")
+        Long applicationId,
+
         String nickname,
 
         @JsonProperty("online_time")
