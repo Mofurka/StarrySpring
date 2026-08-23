@@ -161,8 +161,8 @@ public enum PlayerEntityUpdateCodec implements BinaryCodec<PlayerNetState> {
                 case 14 -> mc.surfaceMovingCollision(
                         this.readSurfaceMovingCollision(reader
                         ));
-                case 15 -> mc.xRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
-                case 16 -> mc.yRelativeSurfaceMovingCollisionPosition(reader.readFloat32BE());
+                case 15 -> mc.xRelativeSurfaceMovingCollisionPosition(VlqCodec.INSTANCE.readInt(reader) * 0.0125f);
+                case 16 -> mc.yRelativeSurfaceMovingCollisionPosition(VlqCodec.INSTANCE.readInt(reader) * 0.0125f);
                 default -> {
                     return mc.build();
                 }

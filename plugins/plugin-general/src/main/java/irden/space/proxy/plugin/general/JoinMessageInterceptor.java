@@ -28,8 +28,7 @@ import static io.micrometer.common.util.StringUtils.isBlank;
 @RequiredArgsConstructor
 public class JoinMessageInterceptor {
     private static final Pattern JOIN_PATTERN =
-            Pattern.compile("^Player '([^']+)' (dis)?connected$");
-    private final GeneralPlugin plugin;
+            Pattern.compile("^Player '(.*)' (dis)?connected");
     private final MessageSource messageSource;
     private final PlayerManagerApi playerManagerApi;
 

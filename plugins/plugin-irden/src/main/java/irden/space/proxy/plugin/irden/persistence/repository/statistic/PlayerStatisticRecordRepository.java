@@ -5,7 +5,12 @@ import irden.space.proxy.plugin.irden.persistence.model.statistic.PlayerStatisti
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
+
 @Repository
 public interface PlayerStatisticRecordRepository
         extends JpaRepository<PlayerStatisticRecordEntity, PlayerStatisticId> {
+
+    List<PlayerStatisticRecordEntity> findAllByPlayerUuidIn(Collection<String> playerUuids);
 }

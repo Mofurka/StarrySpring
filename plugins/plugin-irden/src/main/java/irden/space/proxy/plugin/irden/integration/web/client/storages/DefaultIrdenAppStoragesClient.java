@@ -12,7 +12,7 @@ import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
 @Configuration
-@ComponentScan("irden.space.proxy.plugin.irden.integration.web")
+//@ComponentScan("irden.space.proxy.plugin.irden.integration.web")
 public class DefaultIrdenAppStoragesClient {
 
     // Надо придумать как заставить IDE видить что это бин в этом контексте

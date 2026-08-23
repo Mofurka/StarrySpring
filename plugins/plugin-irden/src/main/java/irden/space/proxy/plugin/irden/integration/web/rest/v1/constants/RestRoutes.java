@@ -23,4 +23,10 @@ public class RestRoutes {
         public static final String PRIVATE = V1 + ROOT;
     }
 
+    @UtilityClass
+    public static final class StatisticsV1 {
+        private static final String ROOT = "/statistics";
+        public static final String PRIVATE = V1 + ROOT;
+    }
+
 }

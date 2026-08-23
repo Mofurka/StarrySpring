@@ -8,10 +8,13 @@ import irden.space.proxy.protocol.packet.PacketType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.Objects;
 
 public class RuntimePacketReader {
+
+    private static final long PACKET_STALL_TIMEOUT_MILLIS = 60_000L;
 
     private final PayloadCompressionCodec payloadCompressionCodec;
 
@@ -34,10 +37,7 @@ public class RuntimePacketReader {
         boolean compressed = encodedSize < 0;
         int payloadSize = Math.abs(encodedSize);
 
-        byte[] rawPayload = inputStream.readNBytes(payloadSize);
-        if (rawPayload.length != payloadSize) {
-            throw new IOException("Unexpected end of stream while reading payload");
-        }
+        byte[] rawPayload = readPayload(inputStream, payloadSize);
 
         PacketType packetType = PacketType.fromId(rawTypeId);
 
@@ -66,6 +66,50 @@ public class RuntimePacketReader {
         return original;
     }
 
+    private int readWithinPacket(InputStream inputStream) throws IOException {
+        long deadline = System.currentTimeMillis() + PACKET_STALL_TIMEOUT_MILLIS;
+
+        while (true) {
+            try {
+                return inputStream.read();
+            } catch (SocketTimeoutException e) {
+                requirePacketNotStalled(deadline, e);
+            }
+        }
+    }
+
+    private byte[] readPayload(InputStream inputStream, int payloadSize) throws IOException {
+        byte[] payload = new byte[payloadSize];
+        long deadline = System.currentTimeMillis() + PACKET_STALL_TIMEOUT_MILLIS;
+        int offset = 0;
+
+        while (offset < payloadSize) {
+            int read;
+            try {
+                read = inputStream.read(payload, offset, payloadSize - offset);
+            } catch (SocketTimeoutException e) {
+                requirePacketNotStalled(deadline, e);
+                continue;
+            }
+
+            if (read < 0) {
+                throw new IOException("Unexpected end of stream while reading payload");
+            }
+            offset += read;
+        }
+
+        return payload;
+    }
+
+    private void requirePacketNotStalled(long deadline, SocketTimeoutException timeout) throws IOException {
+        if (System.currentTimeMillis() >= deadline) {
+            throw new IOException(
+                    "Packet stalled for more than " + PACKET_STALL_TIMEOUT_MILLIS + " ms",
+                    timeout
+            );
+        }
+    }
+
     private SignedVlqReadResult readSignedVlqWithRawBytes(InputStream inputStream) throws IOException {
         byte[] rawBytesBuffer = new byte[5];
         int length = 0;
@@ -75,7 +119,7 @@ public class RuntimePacketReader {
                 throw new IOException("Signed VLQ exceeds expected int size");
             }
 
-            int b = inputStream.read();
+            int b = readWithinPacket(inputStream);
             if (b < 0) {
                 throw new IOException("Stream closed while reading signed VLQ");
             }

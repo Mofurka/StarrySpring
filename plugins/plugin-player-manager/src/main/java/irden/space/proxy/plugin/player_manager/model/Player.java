@@ -130,7 +130,7 @@ public class Player {
         if (!online()) {
             return;
         }
-        CompletableFuture.runAsync(() -> sessionContext.sendToClient(PacketType.CHAT_RECEIVE, message));
+        sessionContext.sendToClient(PacketType.CHAT_RECEIVE, message);
     }
 
     public void sendMessage(@NotBlank String message) {
@@ -139,7 +139,7 @@ public class Player {
         var header = ChatHeader.builder().mode(ChatReceiveMode.BROADCAST).channel("").clientId(0).build();
         var chatReceive = ChatReceive.builder().header(header).name("Server").message(message).build();
 
-        CompletableFuture.runAsync(() -> sessionContext.sendToClient(PacketType.CHAT_RECEIVE, chatReceive));
+        sessionContext.sendToClient(PacketType.CHAT_RECEIVE, chatReceive);
     }
 
     public void sendMessage(@PrintFormat String formatMessage, Object... args) {

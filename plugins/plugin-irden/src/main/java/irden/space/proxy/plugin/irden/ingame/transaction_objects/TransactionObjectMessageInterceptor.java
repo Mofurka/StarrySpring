@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.irden.ingame.transaction_objects;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
 import irden.space.proxy.plugin.command_handler.wording.RussianLiteralsUtils;
+import irden.space.proxy.plugin.discord.DiscordBotMessageService;
 import irden.space.proxy.plugin.irden.account.StructureAccountType;
 import irden.space.proxy.plugin.irden.ingame.transaction_objects.model.TransactionObjectData;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
@@ -16,6 +17,7 @@ import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.codec.variant.Variants;
 import irden.space.proxy.protocol.util.VariantObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -28,7 +30,9 @@ public class TransactionObjectMessageInterceptor {
     private final AccountTransactionService accountTransactionService;
     private final VariantObjectMapper variantObjectMapper;
     private final PlayerManagerApi playerManagerApi;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
+    private final DiscordBotMessageService discordBotMessageService;
 
     @EntityMessageHandler("irden:account:name")
     public VariantValue getAccountName(EntityMessageContext context) {
@@ -59,6 +63,7 @@ public class TransactionObjectMessageInterceptor {
                 AccountTransactionEntity byObject = accountTransactionService.transfer(playerAccountUuid, uuid, amount, UUID.randomUUID(), "By object");
                 AccountEntity account1 = accountService.getAccount(uuid);
                 playerBySessionId.get().sendMessage("Вы перевели %s %s -> %s %s".formatted(byObject.getAmount(), coins(byObject.getAmount()), StructureAccountType.valueOf(account1.getAccountCode()).displayName(), account1.getOwnerName()));
+                discordBotMessageService.handleInGameMessage("**%s** перевёл %s %s -> %s %s".formatted(playerBySessionId.get().name(), byObject.getAmount(), coins(byObject.getAmount()), StructureAccountType.valueOf(account1.getAccountCode()).displayName(), account1.getOwnerName()));
             } catch (InsufficientFundsException e) {
                 return Variants.of("Недостаточно средств");
             } catch (Exception e) {
@@ -68,6 +73,6 @@ public class TransactionObjectMessageInterceptor {
         return null;
     }
     private static String coins(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
+        return RussianLiteralsUtils.declineWord((int) amount, "монету", "монеты", "монет");
     }
 }
