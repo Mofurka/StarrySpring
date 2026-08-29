@@ -6,4 +6,8 @@ import lombok.experimental.UtilityClass;
 public class PlayerAccountDefaults {
     public static final String PLAYER_DEFAULT_ACCOUNT_CODE = "MAIN";
     public static final String PLAYER_METADATA_ACCOUNT_KEY = "accountUuid";
+
+    public static String playerOwnerId(long applicationId) {
+        return Long.toString(applicationId);
+    }
 }

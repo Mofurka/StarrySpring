@@ -87,7 +87,18 @@ public class PlayerConnectionHandler {
     public PacketDecision onConnectSuccess(PacketInterceptionContext context) {
         ConnectSuccess connectSuccess = (ConnectSuccess) context.parsedPayload();
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.session().sessionId());
+
+
         if (tempPlayer != null) {
+            var existingPlayer = players.getByUuid(tempPlayer.uuid().toString());
+            if (existingPlayer != null) {
+                log.warn("Player with uuid={} is already connected. Disconnecting previous session.", tempPlayer.uuid());
+                PluginSessionContext pluginSessionContext = existingPlayer.sessionContext();
+                if (pluginSessionContext != null) {
+                    pluginSessionContext.close();
+                }
+            }
+
             Player player = Player.builder()
                     .name(tempPlayer.name())
                     .uuid(tempPlayer.uuid())

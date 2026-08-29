@@ -37,6 +37,7 @@ public class PacketForwarder implements Runnable {
     private final String sessionId;
     private final PermissionView permissionView;
     private final Runnable onClosed;
+    private final long idleTimeoutMillis;
 
     private volatile PluginSessionContext cachedPluginSessionContext;
     private volatile int cachedOpenProtocolVersion = Integer.MIN_VALUE;
@@ -69,6 +70,24 @@ public class PacketForwarder implements Runnable {
             PluginSessionLifecycleService pluginSessionLifecycleService,
             Runnable onClosed
     ) {
+        this(source, target, sessionRegistry, packetDirection, context, transport,
+                packetInspector, packetInterceptionService, pluginSessionLifecycleService, onClosed, 0L);
+    }
+
+    public PacketForwarder(
+            InputStream source,
+            OutputStream target,
+            SessionRegistry sessionRegistry,
+            PacketDirection packetDirection,
+            ProxySessionRuntimeContext context,
+            SwitchableSessionTransport transport,
+            RuntimePacketInspector packetInspector,
+            PacketInterceptionService packetInterceptionService,
+            PluginSessionLifecycleService pluginSessionLifecycleService,
+            Runnable onClosed,
+            long idleTimeoutMillis
+    ) {
+        this.idleTimeoutMillis = idleTimeoutMillis;
         this.onClosed = onClosed;
         this.context = context;
         this.session = context.session();
@@ -94,8 +113,13 @@ public class PacketForwarder implements Runnable {
             while (!clientSocket.isClosed() && (upstreamSocket == null || !upstreamSocket.isClosed())) {
                 PacketEnvelope envelope = readPacket();
                 if (envelope == null) {
+                    if (isSessionStalled()) {
+                        break;
+                    }
                     continue;
                 }
+
+                session.recordActivity();
 
                 int openProtocolVersion = session.resolveOpenProtocolVersion();
                 PacketInspectionResult inspection = inspectPacket(envelope, packetDirection, openProtocolVersion);
@@ -155,6 +179,28 @@ public class PacketForwarder implements Runnable {
         } finally {
             closeSession();
         }
+    }
+
+
+    private boolean isSessionStalled() {
+        if (idleTimeoutMillis <= 0 || upstreamSocket == null) {
+            return false;
+        }
+
+        long idleMillis = session.idleMillis();
+        if (idleMillis < idleTimeoutMillis) {
+            return false;
+        }
+
+        log.warn(
+                "[{}] session {} is silent in both directions for {} ms, closing it",
+                packetDirection,
+                session.getId(),
+                idleMillis
+        );
+
+        context.closeSockets();
+        return true;
     }
 
     private PacketEnvelope readPacket() throws IOException {

@@ -8,6 +8,7 @@ import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountTransactionEntity;
 import irden.space.proxy.plugin.irden.service.AccountService;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
+import irden.space.proxy.plugin.irden.service.PlayerAccountService;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import irden.space.proxy.plugin.irden.service.exception.InsufficientFundsException;
 import irden.space.proxy.plugin.irden.service.exception.InvalidAmountException;
@@ -37,6 +38,7 @@ public class PlayerBalanceCommandsHandler {
             DateTimeFormatter.ofPattern("dd.MM HH:mm").withZone(ZoneId.systemDefault());
 
     private final AccountService accountService;
+    private final PlayerAccountService playerAccountService;
     private final AccountTransactionService accountTransactionService;
 
     public void handleMoneyCommand(CommandContext context) {
@@ -260,7 +262,7 @@ public class PlayerBalanceCommandsHandler {
 
     private AccountEntity findMainAccount(CommandContext context, Player target) {
         try {
-            return accountService.getPlayerMainAccount(target.uuid());
+            return playerAccountService.getMainAccount(target.uuid());
         } catch (AccountNotFoundException | IllegalArgumentException e) {
             context.reply("У игрока %s ещё нет счёта.", target.name());
             return null;

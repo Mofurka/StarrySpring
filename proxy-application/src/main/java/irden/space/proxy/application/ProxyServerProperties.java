@@ -12,6 +12,8 @@ public class ProxyServerProperties {
     private String upstreamHost = "127.0.0.1";
     private int upstreamPort = 21026;
 
+    private long sessionIdleTimeoutMillis = 15_000;
+
     public String getListenHost() {
         return listenHost;
     }
@@ -44,6 +46,14 @@ public class ProxyServerProperties {
         this.upstreamPort = upstreamPort;
     }
 
+    public long getSessionIdleTimeoutMillis() {
+        return sessionIdleTimeoutMillis;
+    }
+
+    public void setSessionIdleTimeoutMillis(long sessionIdleTimeoutMillis) {
+        this.sessionIdleTimeoutMillis = sessionIdleTimeoutMillis;
+    }
+
     @Override
     public String toString() {
         return "ProxyServerProperties{" +
@@ -51,6 +61,7 @@ public class ProxyServerProperties {
                 ", listenPort=" + listenPort +
                 ", upstreamHost='" + upstreamHost + '\'' +
                 ", upstreamPort=" + upstreamPort +
+                ", sessionIdleTimeoutMillis=" + sessionIdleTimeoutMillis +
                 '}';
     }
 }

@@ -16,6 +16,8 @@ public record StatisticsByPlayer(
 
         List<String> uuids,
 
-        boolean online
+        boolean online,
+
+        Long money
 ) {
 }

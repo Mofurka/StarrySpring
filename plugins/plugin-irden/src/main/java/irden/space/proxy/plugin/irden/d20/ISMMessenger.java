@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.irden.d20;
 import irden.space.proxy.plugin.command_handler.color.Color;
 import irden.space.proxy.plugin.discord.DiscordBotMessageService;
 import irden.space.proxy.plugin.general.GeneralUtils;
+import irden.space.proxy.plugin.general.events.ChatMessageEvent;
 import irden.space.proxy.plugin.irden.d20.constants.Placeholders;
 import irden.space.proxy.plugin.irden.d20.constants.RollMode;
 import irden.space.proxy.plugin.irden.d20.initiative.IrdenFightHandler;
@@ -11,6 +12,7 @@ import irden.space.proxy.plugin.star_custom_chat.StarCustomChatMessageSender;
 import irden.space.proxy.plugin.star_custom_chat.constants.ChatMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -57,4 +59,21 @@ public class ISMMessenger {
         });
 
     }
+
+    @EventListener
+    public void onChatSent(ChatMessageEvent event) {
+        if (event.mode().equals("FIGHT")) {
+            var sender = event.sender();
+            var snapshot = fightHandler.findUuidFightSnapshot(sender.uuid().toString());
+            if (snapshot == null) {
+                return;
+            }
+            List<String> queue = snapshot.queue();
+            var finalMessage = "%s[%s] %s".formatted(ChatMode.FIGHT.getPrefix(), Color.RED.colorString(snapshot.fightName()), event.message());
+            var messageData = new StarCustomChatMessageSender.MessageData(sender.clientId(), sender.nickname(), finalMessage, ChatMode.FIGHT.getMode(), 100);
+            starCustomChatMessageSender.broadcastMessageToUuids(queue, messageData);
+        }
+    }
+
+
 }

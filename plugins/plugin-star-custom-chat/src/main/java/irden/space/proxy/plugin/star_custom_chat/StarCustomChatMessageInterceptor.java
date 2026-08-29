@@ -4,6 +4,7 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.general.events.ChatMessageEvent;
+import irden.space.proxy.plugin.general.permissions.ChatPermissions;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.star_custom_chat.constants.SCCConstants;
@@ -19,10 +20,12 @@ import irden.space.proxy.protocol.util.MapVariantUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,6 +36,7 @@ public class StarCustomChatMessageInterceptor {
     private final JsonMapper jsonMapper;
     private final PlayerManagerApi playerManagerApi;
     private final ApplicationEventPublisher eventPublisher;
+    private final MessageSource messageSource;
 
 
     @PacketHandler(
@@ -69,6 +73,11 @@ public class StarCustomChatMessageInterceptor {
             if (playerBySessionId.isPresent()) {
                 var player = playerBySessionId.get();
                 ChatMessageEvent chatMessageEvent = null;
+                if (!player.permissions().has(ChatPermissions.SEND_MESSAGE)) {
+                    String message = messageSource.getMessage("chat.blocked", null, Locale.getDefault());
+                    player.sendMessage(message);
+                    return PacketDecision.cancel();
+                }
                 if (customChat.data() instanceof IrdenCustomChatProximityData proximityData) {
                     chatMessageEvent = new ChatMessageEvent(player, proximityData.getMode().toString(), proximityData.getText(), Map.of("proximityRadius", proximityData.getProximityRadius()));
                 } else if (customChat.data() instanceof IrdenCustomChatFightData fightData) {

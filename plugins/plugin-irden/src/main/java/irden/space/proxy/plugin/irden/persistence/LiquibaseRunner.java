@@ -20,5 +20,6 @@ public final class LiquibaseRunner {
         PluginLiquibaseRunner.run(dataSource, "db/changelog/2.fight-snapshot-record.xml", getClass().getClassLoader());
         PluginLiquibaseRunner.run(dataSource, "db/changelog/3.player-stats.xml", getClass().getClassLoader());
         PluginLiquibaseRunner.run(dataSource, "db/changelog/4.site-connector.xml", getClass().getClassLoader());
+        PluginLiquibaseRunner.run(dataSource, "db/changelog/5.account-application-id.xml", getClass().getClassLoader());
     }
 }

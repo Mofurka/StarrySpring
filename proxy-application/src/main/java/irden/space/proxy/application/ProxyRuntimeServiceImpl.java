@@ -213,7 +213,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             packetInspector,
                             packetInterceptionService,
                             pluginSessionLifecycleService,
-                            onSessionClosed
+                            onSessionClosed,
+                            properties.getSessionIdleTimeoutMillis()
                     ),
                     session.getId().uuid() + "-proxy-c2s"
             );
@@ -231,7 +232,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                                 packetInspector,
                                 packetInterceptionService,
                                 pluginSessionLifecycleService,
-                                onSessionClosed
+                                onSessionClosed,
+                                properties.getSessionIdleTimeoutMillis()
                         ),
                         session.getId().uuid() + "-proxy-s2c"
                 );

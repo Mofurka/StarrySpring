@@ -7,7 +7,6 @@ import irden.space.proxy.plugin.irden.persistence.model.account.AccountStatus;
 import irden.space.proxy.plugin.irden.persistence.repository.AccountRepository;
 import irden.space.proxy.plugin.irden.service.exception.AccountAlreadyExistsException;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
-import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
@@ -98,11 +97,11 @@ public class AccountService {
 
 
     @Transactional(readOnly = true)
-    public AccountEntity getPlayerMainAccount(StarUuid playerUuid)
+    public AccountEntity getPlayerMainAccount(long applicationId)
             throws AccountNotFoundException {
         return getAccount(
                 AccountOwnerType.CHARACTER,
-                playerUuid.toString(),
+                PlayerAccountDefaults.playerOwnerId(applicationId),
                 PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE
         );
     }

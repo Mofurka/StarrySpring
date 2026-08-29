@@ -7,6 +7,7 @@ import irden.space.proxy.plugin.irden.account.StructureAccountType;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.service.AccountService;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
+import irden.space.proxy.plugin.irden.service.PlayerAccountService;
 import irden.space.proxy.plugin.irden.service.exception.AccountAlreadyExistsException;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import irden.space.proxy.plugin.irden.service.exception.InsufficientFundsException;
@@ -26,6 +27,7 @@ import java.util.UUID;
 public class StructureAccountCommandsHandler {
 
     private final AccountService accountService;
+    private final PlayerAccountService playerAccountService;
     private final AccountTransactionService accountTransactionService;
 
     private enum Direction {
@@ -128,7 +130,7 @@ public class StructureAccountCommandsHandler {
 
         AccountEntity playerAccount;
         try {
-            playerAccount = accountService.getPlayerMainAccount(player.uuid());
+            playerAccount = playerAccountService.getMainAccount(player.uuid());
         } catch (AccountNotFoundException | IllegalArgumentException e) {
             context.reply("У игрока %s ещё нет счёта.", player.name());
             return;

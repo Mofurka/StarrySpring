@@ -51,5 +51,34 @@ public class StarCustomChatMessageSender {
                         player -> this.sendMessageToSCC(player, "Server", message, chatMode)));
     }
 
+    public void broadcastMessageToClientIds(Collection<Integer> clientIds, MessageData messageData) {
+        if (clientIds.isEmpty()) return;
+        clientIds.forEach(
+                clientId -> playerManagerApi.findByClientId(clientId).ifPresent(
+                        player -> this.sendMessageToSCC(player, messageData)));
+    }
 
+    public void broadcastMessageToUuids(Collection<String> uuids, MessageData messageData) {
+        if (uuids.isEmpty()) return;
+        uuids.forEach(uuid -> playerManagerApi.findPlayerByUuid(uuid, true)
+                .ifPresent(player -> this.sendMessageToSCC(player, messageData)));
+    }
+
+    public void sendMessageToSCC(Player target, MessageData messageData) {
+        entityMessageService.sendToEntity(target.sessionContext(),
+                target.entityId(),
+                SCCConstants.SCC_ADD_MESSAGE,
+                Variants.mapOf(
+                        Map.of(
+                                "connection", messageData.connectionId(),
+                                "mode", messageData.chatMode(),
+                                "nickname", messageData.nickname(),
+                                "text", messageData.message(),
+                                "proximityRadius", messageData.proximityRadius()
+                        )
+                )
+        );
+    }
+    public record MessageData(Integer connectionId, String nickname, String message, String chatMode, Integer proximityRadius) {
+    }
 }

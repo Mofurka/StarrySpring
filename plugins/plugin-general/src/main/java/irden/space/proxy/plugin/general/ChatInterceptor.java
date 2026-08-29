@@ -50,7 +50,11 @@ public class ChatInterceptor {
                 if (chatSent.mode().equals(ChatSentMode.UNIVERSE) && !ctx.session().permissions().has(ChatPermissions.UNIVERSE_CHAT.permission())) {
 
                     String message = messageSource.getMessage("chat.universe_blocked", null, Locale.getDefault());
-
+                    player.sendMessage(message);
+                    return PacketDecision.cancel();
+                } else if (!ctx.session().permissions().has(ChatPermissions.SEND_MESSAGE)) {
+                    String message = messageSource.getMessage("chat.blocked", null, Locale.getDefault());
+                    player.sendMessage(message);
                     return PacketDecision.cancel();
                 }
                 var chatMessageEvent = new ChatMessageEvent(player, chatSent.mode().name(), chatSent.content());

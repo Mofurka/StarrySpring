@@ -105,9 +105,7 @@ public class MoneyMessageHandler {
         UUID fromAccountUuid = (UUID) from.metadata().get("accountUuid");
         UUID toAccountUuid = (UUID) to.metadata().get("accountUuid");
         try {
-            var trans = accountTransactionService.transfer(fromAccountUuid, toAccountUuid, amount, UUID.randomUUID(), "Irden Stat Manager Operation");
-//            from.sendMessage("Вы передали %s %s %s ".formatted(trans.getAmount(), getDeclinedAmount(trans.getAmount()), to.nickname()));
-            to.sendMessage("%s передал вам %s %s ".formatted(from.nickname(), trans.getAmount(), getDeclinedAmount(trans.getAmount())));
+            accountTransactionService.transfer(fromAccountUuid, toAccountUuid, amount, UUID.randomUUID(), "Irden Stat Manager Operation");
         } catch (InsufficientFundsException e) {
             from.sendMessage("У вас недостаточно монет.");
         } catch (Exception e) {

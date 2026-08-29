@@ -1,8 +1,12 @@
 package irden.space.proxy.plugin.irden.integration.web.rest.v1.statistics;
 
+import irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults;
 import irden.space.proxy.plugin.irden.integration.persistence.model.PlayerAttributesEntity;
 import irden.space.proxy.plugin.irden.integration.persistence.repository.PlayerAttributesRepository;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 import irden.space.proxy.plugin.irden.persistence.model.statistic.PlayerStatisticRecordEntity;
+import irden.space.proxy.plugin.irden.persistence.repository.AccountRepository;
 import irden.space.proxy.plugin.irden.persistence.repository.statistic.PlayerStatisticRecordRepository;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
@@ -26,6 +30,7 @@ public class StatisticsHandler {
 
     private final PlayerAttributesRepository playerAttributesRepository;
     private final PlayerStatisticRecordRepository playerStatisticRecordRepository;
+    private final AccountRepository accountRepository;
     private final PlayerManagerApi playerManagerApi;
 
     public StatisticsResponse handleAllPlayers() {
@@ -61,6 +66,23 @@ public class StatisticsHandler {
                 .map(player -> player.uuid().toString())
                 .collect(Collectors.toSet());
 
+
+        Set<String> accountOwnerIds = uuidsByApplication.keySet().stream()
+                .map(PlayerAccountDefaults::playerOwnerId)
+                .collect(Collectors.toSet());
+
+        Map<String, Long> balanceByOwnerId = accountRepository.findByOwnerTypeAndOwnerIdInAndAccountCode(
+                        AccountOwnerType.CHARACTER,
+                        accountOwnerIds,
+                        PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        AccountEntity::getOwnerId,
+                        AccountEntity::getBalance,
+                        Long::sum
+                ));
+
         Map<Long, StatisticsByPlayer> players = new LinkedHashMap<>();
         uuidsByApplication.forEach((applicationId, applicationUuids) -> {
             Map<Integer, Map<Month, PeriodAccumulator>> merged =
@@ -74,7 +96,8 @@ public class StatisticsHandler {
                     lastSeen(applicationUuids),
                     toStatistics(merged),
                     List.copyOf(applicationUuids),
-                    applicationUuids.stream().anyMatch(onlineUuids::contains)
+                    applicationUuids.stream().anyMatch(onlineUuids::contains),
+                    balanceByOwnerId.getOrDefault(PlayerAccountDefaults.playerOwnerId(applicationId), 0L)
             ));
         });
 
