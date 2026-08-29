@@ -8,7 +8,7 @@ import java.util.List;
 public record DiscordBotConfiguration(
         String botToken,
         Long gameChatChannelId,
-        List<Long> channelsToListen,
+        List<ChannelToListen> channelsToListen,
         Proxy proxy
 
 ) {
