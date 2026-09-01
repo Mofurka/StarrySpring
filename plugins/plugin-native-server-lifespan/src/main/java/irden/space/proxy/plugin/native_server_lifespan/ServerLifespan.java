@@ -284,7 +284,6 @@ public class ServerLifespan {
             } else {
                 log.warn("Game server stopped unexpectedly, PID: {}, exit code: {}", exitProcess.pid(), exitValue);
             }
-
             synchronized (this) {
                 if (serverProcess == exitProcess) {
                     serverProcess = null;

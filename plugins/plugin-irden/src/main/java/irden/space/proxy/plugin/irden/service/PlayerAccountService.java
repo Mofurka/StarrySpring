@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.irden.service;
 import irden.space.proxy.plugin.irden.integration.persistence.model.PlayerAttributesEntity;
 import irden.space.proxy.plugin.irden.integration.persistence.repository.PlayerAttributesRepository;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
+import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import irden.space.proxy.protocol.payload.common.star_uuid.StarUuid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,11 @@ public class PlayerAccountService {
                 .map(PlayerAttributesEntity::getApplicationId)
                 .map(OptionalLong::of)
                 .orElseGet(OptionalLong::empty);
+    }
+
+    @Transactional
+    public AccountEntity initPlayerMainAccount(String applicationId) {
+        return accountService.createAccount(AccountOwnerType.CHARACTER, applicationId, applicationId, "MAIN");
     }
 
     @Transactional(readOnly = true)
