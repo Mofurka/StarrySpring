@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.Socket;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public record ProxySessionRuntimeContext(ProxySession session,
@@ -14,10 +16,29 @@ public record ProxySessionRuntimeContext(ProxySession session,
                                          Socket upstreamSocket,
                                          SwitchableSessionTransport clientSideTransport,
                                          SwitchableSessionTransport upstreamSideTransport,
-                                         SessionPermissionService sessionPermissionService
+                                         SessionPermissionService sessionPermissionService,
+                                         Map<String, Object> pluginAttributes
 ) {
 
     private static final Logger log = LoggerFactory.getLogger(ProxySessionRuntimeContext.class);
+
+
+    public ProxySessionRuntimeContext(ProxySession session,
+                                      Socket clientSocket,
+                                      Socket upstreamSocket,
+                                      SwitchableSessionTransport clientSideTransport,
+                                      SwitchableSessionTransport upstreamSideTransport,
+                                      SessionPermissionService sessionPermissionService) {
+        this(
+                session,
+                clientSocket,
+                upstreamSocket,
+                clientSideTransport,
+                upstreamSideTransport,
+                sessionPermissionService,
+                new ConcurrentHashMap<>()
+        );
+    }
 
     public void closeSockets() {
         closeQuietly(clientSocket, "client");

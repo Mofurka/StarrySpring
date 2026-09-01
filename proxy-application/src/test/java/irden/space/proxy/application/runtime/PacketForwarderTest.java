@@ -9,14 +9,14 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionService;
 import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.plugin.api.PluginSessionLifecycleService;
+import irden.space.proxy.protocol.packet.PacketDirection;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PacketForwarderTest {
 
@@ -46,7 +46,7 @@ class PacketForwarderTest {
                     null,
                     null,
                     sessionRegistry,
-                    irden.space.proxy.protocol.packet.PacketDirection.TO_SERVER,
+                    PacketDirection.TO_SERVER,
                     runtimeContext,
                     runtimeContext.clientSideTransport(),
                     null,
@@ -68,6 +68,59 @@ class PacketForwarderTest {
                         "disconnected:" + session.getId().uuid()
                 ),
                 events
+        );
+    }
+
+
+    @Test
+    void pluginSessionContextsShareSessionScopedAttributes() throws Exception {
+        ProxySession session = new ProxySession(new ProxySessionId(UUID.randomUUID()), "127.0.0.1");
+        session.activate();
+
+        try (Socket clientSocket = new Socket(); Socket upstreamSocket = new Socket()) {
+            ProxySessionRuntimeContext runtimeContext = new ProxySessionRuntimeContext(
+                    session,
+                    clientSocket,
+                    upstreamSocket,
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
+                    new InMemorySessionPermissionService()
+            );
+
+            PacketForwarder clientToServer = forwarder(runtimeContext, PacketDirection.TO_SERVER);
+            PacketForwarder serverToClient = forwarder(runtimeContext, PacketDirection.TO_CLIENT);
+
+            Method createContext = PacketForwarder.class.getDeclaredMethod("createPluginSessionContext", int.class);
+            createContext.setAccessible(true);
+
+            PluginSessionContext toServerContext = (PluginSessionContext) createContext.invoke(clientToServer, 5);
+            PluginSessionContext toClientContext = (PluginSessionContext) createContext.invoke(serverToClient, 5);
+
+            toServerContext.attributes().put("player", "alice");
+
+            assertEquals("alice", toClientContext.attributes().get("player"));
+
+            PluginSessionContext afterProtocolChange =
+                    (PluginSessionContext) createContext.invoke(clientToServer, 7);
+
+            assertNotSame(toServerContext, afterProtocolChange);
+            assertEquals("alice", afterProtocolChange.attributes().get("player"));
+        }
+    }
+
+    private PacketForwarder forwarder(ProxySessionRuntimeContext runtimeContext, PacketDirection direction) {
+        return new PacketForwarder(
+                null,
+                null,
+                new RecordingSessionRegistry(new ArrayList<>()),
+                direction,
+                runtimeContext,
+                direction == PacketDirection.TO_SERVER
+                        ? runtimeContext.clientSideTransport()
+                        : runtimeContext.upstreamSideTransport(),
+                null,
+                ignored -> PacketDecision.forward(),
+                new RecordingSessionLifecycleService(new ArrayList<>())
         );
     }
 

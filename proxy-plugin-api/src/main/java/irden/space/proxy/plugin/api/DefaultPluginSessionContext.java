@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -24,7 +25,7 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
     private final BiConsumer<PacketDirection, PacketEnvelope> packetSender;
     private final PermissionView permissions;
     private final Runnable sessionCloser;
-    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
+    private final Map<String, Object> attributes;
     private final AtomicBoolean closed = new AtomicBoolean();
 
     public DefaultPluginSessionContext(
@@ -75,6 +76,32 @@ public class DefaultPluginSessionContext implements PluginSessionContext {
             PermissionView permissions,
             Runnable sessionCloser
     ) {
+        this(
+                sessionId,
+                clientIp,
+                clientZstdEnabled,
+                upstreamZstdEnabled,
+                openProtocolVersion,
+                packetSender,
+                permissions,
+                sessionCloser,
+                new ConcurrentHashMap<>()
+        );
+    }
+
+
+    public DefaultPluginSessionContext(
+            String sessionId,
+            String clientIp,
+            boolean clientZstdEnabled,
+            boolean upstreamZstdEnabled,
+            int openProtocolVersion,
+            BiConsumer<PacketDirection, PacketEnvelope> packetSender,
+            PermissionView permissions,
+            Runnable sessionCloser,
+            Map<String, Object> attributes
+    ) {
+        this.attributes = Objects.requireNonNull(attributes, "attributes");
         this.sessionCloser = sessionCloser;
         this.sessionId = sessionId;
         this.clientIp = clientIp;

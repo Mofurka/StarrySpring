@@ -14,15 +14,27 @@ import java.util.Objects;
 
 public class RuntimePacketReader {
 
+
+    public static final int DEFAULT_MAX_PAYLOAD_SIZE_BYTES = 32 * 1024 * 1024;
+
     private static final long PACKET_STALL_TIMEOUT_MILLIS = 60_000L;
 
     private final PayloadCompressionCodec payloadCompressionCodec;
+    private final int maxPayloadSizeBytes;
 
     public RuntimePacketReader(PayloadCompressionCodec payloadCompressionCodec) {
+        this(payloadCompressionCodec, DEFAULT_MAX_PAYLOAD_SIZE_BYTES);
+    }
+
+    public RuntimePacketReader(PayloadCompressionCodec payloadCompressionCodec, int maxPayloadSizeBytes) {
         this.payloadCompressionCodec = Objects.requireNonNull(
                 payloadCompressionCodec,
                 "Payload compression codec cannot be null"
         );
+        if (maxPayloadSizeBytes <= 0) {
+            throw new IllegalArgumentException("Max payload size must be positive: " + maxPayloadSizeBytes);
+        }
+        this.maxPayloadSizeBytes = maxPayloadSizeBytes;
     }
 
     public PacketEnvelope read(InputStream inputStream, PacketDirection direction) throws IOException {
@@ -35,7 +47,7 @@ public class RuntimePacketReader {
 
         int encodedSize = sizeResult.value();
         boolean compressed = encodedSize < 0;
-        int payloadSize = Math.abs(encodedSize);
+        int payloadSize = requireAcceptablePayloadSize(encodedSize, rawTypeId);
 
         byte[] rawPayload = readPayload(inputStream, payloadSize);
 
@@ -56,6 +68,25 @@ public class RuntimePacketReader {
                 originalData,
                 direction
         );
+    }
+
+
+    private int requireAcceptablePayloadSize(int encodedSize, int rawTypeId) throws IOException {
+        if (encodedSize == Integer.MIN_VALUE) {
+            throw new IOException(
+                    "Declared payload size " + encodedSize + " for packet type " + rawTypeId + " is not representable"
+            );
+        }
+
+        int payloadSize = Math.abs(encodedSize);
+        if (payloadSize > maxPayloadSizeBytes) {
+            throw new IOException(
+                    "Declared payload size " + payloadSize + " bytes for packet type " + rawTypeId
+                            + " exceeds the limit of " + maxPayloadSizeBytes + " bytes"
+            );
+        }
+
+        return payloadSize;
     }
 
     private byte[] buildOriginal(int rawTypeId, byte[] rawSizeBytes, byte[] payload) {

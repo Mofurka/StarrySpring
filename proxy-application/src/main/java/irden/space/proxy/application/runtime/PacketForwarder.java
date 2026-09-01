@@ -22,6 +22,9 @@ public class PacketForwarder implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(PacketForwarder.class);
     private static final PacketInspectionResult EMPTY_INSPECTION = PacketInspectionResult.empty();
 
+
+    private static final int PLAIN_PACKETS_AFTER_SWITCH = 1;
+
     private final ProxySession session;
     private final InputStream source;
     private final OutputStream target;
@@ -131,10 +134,10 @@ public class PacketForwarder implements Runnable {
                 PluginSessionContext pluginSessionContext = createPluginSessionContext(resolvedOpenProtocolVersion);
 
                 PacketInterceptionContext interceptionContext =
-                        new PacketInterceptionContext(
+                        PacketInterceptionContext.lazy(
                                 pluginSessionContext,
                                 envelope,
-                                inspection.parsed(),
+                                inspection.parsedPayloadSupplier(),
                                 packetDirection
                         );
 
@@ -155,13 +158,12 @@ public class PacketForwarder implements Runnable {
                 }
 
                 PacketEnvelope envelopeToWrite = envelope;
-                if (decision instanceof ReplacePacketDecision(PacketEnvelope envelope1)) {
-                    envelopeToWrite = envelope1;
-                }
-
                 Runnable afterWrite = null;
 
-                if (decision instanceof ForwardPacketDecision(Runnable afterForward)) {
+                if (decision instanceof ReplacePacketDecision(PacketEnvelope replacement, Runnable afterReplace)) {
+                    envelopeToWrite = replacement;
+                    afterWrite = afterReplace;
+                } else if (decision instanceof ForwardPacketDecision(Runnable afterForward)) {
                     afterWrite = afterForward;
                 }
 
@@ -354,11 +356,10 @@ public class PacketForwarder implements Runnable {
             context.clientSideTransport().enableReadMode(transportMode);
             context.upstreamSideTransport().enableReadMode(transportMode);
 
-            waitForPlainReadersToDrain();
-
+            awaitPeerReaderSwitch(transportMode);
 
             context.clientSideTransport().enableWriteMode(transportMode, 0);
-            context.upstreamSideTransport().enableWriteMode(transportMode, 1);
+            context.upstreamSideTransport().enableWriteMode(transportMode, PLAIN_PACKETS_AFTER_SWITCH);
 
             context.session().setClientTransportMode(transportMode);
             context.session().setUpstreamTransportMode(transportMode);
@@ -367,27 +368,48 @@ public class PacketForwarder implements Runnable {
         }
     }
 
-    private void waitForPlainReadersToDrain() {
-        long gracePeriodMillis = resolveReadSwitchGracePeriodMillis();
+
+    private void awaitPeerReaderSwitch(SessionTransportMode transportMode) {
+        SwitchableSessionTransport peerTransport = peerReadTransport();
+        long timeoutMillis = resolveReadSwitchTimeoutMillis();
 
         try {
-            Thread.sleep(gracePeriodMillis);
+            if (peerTransport.awaitReadModeApplied(transportMode, timeoutMillis)) {
+                return;
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while switching session transport to ZSTD", e);
+            throw new IllegalStateException("Interrupted while switching session transport to " + transportMode, e);
         }
+
+        log.warn(
+                "[{}] peer reader of session {} did not confirm the switch to {} within {} ms;"
+                        + " proceeding anyway, the first compressed packet may be lost",
+                packetDirection,
+                session.getId(),
+                transportMode,
+                timeoutMillis
+        );
     }
 
-    private long resolveReadSwitchGracePeriodMillis() {
+
+    private SwitchableSessionTransport peerReadTransport() {
+        return transport == context.clientSideTransport()
+                ? context.upstreamSideTransport()
+                : context.clientSideTransport();
+    }
+
+
+    private long resolveReadSwitchTimeoutMillis() {
         int clientTimeout = readSocketTimeout(context.clientSocket());
         int upstreamTimeout = readSocketTimeout(context.upstreamSocket());
         int maxTimeout = Math.max(clientTimeout, upstreamTimeout);
 
         if (maxTimeout <= 0) {
-            return 50L;
+            return 100L;
         }
 
-        return maxTimeout + 50L;
+        return maxTimeout * 2L + 100L;
     }
 
     private int readSocketTimeout(Socket socket) {
@@ -477,7 +499,8 @@ public class PacketForwarder implements Runnable {
                     openProtocolVersion,
                     this::sendPacket,
                     permissionView,
-                    context::closeSockets
+                    context::closeSockets,
+                    context.pluginAttributes()
             );
             cachedOpenProtocolVersion = openProtocolVersion;
             cachedPluginSessionContext = newContext;

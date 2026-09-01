@@ -79,13 +79,27 @@ public enum PacketType {
         this.id = id;
     }
 
-    public static PacketType fromId(int id) {
+
+    private static final PacketType[] BY_ID = buildById();
+
+    private static PacketType[] buildById() {
+        int maxId = 0;
         for (PacketType type : values()) {
-            if (type.id == id) {
-                return type;
-            }
+            maxId = Math.max(maxId, type.id);
         }
-        return null;
+
+        PacketType[] byId = new PacketType[maxId + 1];
+        for (PacketType type : values()) {
+            byId[type.id] = type;
+        }
+        return byId;
+    }
+
+    public static PacketType fromId(int id) {
+        if (id < 0 || id >= BY_ID.length) {
+            return null;
+        }
+        return BY_ID[id];
     }
 
     public int id() {

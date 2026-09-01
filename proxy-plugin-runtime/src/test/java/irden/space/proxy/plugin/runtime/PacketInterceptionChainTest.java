@@ -6,10 +6,11 @@ import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketType;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PacketInterceptionChainTest {
 
@@ -34,6 +35,18 @@ class PacketInterceptionChainTest {
         );
     }
 
+    private static PacketInterceptionContext lazyContext(PacketType packetType, AtomicInteger parseCount) {
+        return PacketInterceptionContext.lazy(
+                new DefaultPluginSessionContext("session-1", "127.0.0.1", false, false),
+                envelope(packetType),
+                () -> {
+                    parseCount.incrementAndGet();
+                    return "payload-" + packetType;
+                },
+                PacketDirection.TO_SERVER
+        );
+    }
+
     @Test
     void applyInvokesHandlerRegisteredForConcretePacketType() {
         DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
@@ -50,6 +63,118 @@ class PacketInterceptionChainTest {
 
         assertSame(expectedDecision, matchedDecision);
         assertSame(ForwardPacketDecision.INSTANCE, unmatchedDecision);
+    }
+
+
+    @Test
+    void applyNeverResolvesPayloadWhenNoInterceptorMatches() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PacketInterceptionChain chain = new PacketInterceptionChain(registry);
+
+        registry.register(PacketType.CHAT_RECEIVE, context -> context.replaceWithRawPayload(new byte[0]));
+
+        AtomicInteger parseCount = new AtomicInteger();
+        PacketDecision decision = chain.apply(lazyContext(PacketType.CHAT_SENT, parseCount));
+
+        assertSame(ForwardPacketDecision.INSTANCE, decision);
+        assertEquals(0, parseCount.get());
+    }
+
+    @Test
+    void applyResolvesPayloadOnceForAllMatchingInterceptors() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PacketInterceptionChain chain = new PacketInterceptionChain(registry);
+
+        registry.register(PacketType.CHAT_SENT, context -> {
+            assertEquals("payload-CHAT_SENT", context.parsedPayload());
+            return PacketDecision.forward();
+        });
+        registry.register(PacketType.CHAT_SENT, context -> {
+            assertEquals("payload-CHAT_SENT", context.parsedPayload());
+            return PacketDecision.forward();
+        });
+
+        AtomicInteger parseCount = new AtomicInteger();
+        chain.apply(lazyContext(PacketType.CHAT_SENT, parseCount));
+
+        assertEquals(1, parseCount.get());
+    }
+
+    @Test
+    void applyRunsAfterForwardCallbacksFromEveryInterceptor() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PacketInterceptionChain chain = new PacketInterceptionChain(registry);
+
+        List<String> invocations = new ArrayList<>();
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward(() -> invocations.add("first")));
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward());
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward(() -> invocations.add("third")));
+
+        PacketDecision decision = chain.apply(context(PacketType.CHAT_SENT));
+
+        ForwardPacketDecision forwardDecision = assertInstanceOf(ForwardPacketDecision.class, decision);
+        assertNotNull(forwardDecision.afterForward());
+        forwardDecision.afterForward().run();
+        assertEquals(List.of("first", "third"), invocations);
+    }
+
+    @Test
+    void applyDiscardsPendingCallbacksWhenPacketIsDropped() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PacketInterceptionChain chain = new PacketInterceptionChain(registry);
+
+        List<String> invocations = new ArrayList<>();
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward(() -> invocations.add("forward")));
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.cancel(() -> invocations.add("drop")));
+
+        PacketDecision decision = chain.apply(context(PacketType.CHAT_SENT));
+
+        DropPacketDecision dropDecision = assertInstanceOf(DropPacketDecision.class, decision);
+        assertNotNull(dropDecision.afterDrop());
+        dropDecision.afterDrop().run();
+        assertEquals(List.of("drop"), invocations);
+    }
+
+    @Test
+    void applyKeepsPendingCallbacksWhenPacketIsReplaced() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PacketInterceptionChain chain = new PacketInterceptionChain(registry);
+
+        List<String> invocations = new ArrayList<>();
+        PacketEnvelope replacement = envelope(PacketType.CHAT_RECEIVE);
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward(() -> invocations.add("forward")));
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.replace(replacement));
+
+        PacketDecision decision = chain.apply(context(PacketType.CHAT_SENT));
+
+        ReplacePacketDecision replaceDecision = assertInstanceOf(ReplacePacketDecision.class, decision);
+        assertSame(replacement, replaceDecision.envelope());
+        assertNotNull(replaceDecision.afterForward());
+        replaceDecision.afterForward().run();
+        assertEquals(List.of("forward"), invocations);
+    }
+
+    @Test
+    void applyRunsRemainingCallbacksWhenOneOfThemFails() {
+        DefaultPacketInterceptorRegistry registry = new DefaultPacketInterceptorRegistry();
+        PacketInterceptionChain chain = new PacketInterceptionChain(registry);
+
+        List<String> invocations = new ArrayList<>();
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward(() -> {
+            throw new IllegalStateException("boom");
+        }));
+        registry.register(PacketType.CHAT_SENT, ignored -> PacketDecision.forward(() -> invocations.add("second")));
+
+        PacketDecision decision = chain.apply(context(PacketType.CHAT_SENT));
+
+        ForwardPacketDecision forwardDecision = assertInstanceOf(ForwardPacketDecision.class, decision);
+        IllegalStateException failure = assertThrows(
+                IllegalStateException.class,
+                () -> forwardDecision.afterForward().run()
+        );
+
+        assertEquals("boom", failure.getMessage());
+        assertEquals(List.of("second"), invocations);
     }
 
     @Test

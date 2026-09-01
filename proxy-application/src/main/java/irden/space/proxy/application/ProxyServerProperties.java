@@ -1,6 +1,7 @@
 package irden.space.proxy.application;
 
 
+import irden.space.proxy.application.runtime.RuntimePacketReader;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "proxy")
@@ -13,6 +14,9 @@ public class ProxyServerProperties {
     private int upstreamPort = 21026;
 
     private long sessionIdleTimeoutMillis = 15_000;
+
+
+    private int maxPacketPayloadBytes = RuntimePacketReader.DEFAULT_MAX_PAYLOAD_SIZE_BYTES;
 
     public String getListenHost() {
         return listenHost;
@@ -54,6 +58,14 @@ public class ProxyServerProperties {
         this.sessionIdleTimeoutMillis = sessionIdleTimeoutMillis;
     }
 
+    public int getMaxPacketPayloadBytes() {
+        return maxPacketPayloadBytes;
+    }
+
+    public void setMaxPacketPayloadBytes(int maxPacketPayloadBytes) {
+        this.maxPacketPayloadBytes = maxPacketPayloadBytes;
+    }
+
     @Override
     public String toString() {
         return "ProxyServerProperties{" +
@@ -62,6 +74,7 @@ public class ProxyServerProperties {
                 ", upstreamHost='" + upstreamHost + '\'' +
                 ", upstreamPort=" + upstreamPort +
                 ", sessionIdleTimeoutMillis=" + sessionIdleTimeoutMillis +
+                ", maxPacketPayloadBytes=" + maxPacketPayloadBytes +
                 '}';
     }
 }

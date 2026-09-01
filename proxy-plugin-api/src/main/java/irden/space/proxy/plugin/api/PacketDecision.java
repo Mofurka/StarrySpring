@@ -40,6 +40,16 @@ public sealed interface PacketDecision
         return new ReplacePacketDecision(defaultValue);
     }
 
+    static ReplacePacketDecision replace(
+            @NotNull PacketEnvelope defaultValue,
+            @NotNull Runnable afterForward
+    ) {
+        return new ReplacePacketDecision(
+                defaultValue,
+                Objects.requireNonNull(afterForward)
+        );
+    }
+
     default boolean isForward() {
         return this instanceof ForwardPacketDecision;
     }

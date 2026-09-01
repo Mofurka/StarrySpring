@@ -193,8 +193,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     session,
                     clientSocket,
                     upstreamSocket,
-                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
-                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN, properties.getMaxPacketPayloadBytes()),
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN, properties.getMaxPacketPayloadBytes()),
                     sessionPermissionService
             );
 
@@ -328,7 +328,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                 session.resolveOpenProtocolVersion(),
                 (direction, envelope) -> sendPacket(context, direction, envelope),
                 permissionView,
-                context::closeSockets
+                context::closeSockets,
+                context.pluginAttributes()
         );
     }
 

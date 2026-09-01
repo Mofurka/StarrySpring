@@ -24,23 +24,34 @@ public class SwitchableSessionTransport implements SessionTransport {
     private SessionTransportMode wrappedReadMode;
     private OutputStream writeTarget;
 
-    private volatile SessionTransportMode readMode;
+
+    private volatile SessionTransportMode requestedReadMode;
+    private volatile SessionTransportMode appliedReadMode;
     private volatile SessionTransportMode writeMode;
     private int writeSkipPackets;
 
     public SwitchableSessionTransport(SessionTransport initialTransport) {
-        this(DEFAULT_CODECS, initialTransport.mode());
+        this(DEFAULT_CODECS, initialTransport.mode(), RuntimePacketReader.DEFAULT_MAX_PAYLOAD_SIZE_BYTES);
     }
 
     public SwitchableSessionTransport(SessionTransportMode initialMode) {
-        this(DEFAULT_CODECS, initialMode);
+        this(DEFAULT_CODECS, initialMode, RuntimePacketReader.DEFAULT_MAX_PAYLOAD_SIZE_BYTES);
     }
 
-    SwitchableSessionTransport(Map<SessionTransportMode, SessionTransportCodec> codecs, SessionTransportMode initialMode) {
-        this.packetReader = new RuntimePacketReader(new ZlibPayloadCompressionCodec());
+    public SwitchableSessionTransport(SessionTransportMode initialMode, int maxPayloadSizeBytes) {
+        this(DEFAULT_CODECS, initialMode, maxPayloadSizeBytes);
+    }
+
+    SwitchableSessionTransport(
+            Map<SessionTransportMode, SessionTransportCodec> codecs,
+            SessionTransportMode initialMode,
+            int maxPayloadSizeBytes
+    ) {
+        this.packetReader = new RuntimePacketReader(new ZlibPayloadCompressionCodec(), maxPayloadSizeBytes);
         this.packetWriter = new RuntimePacketWriter();
         this.codecs = Map.copyOf(codecs);
-        this.readMode = requireSupportedMode(initialMode);
+        this.requestedReadMode = requireSupportedMode(initialMode);
+        this.appliedReadMode = this.requestedReadMode;
         this.writeMode = requireSupportedMode(initialMode);
     }
 
@@ -79,7 +90,7 @@ public class SwitchableSessionTransport implements SessionTransport {
             return writeMode;
         }
 
-        return readMode;
+        return requestedReadMode;
     }
 
     public boolean isZstd() {
@@ -102,8 +113,31 @@ public class SwitchableSessionTransport implements SessionTransport {
         return isWriteModeEnabled(SessionTransportMode.ZSTD);
     }
 
+
     public synchronized void enableReadMode(SessionTransportMode mode) {
-        this.readMode = requireSupportedMode(mode);
+        this.requestedReadMode = requireSupportedMode(mode);
+        if (readSource == null) {
+            this.appliedReadMode = this.requestedReadMode;
+        }
+        notifyAll();
+    }
+
+
+    public synchronized boolean awaitReadModeApplied(SessionTransportMode mode, long timeoutMillis)
+            throws InterruptedException {
+        long deadlineNanos = System.nanoTime() + timeoutMillis * 1_000_000L;
+        while (appliedReadMode != mode) {
+            long remainingNanos = deadlineNanos - System.nanoTime();
+            if (remainingNanos <= 0) {
+                return false;
+            }
+            wait(remainingNanos / 1_000_000L + 1L);
+        }
+        return true;
+    }
+
+    public synchronized boolean isReadModeApplied(SessionTransportMode mode) {
+        return appliedReadMode == mode;
     }
 
     public synchronized void enableWriteMode(SessionTransportMode mode, int skipPackets) {
@@ -112,7 +146,7 @@ public class SwitchableSessionTransport implements SessionTransport {
     }
 
     public synchronized boolean isReadModeEnabled(SessionTransportMode mode) {
-        return readMode == mode;
+        return requestedReadMode == mode;
     }
 
     public synchronized boolean isWriteModeEnabled(SessionTransportMode mode) {
@@ -126,18 +160,34 @@ public class SwitchableSessionTransport implements SessionTransport {
             throw new IOException("Transport read source cannot change within a session");
         }
 
-        if (readMode == SessionTransportMode.PLAIN) {
+        applyRequestedReadMode();
+
+        if (appliedReadMode == SessionTransportMode.PLAIN) {
             return readSource;
         }
 
         if (wrappedReadSource == null) {
-            wrappedReadSource = resolveCodec(readMode).wrapRead(readSource);
-            wrappedReadMode = readMode;
-        } else if (wrappedReadMode != readMode) {
+            wrappedReadSource = resolveCodec(appliedReadMode).wrapRead(readSource);
+            wrappedReadMode = appliedReadMode;
+        } else if (wrappedReadMode != appliedReadMode) {
             throw new IOException("Transport read mode cannot change after wrapped stream initialization");
         }
 
         return wrappedReadSource;
+    }
+
+
+    private void applyRequestedReadMode() throws IOException {
+        if (appliedReadMode == requestedReadMode) {
+            return;
+        }
+
+        if (wrappedReadSource != null) {
+            throw new IOException("Transport read mode cannot change after wrapped stream initialization");
+        }
+
+        appliedReadMode = requestedReadMode;
+        notifyAll();
     }
 
     private synchronized OutputStream bindWriteTarget(OutputStream outputStream) throws IOException {
