@@ -18,6 +18,7 @@ import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
+import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -133,6 +134,19 @@ public class PlayerConnectionHandler {
 
         }
         return PacketDecision.cancel(() -> context.session().sendToClient(PacketType.CONNECT_FAILURE, new ConnectFailure("Player connection state not found. Please try again.")));
+    }
+
+    @PacketHandler(value = PacketType.ENTITY_UPDATE, direction = PacketDirection.TO_SERVER)
+    public PacketDecision onEntityUpdate(PacketInterceptionContext context) {
+        PlayerNetState playerNetState = context.parsedPayload(PlayerNetState.class);
+        if (playerNetState != null && playerNetState.humanoidIdentity() != null && playerNetState.humanoidIdentity().name() != null) {
+            Player player = players.getBySessionId(context.session().sessionId());
+            if (player != null && player.name() != null && !player.name().equals(playerNetState.humanoidIdentity().name())) {
+                player.name(playerNetState.humanoidIdentity().name());
+                log.info("Player name updated: uuid={}, newName={}", player.uuid(), player.name());
+            }
+        }
+        return null;
     }
 
     @OnDisconnected
