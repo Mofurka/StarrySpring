@@ -76,8 +76,9 @@ public class PlayerDataResolver {
     }
 
     //random 50-100
+    @SuppressWarnings("java:S2140")
     private Long initFirstMoney() {
-        return (new Random().nextLong() * 51) + 50;
+        return (long) (Math.random() * 51) + 50;
     }
 
 }
