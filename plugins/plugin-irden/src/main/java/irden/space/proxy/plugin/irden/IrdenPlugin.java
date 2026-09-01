@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.irden;
 
 import irden.space.proxy.plugin.api.PluginDefinition;
 import irden.space.proxy.plugin.api.ProxyPlugin;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @PluginDefinition(
@@ -14,7 +13,6 @@ import org.springframework.stereotype.Component;
         description = "Irden gavno ebanoe"
 )
 @Component
-@EnableConfigurationProperties({IrdenConfig.class})
 
 public final class IrdenPlugin implements ProxyPlugin {
 
