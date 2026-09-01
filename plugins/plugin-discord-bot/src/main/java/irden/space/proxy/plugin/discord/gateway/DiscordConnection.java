@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +42,7 @@ public class DiscordConnection {
         }
 
         JDABuilder builder = JDABuilder.createDefault(token, EnumSet.allOf(GatewayIntent.class));
+        builder.setEnableShutdownHook(false);
         applyProxy(builder);
 
         JDA connected;
@@ -96,7 +98,15 @@ public class DiscordConnection {
         }
 
         log.info("Shutting down Discord bot");
-        current.shutdown();
+        try {
+            if (!jda.awaitShutdown(Duration.ofSeconds(15))) {
+                jda.shutdownNow();
+                jda.awaitShutdown();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            jda.shutdownNow();
+        }
     }
 
 

@@ -5,6 +5,7 @@ import irden.space.proxy.plugin.native_server_lifespan.model.response.NativeServ
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ServerStatusAnnouncer {
+public class ServerStatusAnnouncer implements DisposableBean {
 
     private static final int COLOR_ONLINE = 0x57F287;
     private static final int COLOR_OFFLINE = 0xED4245;
@@ -93,5 +94,25 @@ public class ServerStatusAnnouncer {
                 .footerText("Если последнее обновление статуса больше 1 минуты, значит сервер лежит, либо дискорд бот не работает.\nЭто состояние основного сервера, а не шлюза.")
                 .timestamp(Instant.now())
                 .build();
+    }
+
+    @Override
+    public void destroy() {
+        try {
+            log.info("Cleaning up Discord server status panel");
+            DiscordEmbed discordEmbed = statusEmbed(NativeServerInfo.stopped());
+            DiscordMessage message = DiscordMessage.builder()
+                    .embed(discordEmbed)
+                    .build();
+            discord.whenReady()
+                    .thenCompose(ignored -> discord.publish(panel, config.discordAnnounceChannelId(), message))
+                    .thenAccept(ref -> panel = ref)
+                    .exceptionally(failure -> {
+                        log.warn("Failed to refresh Discord server status panel", failure);
+                        return null;
+                    });
+        } catch (Exception e) {
+            log.info("Failed to cleanup Discord server status panel", e);
+        }
     }
 }
