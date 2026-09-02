@@ -2,3 +2,6 @@ discord-bot:
   bot-token: ===== PASTE YOUR TKEN HERE =====
   # discord channel id for in game messages transport
   game-chat-channel-id: 1011205306128285829 # as example
+  proxy:
+    enabled: false
+    proxy-url: "socks5://user:password@host:port"

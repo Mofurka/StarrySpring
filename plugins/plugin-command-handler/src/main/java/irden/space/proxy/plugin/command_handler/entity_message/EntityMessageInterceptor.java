@@ -6,7 +6,6 @@ import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
-import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessage;
 import irden.space.proxy.protocol.payload.packet.entity_message_response.EntityMessageResponse;
@@ -25,7 +24,7 @@ public class EntityMessageInterceptor {
 
     private final EntityMessageService entityMessageService;
 
-    @PacketHandler(value = PacketType.ENTITY_MESSAGE, direction = PacketDirection.TO_SERVER)
+    @PacketHandler(value = PacketType.ENTITY_MESSAGE)
     @SuppressWarnings("unused")
     public PacketDecision onEntityMessage(PacketInterceptionContext context) {
         EntityMessage entityMessage = context.parsedPayload(EntityMessage.class);
@@ -66,7 +65,7 @@ public class EntityMessageInterceptor {
         return PacketDecision.cancel();
     }
 
-    @PacketHandler(value = PacketType.ENTITY_MESSAGE_RESPONSE, direction = PacketDirection.TO_SERVER)
+    @PacketHandler(value = PacketType.ENTITY_MESSAGE_RESPONSE)
     @SuppressWarnings("unused")
     public PacketDecision onEntityMessageResponse(PacketInterceptionContext context) {
         EntityMessageResponse response = context.parsedPayload(EntityMessageResponse.class);

@@ -18,6 +18,10 @@ public final class PluginLiquibaseRunner {
 
     public static void run(DataSource dataSource, String changelogPath, ClassLoader resourceClassLoader) {
         Objects.requireNonNull(resourceClassLoader, "resourceClassLoader");
+
+        Thread currentThread = Thread.currentThread();
+        ClassLoader previousContextClassLoader = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(resourceClassLoader);
         try (Connection connection = dataSource.getConnection()) {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
@@ -31,6 +35,8 @@ public final class PluginLiquibaseRunner {
             liquibase.update();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to run Liquibase changelog: " + changelogPath, e);
+        } finally {
+            currentThread.setContextClassLoader(previousContextClassLoader);
         }
     }
 }

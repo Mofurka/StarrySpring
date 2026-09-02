@@ -1,0 +1,5 @@
+osb-detector:
+  enabled: true
+  osb-protocol-version-threshhold: 14
+  osb-version: 0.1.14
+

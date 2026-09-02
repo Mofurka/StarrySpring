@@ -1,18 +1,20 @@
 package irden.space.proxy.plugin.irden;
 
 import irden.space.proxy.plugin.command_handler.CommandContext;
-import irden.space.proxy.plugin.command_handler.wording.RussianLiteralsUtils;
 import irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountTransactionEntity;
 import irden.space.proxy.plugin.irden.service.AccountService;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
+import irden.space.proxy.plugin.irden.service.PlayerAccountService;
+import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import irden.space.proxy.plugin.irden.service.exception.InsufficientFundsException;
 import irden.space.proxy.plugin.irden.service.exception.InvalidAmountException;
 import irden.space.proxy.plugin.irden.service.exception.SameAccountTransferException;
 import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.wording.LiteralUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +38,7 @@ public class PlayerBalanceCommandsHandler {
             DateTimeFormatter.ofPattern("dd.MM HH:mm").withZone(ZoneId.systemDefault());
 
     private final AccountService accountService;
+    private final PlayerAccountService playerAccountService;
     private final AccountTransactionService accountTransactionService;
 
     public void handleMoneyCommand(CommandContext context) {
@@ -259,12 +262,8 @@ public class PlayerBalanceCommandsHandler {
 
     private AccountEntity findMainAccount(CommandContext context, Player target) {
         try {
-            return accountService.getAccount(
-                    AccountOwnerType.CHARACTER,
-                    target.uuid().toString(),
-                    PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE
-            );
-        } catch (IllegalArgumentException e) {
+            return playerAccountService.getMainAccount(target.uuid());
+        } catch (AccountNotFoundException | IllegalArgumentException e) {
             context.reply("У игрока %s ещё нет счёта.", target.name());
             return null;
         }
@@ -310,6 +309,6 @@ public class PlayerBalanceCommandsHandler {
 
 
     private String getDeclinedAmount(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
+        return LiteralUtils.declineRussian((int) amount, "монета", "монеты", "монет");
     }
 }

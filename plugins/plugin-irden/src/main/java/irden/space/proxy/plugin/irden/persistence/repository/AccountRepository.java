@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AccountRepository
@@ -21,6 +22,12 @@ public interface AccountRepository
     findByOwnerTypeAndOwnerIdAndAccountCode(
             AccountOwnerType ownerType,
             String ownerId,
+            String accountCode
+    );
+
+    List<AccountEntity> findByOwnerTypeAndOwnerIdInAndAccountCode(
+            AccountOwnerType ownerType,
+            Set<String> ownerIds,
             String accountCode
     );
 

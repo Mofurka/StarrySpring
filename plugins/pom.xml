@@ -11,66 +11,79 @@
     <properties>
 
     </properties>
-    <dependencies>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-player-manager</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-command-handler</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-discord-bot</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-star-custom-chat</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-runtime-admin</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-ban-manager</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-general</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-native-server-lifespan</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-planet-backup</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-launcher</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>irden.space.plugin</groupId>
-            <artifactId>plugin-irden</artifactId>
-            <version>1.0.0</version>
-        </dependency>
 
-
-    </dependencies>
-
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <dependencies>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-player-manager</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-command-handler</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-discord-bot</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-star-custom-chat</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-runtime-admin</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-ban-manager</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-general</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-native-server-lifespan</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-planet-backup</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-launcher</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-irden</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-planet-protect</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>irden.space.plugin</groupId>
+                    <artifactId>plugin-osb-detector</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
     <modules>
         <module>plugin-command-handler</module>
         <module>plugin-player-manager</module>
@@ -83,6 +96,8 @@
         <module>plugin-planet-backup</module>
         <module>plugin-launcher</module>
         <module>plugin-irden</module>
+        <module>plugin-planet-protect</module>
+        <module>plugin-osb-detector</module>
     </modules>
 
 </project>

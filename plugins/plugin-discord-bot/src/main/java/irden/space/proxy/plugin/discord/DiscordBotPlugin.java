@@ -27,18 +27,15 @@ public final class DiscordBotPlugin implements ProxyPlugin {
     private final CommandHandlerPlugin commandHandler;
     private final CommandContextResolver discordExecutorPlayerResolver;
     private final PluginContext pluginContext;
-    private final DiscordBotRunner botRunner;
 
     public DiscordBotPlugin(
             CommandHandlerPlugin commandHandler,
             CommandContextResolver discordExecutorPlayerResolver,
-            PluginContext pluginContext,
-            DiscordBotRunner botRunner
+            PluginContext pluginContext
     ) {
         this.commandHandler = commandHandler;
         this.discordExecutorPlayerResolver = discordExecutorPlayerResolver;
         this.pluginContext = pluginContext;
-        this.botRunner = botRunner;
     }
 
     @OnLoad

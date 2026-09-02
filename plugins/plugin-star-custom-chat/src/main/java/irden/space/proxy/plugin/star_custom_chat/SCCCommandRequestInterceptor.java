@@ -9,8 +9,10 @@ import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHand
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageService;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
+import irden.space.proxy.protocol.codec.variant.Variants;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
+import irden.space.proxy.protocol.payload.packet.chat.ChatSent;
 import irden.space.proxy.protocol.payload.packet.entity.type.StageHandEntity;
 import irden.space.proxy.protocol.util.MapVariantUtils;
 import lombok.RequiredArgsConstructor;
@@ -25,17 +27,52 @@ public class SCCCommandRequestInterceptor {
     private static final String CUSTOM_CHAT_ENTITY_TYPE = "irdencustomchat";
     private static final String REQUEST_COMMANDS_MESSAGE = "requestCommands";
     private static final String COMMAND_LIST_MESSAGE = "scc_stagehand_commandlist";
-    private static final String COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE = "irdenchat_command_autocomplete";
+    private static final String COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE = "irdenchat:command:autocomplete";
+    private static final String COMMAND_RUN_MESSAGE = "irdenchat:command:run";
     private static final String SERVER_NAME = "IrdenServer";
     private final CommandHandlerPlugin commandHandlerPlugin;
     private final EntityMessageService entityMessages;
+    private final SccCommandAutocomplete commandAutocomplete;
 
-
-    @EntityMessageHandler(COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE)
-    public void autocompleteRequest(EntityMessageContext context) {
-        log.info("Received command autocomplete request: {}", context.message());
+    private static VariantValue handled(boolean handled) {
+        return Variants.mapBuilder().put("handled", handled).build();
     }
 
+    @EntityMessageHandler(COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE)
+    public VariantValue autocompleteRequest(EntityMessageContext context) {
+        String substr = Variants.asString(context.arg(0)).orElse(null);
+        if (substr == null || substr.isBlank()) {
+            return Variants.list();
+        }
+        return commandAutocomplete.suggest(context.session(), substr);
+    }
+
+    @EntityMessageHandler(COMMAND_RUN_MESSAGE)
+    public VariantValue runCommand(EntityMessageContext context) {
+        String text = Variants.asString(context.arg(0)).orElse(null);
+        if (text == null || text.isBlank()) {
+            return handled(false);
+        }
+
+        String cleaned = StarCustomChatCommandExporter.stripArgumentLabels(text);
+        if (cleaned == null || !cleaned.startsWith(CommandHandlerPlugin.COMMAND_PREFIX)) {
+            return handled(false);
+        }
+
+        PacketInterceptionContext packetContext = new PacketInterceptionContext(
+                context.session(),
+                null,
+                new ChatSent(cleaned, null, null),
+                PacketDirection.TO_SERVER
+        );
+
+        PacketDecision decision = commandHandlerPlugin.onChatSent(packetContext);
+        boolean wasHandled = decision != null && decision.isDrop();
+        if (!wasHandled) {
+            log.debug("SCC command '{}' is not registered on the proxy, letting the client fall back", cleaned);
+        }
+        return handled(wasHandled);
+    }
 
     @PacketHandler(value = PacketType.SPAWN_ENTITY, direction = PacketDirection.TO_SERVER)
     public PacketDecision onSpawnEntity(PacketInterceptionContext context) {

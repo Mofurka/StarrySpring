@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.native_server_lifespan;
 
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
-import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.general.GeneralUtils;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.NativeServerInfo;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.ServerRestartResult;
@@ -12,6 +11,7 @@ import irden.space.proxy.plugin.native_server_lifespan.rcon.RconAuthenticationEx
 import irden.space.proxy.plugin.native_server_lifespan.rcon.StarboundRconClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.stereotype.Component;
@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Thread.sleep;
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ import java.util.concurrent.TimeUnit;
         value = "native-server-lifespan.enabled",
         matchIfMissing = true
 )
-public class ServerLifespan {
+public class ServerLifespan implements DisposableBean {
     private static final String READY_LOG_MARKER = "UniverseServer: listening for incoming TCP connections";
 
     private final NativeServerLifespanConfig config;
@@ -128,6 +130,7 @@ public class ServerLifespan {
     }
 
     public synchronized ServerStopResult stopServer(String message) {
+        log.info("Stopping Native Server");
         Process process = serverProcess;
         serverReady = false;
         if (process == null || !process.isAlive()) {
@@ -281,7 +284,6 @@ public class ServerLifespan {
             } else {
                 log.warn("Game server stopped unexpectedly, PID: {}, exit code: {}", exitProcess.pid(), exitValue);
             }
-
             synchronized (this) {
                 if (serverProcess == exitProcess) {
                     serverProcess = null;
@@ -354,9 +356,27 @@ public class ServerLifespan {
     }
 
 
-    @OnStop
+    @Override
     public void destroy() {
-        stopServer("Server is shutting down");
+        try {
+            var time = 10;
+            generalUtils.broadcastMessage("Server shutdown initiated.");
+            log.warn("[Game server] Grace Shutdown");
+            sleep(1_000);
+            for (int i = time; i > 0; i--) {
+                if (i < 10 || i % 10 == 0) {
+                    log.warn("[Game server] Grace Shutdown {}", i);
+                    generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
+                }
+                sleep(1_000);
+            }
+            String message = "Server is shutting down.";
+            generalUtils.kickAll(message);
+            sleep(3_000);
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+        }
+        stopServer();
     }
 
 }

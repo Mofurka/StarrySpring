@@ -6,12 +6,14 @@ import irden.space.boot.scheduling.PluginSchedulingConfiguration;
 import irden.space.boot.security.PluginMethodSecurityConfiguration;
 import irden.space.proxy.plugin.api.*;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.api.annotations.PluginContextConfiguration;
 import irden.space.proxy.plugin.api.annotations.RegisterPluginPermissions;
 import irden.space.proxy.plugin.runtime.*;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.context.annotation.ImportCandidates;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -21,6 +23,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.AssignableTypeFilter;
+import org.springframework.util.ClassUtils;
 
 import java.util.*;
 
@@ -61,6 +64,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             pluginContext.register(PluginMethodSecurityConfiguration.class);
             pluginContext.register(PluginSchedulingConfiguration.class);
             pluginContext.register(AsyncConfiguration.class);
+            registerContributedConfigurations(pluginContext, candidate);
             jpaInitializer.apply(pluginContext, candidate);
             registerScopedRuntimeBeans(pluginContext, scopedContext);
             registerDependencyBeans(pluginContext, dependencyContainers);
@@ -143,6 +147,24 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             pluginContext.close();
             throw e;
         }
+    }
+
+    private void registerContributedConfigurations(
+            AnnotationConfigApplicationContext context,
+            PluginCandidate candidate
+    ) {
+        ClassLoader pluginClassLoader = candidate.pluginClass().getClassLoader();
+        Class<?>[] configurations = ImportCandidates
+                .load(PluginContextConfiguration.class, pluginClassLoader)
+                .getCandidates()
+                .stream()
+                .distinct()
+                .map(className -> ClassUtils.resolveClassName(className, pluginClassLoader))
+                .toArray(Class<?>[]::new);
+        if (configurations.length == 0) {
+            return;
+        }
+        context.register(configurations);
     }
 
     private void registerScopedRuntimeBeans(

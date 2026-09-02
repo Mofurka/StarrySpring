@@ -28,10 +28,12 @@ proxy:
   upstream-host: localhost
   upstream-port: 21024
 
+  max-packet-payload-bytes: 33554432
+
 assets:
   store:
     enabled: false
-    archives: []
+    archives: [ ]
     excluded-extensions:
       - .ogg
       - .png

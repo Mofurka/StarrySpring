@@ -2,28 +2,30 @@ package irden.space.proxy.plugin.irden.integration.web.rest.v1.player_balance;
 
 import irden.space.proxy.plugin.irden.integration.web.rest.v1.dto.player_uuid.PlayerUuidParam;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
-import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
-import irden.space.proxy.plugin.irden.service.AccountService;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
+import irden.space.proxy.plugin.irden.service.PlayerAccountService;
+import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE;
-
+/**
+ * Путь остался на uuid персонажа, чтобы не ломать контракт с сайтом, но счёт
+ * принадлежит привязке: uuid переводится в {@code applicationId} внутри
+ * {@link PlayerAccountService}.
+ */
 @Component
 @RequiredArgsConstructor
 public class PlayerBalanceHandler {
-    private final AccountService accountService;
+    private final PlayerAccountService playerAccountService;
     private final AccountTransactionService accountTransactionService;
 
     public long handleGetPlayerBalance(PlayerUuidParam param) {
-        String uuid = param.uuid();
         AccountEntity account;
         try {
-            account = accountService.getAccount(AccountOwnerType.CHARACTER, uuid, PLAYER_DEFAULT_ACCOUNT_CODE);
-        } catch (IllegalArgumentException _) {
+            account = requireAccount(param);
+        } catch (AccountNotFoundException _) {
             return 0L;
         }
         return account.getBalance();
@@ -31,8 +33,7 @@ public class PlayerBalanceHandler {
 
 
     public long handleResetPlayerBalance(PlayerUuidParam param) {
-        String uuid = param.uuid();
-        var account = accountService.getAccount(AccountOwnerType.CHARACTER, uuid, PLAYER_DEFAULT_ACCOUNT_CODE);
+        AccountEntity account = requireAccount(param);
         if (account.getBalance() == 0) {
             return 0L;
         }
@@ -42,8 +43,7 @@ public class PlayerBalanceHandler {
 
 
     public long setPlayerBalance(PlayerUuidParam param, BalanceRequestBody balanceRequestBody) {
-        String uuid = param.uuid();
-        var account = accountService.getAccount(AccountOwnerType.CHARACTER, uuid, PLAYER_DEFAULT_ACCOUNT_CODE);
+        AccountEntity account = requireAccount(param);
         long amount = account.getBalance() + balanceRequestBody.amount();
         if (account.getBalance() == amount) {
             return amount;
@@ -59,13 +59,16 @@ public class PlayerBalanceHandler {
     }
 
     public long updatePlayerBalance(PlayerUuidParam param, BalanceRequestBody balanceRequestBody) {
-        String uuid = param.uuid();
-        var account = accountService.getAccount(AccountOwnerType.CHARACTER, uuid, PLAYER_DEFAULT_ACCOUNT_CODE);
+        AccountEntity account = requireAccount(param);
         if (balanceRequestBody.amount() >= 0) {
             return handlePlayerBalanceDeposit(account, balanceRequestBody.amount(), balanceRequestBody.fromId());
         } else {
             return handlePlayerBalanceWithdraw(account, balanceRequestBody.amount(), balanceRequestBody.fromId());
         }
+    }
+
+    private AccountEntity requireAccount(PlayerUuidParam param) throws AccountNotFoundException {
+        return playerAccountService.getMainAccount(param.uuid());
     }
 
     private long handlePlayerBalanceDeposit(AccountEntity account, long amount, String fromId) {

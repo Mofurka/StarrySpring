@@ -70,22 +70,35 @@ public enum PacketType {
     SYSTEM_SHIP_CREATE(66),
     SYSTEM_SHIP_DESTROY(67),
     SYSTEM_OBJECT_SPAWN(68),
-    REPALCE_TILE_LIST(69),
+    REPLACE_TILE_LIST(69),
     UPDATE_WORLD_TEMPLATE(70);
 
+    private static final PacketType[] BY_ID = buildById();
     private final int id;
+
 
     PacketType(int id) {
         this.id = id;
     }
 
-    public static PacketType fromId(int id) {
+    private static PacketType[] buildById() {
+        int maxId = 0;
         for (PacketType type : values()) {
-            if (type.id == id) {
-                return type;
-            }
+            maxId = Math.max(maxId, type.id);
         }
-        return null;
+
+        PacketType[] byId = new PacketType[maxId + 1];
+        for (PacketType type : values()) {
+            byId[type.id] = type;
+        }
+        return byId;
+    }
+
+    public static PacketType fromId(int id) {
+        if (id < 0 || id >= BY_ID.length) {
+            return null;
+        }
+        return BY_ID[id];
     }
 
     public int id() {

@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.irden.service;
 
+import irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountStatus;
@@ -91,6 +92,17 @@ public class AccountService {
                                         normalizedAccountCode
                                 )
                 ));
+    }
+
+
+    @Transactional(readOnly = true)
+    public AccountEntity getPlayerMainAccount(long applicationId)
+            throws AccountNotFoundException {
+        return getAccount(
+                AccountOwnerType.CHARACTER,
+                PlayerAccountDefaults.playerOwnerId(applicationId),
+                PlayerAccountDefaults.PLAYER_DEFAULT_ACCOUNT_CODE
+        );
     }
 
 

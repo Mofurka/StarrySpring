@@ -18,6 +18,7 @@ import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.client_connect.ClientConnect;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectFailure;
 import irden.space.proxy.protocol.payload.packet.connect.ConnectSuccess;
+import irden.space.proxy.protocol.payload.packet.entity.type.player.PlayerNetState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -87,7 +88,18 @@ public class PlayerConnectionHandler {
     public PacketDecision onConnectSuccess(PacketInterceptionContext context) {
         ConnectSuccess connectSuccess = (ConnectSuccess) context.parsedPayload();
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.session().sessionId());
+
+
         if (tempPlayer != null) {
+            var existingPlayer = players.getByUuid(tempPlayer.uuid().toString());
+            if (existingPlayer != null) {
+                log.warn("Player with uuid={} is already connected. Disconnecting previous session.", tempPlayer.uuid());
+                PluginSessionContext pluginSessionContext = existingPlayer.sessionContext();
+                if (pluginSessionContext != null) {
+                    pluginSessionContext.close();
+                }
+            }
+
             Player player = Player.builder()
                     .name(tempPlayer.name())
                     .uuid(tempPlayer.uuid())
@@ -124,10 +136,23 @@ public class PlayerConnectionHandler {
         return PacketDecision.cancel(() -> context.session().sendToClient(PacketType.CONNECT_FAILURE, new ConnectFailure("Player connection state not found. Please try again.")));
     }
 
+    @PacketHandler(value = PacketType.ENTITY_UPDATE, direction = PacketDirection.TO_SERVER)
+    public PacketDecision onEntityUpdate(PacketInterceptionContext context) {
+        PlayerNetState playerNetState = context.parsedPayload(PlayerNetState.class);
+        if (playerNetState != null && playerNetState.humanoidIdentity() != null && playerNetState.humanoidIdentity().name() != null) {
+            Player player = players.getBySessionId(context.session().sessionId());
+            if (player != null && player.name() != null && !player.name().equals(playerNetState.humanoidIdentity().name())) {
+                player.name(playerNetState.humanoidIdentity().name());
+                log.info("Player name updated: uuid={}, newName={}", player.uuid(), player.name());
+            }
+        }
+        return null;
+    }
+
     @OnDisconnected
     public void onDisconnected(PluginSessionContext context) {
         if (log.isInfoEnabled()) log.info("Session {} has disconnected.", context.sessionId());
-        sessionPermissionService.clearPermissions(context.sessionId());
+
         TempPlayer tempPlayer = connectingPlayers.removeBySessionId(context.sessionId());
         if (tempPlayer != null) {
             log.info("Player connection attempt failed or was cancelled: name='{}', uuid={}", tempPlayer.name(), tempPlayer.uuid());
@@ -138,5 +163,6 @@ public class PlayerConnectionHandler {
             eventPublisher.publishEvent(new PlayerDisconnectedEvent(context.sessionId(), player));
             log.info("Player disconnected: name='{}', uuid={}", player.name(), player.uuid());
         }
+        sessionPermissionService.clearPermissions(context.sessionId());
     }
 }

@@ -77,6 +77,28 @@ public class PlayerAccessService {
         return permissionResolver.resolveRules(permissionRules);
     }
 
+
+    public void grantSessionPermissions(String sessionId, PermissionEnum... permissions) {
+        if (sessionId == null || permissions == null || permissions.length == 0) {
+            return;
+        }
+
+        PermissionSet grantedPermissions = Permissions.none();
+        PermissionSet revokedPermissions = Permissions.none();
+        if (sessionPermissionService.permissions(sessionId) instanceof UserPermissions currentPermissions) {
+            grantedPermissions = currentPermissions.effectivePermissions();
+            revokedPermissions = currentPermissions.revokedPermissions();
+        }
+
+        for (PermissionEnum permission : permissions) {
+            if (permission != null) {
+                grantedPermissions.grant(permission.permission());
+            }
+        }
+
+        bindSessionPermissions(sessionId, List.of(), grantedPermissions, revokedPermissions);
+    }
+
     public void assignRoleToPlayer(String playerUuid, String roleName, String assignedBy) {
         ensurePlayerAccessMutable(playerUuid);
 

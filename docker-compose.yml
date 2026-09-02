@@ -1,6 +1,38 @@
 services:
-  db:
-    image: postgres:16-alpine
+  server:
+    image: irden.offline/starry-spring:latest
+    restart: on-failure
+
+    stop_signal: SIGTERM
+    stop_grace_period: 1m
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      retries: 10
+      start_period: 10s
+      timeout: 10s
+
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOCALE=ru
+
+    ports:
+      - "7778:7777"
+
+    volumes:
+      - ./runtime-plugins:/app/runtime-plugins:ro
+      - ./config:/app/config
+      - /home/mofuro/.steam/steam/steamapps/common/Starbound:/app/game
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - irden
+
+  postgres:
+    image: postgres:17-alpine
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -8,8 +40,15 @@ services:
       POSTGRES_DB: starryspring
     ports:
       - "15432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - ./db_data:/var/lib/postgresql/data
+    networks:
+      - irden
 
-volumes:
-  db_data:
+networks:
+  irden:

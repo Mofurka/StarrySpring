@@ -4,7 +4,7 @@ import irden.space.proxy.protocol.codec.BinaryCodec;
 import irden.space.proxy.protocol.codec.BinaryReader;
 import irden.space.proxy.protocol.codec.BinaryWriter;
 import irden.space.proxy.protocol.codec.VlqUnsignedCodec;
-import irden.space.proxy.protocol.payload.packet.modify_tile_list.tile_modification.tile_layer.TileLayer;
+import irden.space.proxy.protocol.payload.common.tile_layer.TileLayer;
 
 import java.util.Optional;
 

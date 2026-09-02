@@ -17,11 +17,14 @@ public final class ProxySession {
     private volatile SessionTransportMode upstreamCompression;
     private volatile int openProtocolVersion;
 
+    private volatile long lastActivityAt;
+
 
     public ProxySession(ProxySessionId id, String clientIp) {
         this.id = Objects.requireNonNull(id, "Session ID cannot be null");
         this.clientIp = Objects.requireNonNull(clientIp, "Client IP cannot be null");
         this.state = SessionState.NEW;
+        this.lastActivityAt = System.nanoTime();
         this.clientCompression = SessionTransportMode.PLAIN;
         this.upstreamCompression = SessionTransportMode.PLAIN;
         this.openProtocolVersion = UNSET_OPEN_PROTOCOL_VERSION;
@@ -69,6 +72,14 @@ public final class ProxySession {
 
     public int resolveOpenProtocolVersion() {
         return openProtocolVersion;
+    }
+
+    public void recordActivity() {
+        this.lastActivityAt = System.nanoTime();
+    }
+
+    public long idleMillis() {
+        return (System.nanoTime() - lastActivityAt) / 1_000_000L;
     }
 
     private void ensureNotDisconnected() {

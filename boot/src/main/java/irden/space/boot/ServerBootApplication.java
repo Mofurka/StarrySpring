@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.TimeZone;
+import java.util.Locale;
 
 @SpringBootApplication(scanBasePackages = {
         "irden.space.boot",
@@ -13,7 +13,7 @@ import java.util.TimeZone;
 })
 public class ServerBootApplication {
     static void main(String[] args) {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        Locale.setDefault(Locale.of(System.getenv("LOCALE") != null ? System.getenv("LOCALE") : "ru"));
         ConfigurableApplicationContext ctx = SpringApplication.run(ServerBootApplication.class, args);
         ctx.registerShutdownHook();
     }

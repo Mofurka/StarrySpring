@@ -124,6 +124,7 @@ public final class PlayerDirectory {
                 .name(record.getName())
                 .uuid(StarUuid.fromHex(record.getPlayerUuid()))
                 .ipAddress(record.getIpAddress())
+                .lastSeen(record.getLastSeen())
                 .build();
     }
 

@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @PluginDefinition(
@@ -83,7 +82,10 @@ public class CommandHandlerPlugin implements ProxyPlugin {
                 registeredCommand.ownerPluginId()
         );
 
-        CompletableFuture.runAsync(() -> executeAsync(context.session(), registeredCommand, argumentContext, parsedCommand));
+
+        Thread.ofVirtual()
+                .name("command-" + registeredCommand.name())
+                .start(() -> executeAsync(context.session(), registeredCommand, argumentContext, parsedCommand));
         return PacketDecision.cancel();
     }
 
@@ -150,6 +152,48 @@ public class CommandHandlerPlugin implements ProxyPlugin {
 
     public Collection<RegisteredCommand> allCommands() {
         return CommandRegistry.global().allCommands();
+    }
+
+    public List<String> suggestArgumentValues(
+            PacketInterceptionContext packetContext,
+            String commandName,
+            List<ResolvedArgument> priorArguments,
+            ArgumentNode<?> focusedArgument,
+            String focusedValue
+    ) {
+        Objects.requireNonNull(packetContext, "packetContext");
+        Objects.requireNonNull(commandName, "commandName");
+        Objects.requireNonNull(focusedArgument, "focusedArgument");
+
+        if (!focusedArgument.type().supportsAutocomplete()) {
+            return List.of();
+        }
+
+        LinkedHashMap<String, String> rawArguments = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> parsedArguments = new LinkedHashMap<>();
+
+        if (priorArguments != null) {
+            for (ResolvedArgument prior : priorArguments) {
+                try {
+                    Object parsed = prior.node().type().parse(
+                            createArgumentContext(packetContext, commandName, rawArguments, parsedArguments),
+                            prior.rawValue()
+                    );
+                    if (parsed != null) {
+                        parsedArguments.put(prior.node().name(), parsed);
+                    }
+                } catch (RuntimeException ignored) {
+                }
+                rawArguments.put(prior.node().name(), prior.rawValue());
+            }
+        }
+
+        CommandContext commandContext = createCommandContext(
+                createArgumentContext(packetContext, commandName, rawArguments, parsedArguments),
+                parsedArguments
+        );
+
+        return focusedArgument.type().suggestions(commandContext, focusedValue == null ? "" : focusedValue);
     }
 
     public List<String> autocomplete(
@@ -301,6 +345,9 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         return value == null
                 ? ""
                 : value.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+    }
+
+    public record ResolvedArgument(ArgumentNode<?> node, String rawValue) {
     }
 
     private record ParsedCommand(

@@ -23,7 +23,7 @@ public class EntitySpawnParser implements PacketParser<Entity> {
             case PLANT_DROP -> null;
             case PROJECTILE -> ProjectileSpawnEntityCodec.INSTANCE.read(reader);
             case STAGEHAND -> StagehandEntitySpawnCodec.INSTANCE.read(reader);
-            case MONSTER -> MonsterEntitySpawnCodec.INSTANCE.read(reader);
+            case MONSTER -> null;
             case NPC -> null;
             case PLAYER -> null;
         };

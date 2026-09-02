@@ -277,7 +277,7 @@ public class IrdenFightHandler {
         var fightName = Variants.asString(context.arg(0));
         if (fightName.isPresent()) {
             IrdenFightSnapshot fight = getFight(fightName.get());
-            var playerBySessionId = playerManagerApi.getPlayerBySessionId(context.session().sessionId());
+            var playerBySessionId = playerManagerApi.findPlayerBySessionId(context.session().sessionId());
             if (playerBySessionId.isPresent() && fight.currentPlayerUuidTurn().equals(playerBySessionId.get().uuid().toString())) {
                 this.nextTurn(fightName.get());
                 return Variants.of("Ход передан");
@@ -290,7 +290,7 @@ public class IrdenFightHandler {
     public VariantValue leaveFight(EntityMessageContext context) {
         var fightName = Variants.asString(context.arg(0));
         if (fightName.isPresent()) {
-            var playerBySessionId = playerManagerApi.getPlayerBySessionId(context.session().sessionId());
+            var playerBySessionId = playerManagerApi.findPlayerBySessionId(context.session().sessionId());
             if (playerBySessionId.isPresent()) {
                 this.removePlayerFromFight(fightName.get(), playerBySessionId.get().uuid().toString());
                 return Variants.of("Вы покинули бой");
@@ -303,7 +303,7 @@ public class IrdenFightHandler {
     public VariantValue ensureFight(EntityMessageContext context) {
         var fightName = Variants.asString(context.arg(0));
         if (fightName.isPresent()) {
-            var playerBySessionId = playerManagerApi.getPlayerBySessionId(context.session().sessionId());
+            var playerBySessionId = playerManagerApi.findPlayerBySessionId(context.session().sessionId());
             if (playerBySessionId.isPresent()) {
                 boolean inFight = isInFight(fightName.get(), playerBySessionId.get().uuid().toString());
                 return Variants.of(inFight);

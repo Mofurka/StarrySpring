@@ -9,16 +9,15 @@ import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
 import irden.space.proxy.plugin.player_manager.events.PlayerDisconnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.chat.ChatReceive;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,9 +27,8 @@ import static io.micrometer.common.util.StringUtils.isBlank;
 @RequiredArgsConstructor
 public class JoinMessageInterceptor {
     private static final Pattern JOIN_PATTERN =
-            Pattern.compile("^Player '([^']+)' (dis)?connected$");
-    private final GeneralPlugin plugin;
-    private final MessageSource messageSource;
+            Pattern.compile("^Player '(.*)' (dis)?connected");
+    private final MessageUtils messageUtils;
     private final PlayerManagerApi playerManagerApi;
 
     @PacketHandler(
@@ -58,16 +56,15 @@ public class JoinMessageInterceptor {
     public void onPlayerConnectedEvent(PlayerConnectedEvent event) {
         Player player = event.player();
         String finalPlayerName = formatPlayerName(player);
-        String joinMsg = messageSource.getMessage("chat.player.join", new Object[]{finalPlayerName}, Locale.getDefault());
+        String joinMsg = messageUtils.get("chat.player.join", finalPlayerName);
         this.notifyPlayers(player, joinMsg);
     }
 
-    @Async
     @EventListener
     public void onPlayerDisconnectedEvent(PlayerDisconnectedEvent event) {
         Player player = event.player();
         String finalPlayerName = formatPlayerName(player);
-        String exitMsg = messageSource.getMessage("chat.player.exit", new Object[]{finalPlayerName}, Locale.getDefault());
+        String exitMsg = messageUtils.get("chat.player.exit", finalPlayerName);
         this.notifyPlayers(player, exitMsg);
     }
 

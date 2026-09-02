@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @Component
@@ -57,7 +56,9 @@ public class GeneralCommands {
                                     } else name = "Unknown";
                                     var timer = ctx.getOrDefault("timer", Integer.class, 5);
                                     ctx.reply("Server shutdown initiated in %s seconds".formatted(timer));
-                                    CompletableFuture.runAsync(() -> generalUtils.shutdownServer(name, timer));
+                                    Thread.ofVirtual()
+                                            .name("server-shutdown")
+                                            .start(() -> generalUtils.shutdownServer(name, timer));
                                 }
                         )
                 )

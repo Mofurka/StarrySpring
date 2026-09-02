@@ -6,6 +6,7 @@ import irden.space.proxy.plugin.ban_manager.persistence.repository.BanRecordRepo
 import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -25,11 +26,13 @@ public class BanService {
     private final BanRecordRepository banRecordRepository;
     private final PlayerManagerApi playerManagerApi;
     private final BanFormatUtils banFormatUtils;
+    private final MessageUtils messageUtils;
 
-    public BanService(BanRecordRepository banRecordRepository, @Lazy PlayerManagerApi playerManagerApi, BanFormatUtils banFormatUtils) {
+    public BanService(BanRecordRepository banRecordRepository, @Lazy PlayerManagerApi playerManagerApi, BanFormatUtils banFormatUtils, MessageUtils messageUtils) {
         this.banRecordRepository = banRecordRepository;
         this.playerManagerApi = playerManagerApi;
         this.banFormatUtils = banFormatUtils;
+        this.messageUtils = messageUtils;
     }
 
     public Optional<BanRecordEntity> findActiveBan(String name, String playerUuid, String ipAddress) {
@@ -66,7 +69,7 @@ public class BanService {
             try {
                 expiresAt = banFormatUtils.parseExpiresAt(durationStr);
             } catch (IllegalArgumentException ex) {
-                return new BanOperationResult(false, banFormatUtils.get("ban.operation.failure.invalid_duration", "1y 2m 3d 5h 6s"));
+                return new BanOperationResult(false, messageUtils.get("ban.operation.failure.invalid_duration", "1w 2d 3h 4m 5s"));
             }
         }
 
@@ -98,7 +101,7 @@ public class BanService {
         playerManagerApi.findAllPlayersByIpAddress(ipAddress)
                 .forEach(player -> player.kick(message));
 
-        return new BanOperationResult(true, banFormatUtils.get("ban.operation.success.ip", ipAddress, reason));
+        return new BanOperationResult(true, messageUtils.get("ban.operation.success.ip", ipAddress, reason));
     }
 
 
@@ -111,7 +114,7 @@ public class BanService {
     ) {
         Optional<Player> optionalPlayer = playerManagerApi.findPlayer(targetPlayer, false);
         if (optionalPlayer.isEmpty()) {
-            return new BanOperationResult(false, banFormatUtils.get("ban.operation.failure.player_not_found", targetPlayer));
+            return new BanOperationResult(false, messageUtils.get("ban.operation.failure.player_not_found", targetPlayer));
         }
 
         Player player = optionalPlayer.get();
@@ -128,7 +131,7 @@ public class BanService {
         banRecordRepository.save(banRecord);
         player.kick(banFormatUtils.formatBanMessage(reason, permanent, expiresAt));
 
-        return new BanOperationResult(true, banFormatUtils.get("ban.operation.success.player", player.name(), reason));
+        return new BanOperationResult(true, messageUtils.get("ban.operation.success.player", player.name(), reason));
     }
 
 

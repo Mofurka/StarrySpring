@@ -4,12 +4,14 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.general.events.ChatMessageEvent;
+import irden.space.proxy.plugin.general.permissions.ChatPermissions;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.star_custom_chat.constants.SCCConstants;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatFightData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatProximityData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatSH;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -33,6 +35,7 @@ public class StarCustomChatMessageInterceptor {
     private final JsonMapper jsonMapper;
     private final PlayerManagerApi playerManagerApi;
     private final ApplicationEventPublisher eventPublisher;
+    private final MessageUtils messageUtils;
 
 
     @PacketHandler(
@@ -65,10 +68,15 @@ public class StarCustomChatMessageInterceptor {
         try {
             IrdenCustomChatSH customChat =
                     jsonMapper.treeToValue(jsonNode, IrdenCustomChatSH.class);
-            Optional<Player> playerBySessionId = playerManagerApi.getPlayerBySessionId(ctx.session().sessionId());
+            Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
             if (playerBySessionId.isPresent()) {
                 var player = playerBySessionId.get();
                 ChatMessageEvent chatMessageEvent = null;
+                if (!player.permissions().has(ChatPermissions.SEND_MESSAGE)) {
+                    String message = messageUtils.get("chat.blocked");
+                    player.sendMessage(message);
+                    return PacketDecision.cancel();
+                }
                 if (customChat.data() instanceof IrdenCustomChatProximityData proximityData) {
                     chatMessageEvent = new ChatMessageEvent(player, proximityData.getMode().toString(), proximityData.getText(), Map.of("proximityRadius", proximityData.getProximityRadius()));
                 } else if (customChat.data() instanceof IrdenCustomChatFightData fightData) {

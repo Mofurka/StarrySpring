@@ -9,6 +9,15 @@ public interface PermissionView {
 
     boolean has(int permissionId);
 
+    default boolean has(PermissionEnum permissionEnum) {
+        if (permissionEnum == null) {
+            return false;
+        }
+
+        return has(permissionEnum.permission().id());
+    }
+
+
     default boolean has(Permission permission) {
         if (permission == null) {
             return false;

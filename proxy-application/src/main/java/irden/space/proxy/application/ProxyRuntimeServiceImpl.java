@@ -193,8 +193,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                     session,
                     clientSocket,
                     upstreamSocket,
-                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
-                    new SwitchableSessionTransport(SessionTransportMode.PLAIN),
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN, properties.getMaxPacketPayloadBytes()),
+                    new SwitchableSessionTransport(SessionTransportMode.PLAIN, properties.getMaxPacketPayloadBytes()),
                     sessionPermissionService
             );
 
@@ -213,7 +213,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                             packetInspector,
                             packetInterceptionService,
                             pluginSessionLifecycleService,
-                            onSessionClosed
+                            onSessionClosed,
+                            properties.getSessionIdleTimeoutMillis()
                     ),
                     session.getId().uuid() + "-proxy-c2s"
             );
@@ -231,7 +232,8 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                                 packetInspector,
                                 packetInterceptionService,
                                 pluginSessionLifecycleService,
-                                onSessionClosed
+                                onSessionClosed,
+                                properties.getSessionIdleTimeoutMillis()
                         ),
                         session.getId().uuid() + "-proxy-s2c"
                 );
@@ -262,14 +264,6 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
             log.debug("Failed to close proxy server socket", e);
         }
     }
-
-    private record ActiveSession(
-            ProxySessionRuntimeContext context,
-            Thread clientToServer,
-            Thread serverToClient
-    ) {
-    }
-
 
     private Socket connectUpstream(ProxySession session) {
         try {
@@ -325,7 +319,9 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
                 session.getUpstreamCompression() == SessionTransportMode.ZSTD,
                 session.resolveOpenProtocolVersion(),
                 (direction, envelope) -> sendPacket(context, direction, envelope),
-                permissionView
+                permissionView,
+                context::closeSockets,
+                context.pluginAttributes()
         );
     }
 
@@ -348,5 +344,12 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to send lifecycle packet for session " + context.session().getId(), e);
         }
+    }
+
+    private record ActiveSession(
+            ProxySessionRuntimeContext context,
+            Thread clientToServer,
+            Thread serverToClient
+    ) {
     }
 }

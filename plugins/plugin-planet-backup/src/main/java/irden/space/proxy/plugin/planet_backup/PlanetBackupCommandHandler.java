@@ -35,9 +35,7 @@ public class PlanetBackupCommandHandler {
                 generalUtils.broadcastMessage("Server is starting planet backup schedule! 30 seconds until server shutdown.");
                 sleep(1_000);
                 for (int i = time; i > 0; i--) {
-                    if (i < 10) {
-                        generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
-                    } else if (i % 10 == 0) {
+                    if (i < 10 || i % 10 == 0) {
                         generalUtils.broadcastMessage("Shutdown in %s seconds".formatted(i));
                     }
                     sleep(1_000);

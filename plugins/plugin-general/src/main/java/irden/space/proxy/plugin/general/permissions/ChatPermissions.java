@@ -8,7 +8,8 @@ public enum ChatPermissions implements PermissionEnum {
     BROADCAST("chat.broadcast"),
     INVISIBLE_BYPASS("chat.invisible_bypass"),
     JOIN_ANNOUNCE("chat.join_announce"),
-    UNIVERSE_CHAT("chat.universe");
+    UNIVERSE_CHAT("chat.universe"),
+    SEND_MESSAGE("chat.send_message");
 
     private final String permissionNode;
 

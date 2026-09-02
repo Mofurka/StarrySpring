@@ -6,6 +6,7 @@ import irden.space.proxy.plugin.command_handler.CommandArgumentContext;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.service.AccountService;
+import irden.space.proxy.plugin.irden.service.exception.AccountNotFoundException;
 
 import java.util.List;
 import java.util.Objects;
@@ -68,7 +69,7 @@ public final class StructureAccountArgumentType implements ArgumentType<Structur
                     type.accountCode()
             );
             return new StructureAccountTarget(type, name, account);
-        } catch (IllegalArgumentException e) {
+        } catch (AccountNotFoundException | IllegalArgumentException e) {
             throw new ArgumentParseException("Счёт " + type.displayName() + " '" + name + "' не найден");
         }
     }

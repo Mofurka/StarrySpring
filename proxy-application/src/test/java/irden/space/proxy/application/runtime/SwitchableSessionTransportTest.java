@@ -2,6 +2,7 @@ package irden.space.proxy.application.runtime;
 
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
+import irden.space.proxy.domain.session.SessionTransportMode;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketEnvelope;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -10,9 +11,13 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.DeflaterOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,6 +61,103 @@ class SwitchableSessionTransportTest {
 
         assertArrayEquals(firstPacket, slice(writtenBytes, 0, firstPacket.length));
         assertArrayEquals(secondPacket, decompressZstd(secondFrameBytes));
+    }
+
+
+    @Test
+    void writesSelfContainedFramesReadableBySingleZstdStream() throws IOException {
+        byte[] firstPacket = buildPacket(1, 4, new byte[]{10, 20, 30, 40});
+        byte[] secondPacket = buildPacket(0, 3, "abc".getBytes(StandardCharsets.UTF_8));
+        byte[] thirdPacket = buildPacket(6, 5, "hello".getBytes(StandardCharsets.UTF_8));
+
+        SwitchableSessionTransport transport = new SwitchableSessionTransport(new PlainSessionTransport());
+        transport.enableZstdWrite(0);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        transport.write(outputStream, envelope(firstPacket, PacketType.PROTOCOL_RESPONSE));
+        transport.write(outputStream, envelope(secondPacket, PacketType.PROTOCOL_REQUEST));
+        transport.write(outputStream, envelope(thirdPacket, PacketType.CHAT_RECEIVE));
+
+        byte[] decoded;
+        try (ZstdInputStream zstdInputStream =
+                     new ZstdInputStream(new ByteArrayInputStream(outputStream.toByteArray()))) {
+            decoded = zstdInputStream.readAllBytes();
+        }
+
+        ByteArrayOutputStream expected = new ByteArrayOutputStream();
+        expected.write(firstPacket);
+        expected.write(secondPacket);
+        expected.write(thirdPacket);
+
+        assertArrayEquals(expected.toByteArray(), decoded);
+    }
+
+
+    @Test
+    void appliesRequestedReadModeOnlyAtPacketBoundary() throws IOException, InterruptedException {
+        InputStream source = plainThenZstdStream();
+        SwitchableSessionTransport transport = new SwitchableSessionTransport(new PlainSessionTransport());
+
+        PacketEnvelope plainPacket = transport.read(source, PacketDirection.TO_SERVER);
+        assertEquals(PacketType.PROTOCOL_REQUEST, plainPacket.packetType());
+
+        transport.enableReadMode(SessionTransportMode.ZSTD);
+
+        assertTrue(transport.isReadModeEnabled(SessionTransportMode.ZSTD), "режим должен быть запрошен");
+        assertFalse(transport.isReadModeApplied(SessionTransportMode.ZSTD), "но ещё не применён");
+        assertFalse(transport.awaitReadModeApplied(SessionTransportMode.ZSTD, 20));
+
+        PacketEnvelope compressedPacket = transport.read(source, PacketDirection.TO_SERVER);
+
+        assertTrue(transport.isReadModeApplied(SessionTransportMode.ZSTD));
+        assertEquals(PacketType.PROTOCOL_RESPONSE, compressedPacket.packetType());
+    }
+
+
+    @Test
+    void awaitReadModeAppliedIsReleasedByTheReaderThread() throws Exception {
+        InputStream source = plainThenZstdStream();
+        SwitchableSessionTransport transport = new SwitchableSessionTransport(new PlainSessionTransport());
+        transport.read(source, PacketDirection.TO_SERVER);
+
+        transport.enableReadMode(SessionTransportMode.ZSTD);
+
+        CountDownLatch started = new CountDownLatch(1);
+        AtomicBoolean confirmed = new AtomicBoolean();
+        Thread waiter = new Thread(() -> {
+            started.countDown();
+            try {
+                confirmed.set(transport.awaitReadModeApplied(SessionTransportMode.ZSTD, 5_000));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "switch-waiter");
+        waiter.start();
+
+        assertTrue(started.await(5, TimeUnit.SECONDS));
+
+        transport.read(source, PacketDirection.TO_SERVER);
+
+        waiter.join(5_000);
+        assertFalse(waiter.isAlive(), "ожидающий поток должен быть разбужен читателем");
+        assertTrue(confirmed.get());
+    }
+
+    @Test
+    void appliesReadModeImmediatelyWhenNoReaderIsAttachedYet() throws InterruptedException {
+        SwitchableSessionTransport transport = new SwitchableSessionTransport(new PlainSessionTransport());
+
+        transport.enableReadMode(SessionTransportMode.ZSTD);
+
+        assertTrue(transport.isReadModeApplied(SessionTransportMode.ZSTD));
+        assertTrue(transport.awaitReadModeApplied(SessionTransportMode.ZSTD, 0));
+    }
+
+    private InputStream plainThenZstdStream() throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        stream.write(buildPacket(0, 3, "abc".getBytes(StandardCharsets.UTF_8)));
+        stream.write(compressZstd(buildPacket(1, 4, new byte[]{9, 8, 7, 6})));
+        return new ByteArrayInputStream(stream.toByteArray());
     }
 
     private PacketEnvelope envelope(byte[] originalData, PacketType packetType) {
