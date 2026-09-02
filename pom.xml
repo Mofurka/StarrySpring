@@ -30,6 +30,7 @@
         <module>proxy-adapters</module>
         <module>proxy-plugin-api</module>
         <module>proxy-plugin-runtime</module>
+        <module>utils/plugin-utils</module>
         <module>plugins</module>
         <module>boot</module>
     </modules>

@@ -8,6 +8,7 @@ import irden.space.proxy.plugin.general.events.CleanChatMessageEvent;
 import irden.space.proxy.plugin.general.permissions.ChatPermissions;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.chat_header.ChatHeader;
@@ -18,11 +19,9 @@ import irden.space.proxy.protocol.payload.packet.chat.consts.ChatSentMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.Locale;
 import java.util.Optional;
 
 import static irden.space.proxy.plugin.command_handler.CommandHandlerPlugin.COMMAND_PREFIX;
@@ -31,7 +30,7 @@ import static irden.space.proxy.plugin.command_handler.CommandHandlerPlugin.COMM
 @RequiredArgsConstructor
 @Slf4j
 public class ChatInterceptor {
-    private final MessageSource messageSource;
+    private final MessageUtils messageUtils;
     private final PlayerManagerApi playerManager;
     private final ApplicationEventPublisher publisher;
     private final GeneralUtils generalUtils;
@@ -49,11 +48,11 @@ public class ChatInterceptor {
                 var player = playerBySessionId.get();
                 if (chatSent.mode().equals(ChatSentMode.UNIVERSE) && !ctx.session().permissions().has(ChatPermissions.UNIVERSE_CHAT.permission())) {
 
-                    String message = messageSource.getMessage("chat.universe_blocked", null, Locale.getDefault());
+                    String message = messageUtils.get("chat.universe_blocked");
                     player.sendMessage(message);
                     return PacketDecision.cancel();
                 } else if (!ctx.session().permissions().has(ChatPermissions.SEND_MESSAGE)) {
-                    String message = messageSource.getMessage("chat.blocked", null, Locale.getDefault());
+                    String message = messageUtils.get("chat.blocked");
                     player.sendMessage(message);
                     return PacketDecision.cancel();
                 }

@@ -1,41 +1,40 @@
 package irden.space.proxy.plugin.ban_manager.utils;
 
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 
 @RequiredArgsConstructor
 @Component
 public class BanFormatUtils {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final MessageSource msg;
+    private final MessageUtils messageUtils;
 
     public String formatBanMessage(String reason, boolean permanent, LocalDateTime expiresAt) {
         var message = new StringBuilder();
 
-        message.append(get("ban.message.header"));
+        message.append(messageUtils.get("ban.message.header"));
         message.append(System.lineSeparator());
 
-        message.append(get("ban.message.reason", reason));
+        message.append(messageUtils.get("ban.message.reason", reason));
 
         if (!permanent && expiresAt != null) {
             message.append(System.lineSeparator());
             message.append(System.lineSeparator());
 
-            message.append(get("ban.message.expire.header"));
+            message.append(messageUtils.get("ban.message.expire.header"));
             message.append(System.lineSeparator());
 
             message.append(formatUntil(expiresAt));
             message.append(System.lineSeparator());
         } else {
             message.append(System.lineSeparator());
-            message.append(get("ban.message.permanent"));
+            message.append(messageUtils.get("ban.message.permanent"));
         }
 
         return message.toString();
@@ -45,7 +44,7 @@ public class BanFormatUtils {
         LocalDateTime now = LocalDateTime.now();
 
         if (expiresAt.isBefore(now.plusMinutes(1))) {
-            return get("ban.until.less-than-minute");
+            return messageUtils.get("ban.until.less-than-minute");
         }
 
         if (expiresAt.isBefore(now.plusHours(2))) {
@@ -55,28 +54,28 @@ public class BanFormatUtils {
             // Для английского оставляем "s", для русского строка всё равно "{0} мин."
             String pluralSuffix = minutes > 1 ? "s" : "";
 
-            return get("ban.until.minutes", minutes, pluralSuffix);
+            return messageUtils.get("ban.until.minutes", minutes, pluralSuffix);
         }
 
         String time = expiresAt.toLocalTime().format(TIME_FORMATTER);
 
         if (expiresAt.isBefore(now.plusDays(1))) {
-            return get("ban.until.today", time);
+            return messageUtils.get("ban.until.today", time);
         }
 
         if (expiresAt.isBefore(now.plusDays(2))) {
-            return get("ban.until.tomorrow", time);
+            return messageUtils.get("ban.until.tomorrow", time);
         }
 
         if (expiresAt.isBefore(now.plusWeeks(1))) {
-            return get("ban.until.this-week", get("ban.until.this-week.names").split(",")[expiresAt.getDayOfWeek().getValue() - 1], time);
+            return messageUtils.get("ban.until.this-week", messageUtils.get("ban.until.this-week.names").split(",")[expiresAt.getDayOfWeek().getValue() - 1], time);
         }
 
         if (expiresAt.isBefore(now.plusMonths(1))) {
-            return get("ban.until.this-month", expiresAt.getDayOfMonth(), time);
+            return messageUtils.get("ban.until.this-month", expiresAt.getDayOfMonth(), time);
         }
 
-        return get("ban.until.datetime", expiresAt.toString());
+        return messageUtils.get("ban.until.datetime", expiresAt.toString());
     }
 
     public LocalDateTime parseExpiresAt(String durationStr) {
@@ -108,7 +107,4 @@ public class BanFormatUtils {
         return expiresAt;
     }
 
-    public String get(String code, Object... args) {
-        return msg.getMessage(code, args, Locale.getDefault());
-    }
 }

@@ -3,7 +3,6 @@ package irden.space.proxy.plugin.ban_manager;
 import irden.space.proxy.plugin.ban_manager.command.BanTarget;
 import irden.space.proxy.plugin.ban_manager.command.BanTargetArgumentType;
 import irden.space.proxy.plugin.ban_manager.model.BanOperationResult;
-import irden.space.proxy.plugin.ban_manager.utils.BanFormatUtils;
 import irden.space.proxy.plugin.command_handler.ChatCommand;
 import irden.space.proxy.plugin.command_handler.CommandContext;
 import irden.space.proxy.plugin.command_handler.CommandSpec;
@@ -12,6 +11,7 @@ import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.command.PlayerOnlineTargetArgumentType;
 import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +25,7 @@ public class BanCommands {
 
     private final BanService banService;
     private final PlayerManagerApi playerManagerApi;
-    private final BanFormatUtils banFormatUtils;
+    private final MessageUtils messageUtils;
 
     @ChatCommand(
             value = "ban",
@@ -71,9 +71,9 @@ public class BanCommands {
                             BanTarget target = context.get("target", BanTarget.class);
                             boolean success = banService.unban(target.value());
                             if (success) {
-                                context.reply(banFormatUtils.get("ban.message.unban.success", target.value()));
+                                context.reply(messageUtils.get("ban.message.unban.success", target.value()));
                             } else {
-                                context.reply(banFormatUtils.get("ban.message.unban.not_found", target.value()));
+                                context.reply(messageUtils.get("ban.message.unban.not_found", target.value()));
                             }
                         }))
                 .build();
@@ -87,7 +87,7 @@ public class BanCommands {
                 target.value(),
                 executor == null ? null : executor.name(),
                 context.getOrDefault("duration", String.class, "permanent"),
-                context.getOrDefault("reason", String.class, banFormatUtils.get("ban.operation.default_reason"))
+                context.getOrDefault("reason", String.class, messageUtils.get("ban.operation.default_reason"))
         );
 
         context.reply(result.message());

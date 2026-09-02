@@ -1,6 +1,8 @@
 package irden.space.proxy.plugin.discord.api;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public interface DiscordGateway {
@@ -37,6 +39,54 @@ public interface DiscordGateway {
      * }</pre>
      */
     DiscordButtonRegistration onButton(String buttonId, DiscordButtonHandler handler);
+
+    CompletableFuture<List<DiscordReceivedMessage>> history(long channelId, DiscordHistoryQuery query);
+
+
+    CompletableFuture<Optional<DiscordReceivedMessage>> fetchMessage(long channelId, long messageId);
+
+
+    CompletableFuture<List<DiscordReceivedMessage>> pinnedMessages(long channelId);
+
+    /**
+     * <pre>{@code
+     * @PostConstruct
+     * void listenLore() {
+     *     registration = discord.onMessage(loreChannelId, this::portToGame);
+     * }
+     * }</pre>
+     */
+    DiscordMessageRegistration onMessage(long channelId, DiscordMessageHandler handler);
+
+    DiscordMessageRegistration onAnyMessage(DiscordMessageHandler handler);
+
+    default CompletableFuture<List<DiscordReceivedMessage>> history(long channelId, int limit) {
+        return history(channelId, DiscordHistoryQuery.latest(limit));
+    }
+
+    default CompletableFuture<Optional<DiscordReceivedMessage>> fetchMessage(DiscordMessageRef message) {
+        return fetchMessage(message.channelId(), message.messageId());
+    }
+
+    default CompletableFuture<Optional<DiscordReceivedMessage>> lastMessage(long channelId) {
+        return history(channelId, DiscordHistoryQuery.latest(1))
+                .thenApply(messages -> messages.isEmpty() ? Optional.empty() : Optional.of(messages.getFirst()));
+    }
+
+    default CompletableFuture<List<DiscordReceivedMessage>> historyWhenReady(
+            long channelId,
+            DiscordHistoryQuery query,
+            Duration timeout
+    ) {
+        return whenReady(timeout).thenCompose(ignored -> history(channelId, query));
+    }
+
+    default CompletableFuture<List<DiscordReceivedMessage>> historyWhenReady(
+            long channelId,
+            DiscordHistoryQuery query
+    ) {
+        return historyWhenReady(channelId, query, DEFAULT_READY_TIMEOUT);
+    }
 
     default CompletableFuture<DiscordMessageRef> send(long channelId, String content) {
         return send(channelId, DiscordMessage.text(content));

@@ -2,7 +2,6 @@ package irden.space.proxy.plugin.irden.ingame.transaction_objects;
 
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
-import irden.space.proxy.plugin.command_handler.wording.RussianLiteralsUtils;
 import irden.space.proxy.plugin.discord.DiscordBotMessageService;
 import irden.space.proxy.plugin.irden.account.StructureAccountType;
 import irden.space.proxy.plugin.irden.ingame.transaction_objects.model.TransactionObjectData;
@@ -13,6 +12,7 @@ import irden.space.proxy.plugin.irden.service.AccountTransactionService;
 import irden.space.proxy.plugin.irden.service.exception.InsufficientFundsException;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.wording.LiteralUtils;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.codec.variant.Variants;
 import irden.space.proxy.protocol.util.VariantObjectMapper;
@@ -35,7 +35,7 @@ public class TransactionObjectMessageInterceptor {
     private final DiscordBotMessageService discordBotMessageService;
 
     private static String coins(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монету", "монеты", "монет");
+        return LiteralUtils.declineRussian((int) amount, "монету", "монеты", "монет");
     }
 
     @EntityMessageHandler("irden:account:name")

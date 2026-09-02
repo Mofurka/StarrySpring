@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.osb_detector;
 import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import irden.space.proxy.protocol.codec.variant.IntVariantValue;
 import irden.space.proxy.protocol.codec.variant.StringVariantValue;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
@@ -15,10 +16,8 @@ import irden.space.proxy.protocol.payload.packet.protocol_response.ProtocolRespo
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
-import java.util.Locale;
 import java.util.Optional;
 
 
@@ -29,7 +28,7 @@ import java.util.Optional;
         value = "osb-detector.enabled"
 )
 public final class OsbDetectorJoinInterceptor {
-    private final MessageSource messageSource;
+    private final MessageUtils messageUtils;
     private final OsbDetectorConfiguration configuration;
 
     @PacketHandler(value = PacketType.PROTOCOL_REQUEST, direction = PacketDirection.TO_SERVER)
@@ -70,18 +69,15 @@ public final class OsbDetectorJoinInterceptor {
         if (brand.equals("OpenStarbound") && openProtocolVersion >= configuration.osbProtocolVersionThreshold()) {
             return null;
         } else {
-            String message = get("osb_detector.version.failure", configuration.osbVersion());
+            String message = messageUtils.get("osb_detector.version.failure", configuration.osbVersion());
             return PacketDecision.cancel(() -> ctx.session().sendToClient(PacketType.CONNECT_FAILURE, new ConnectFailure(message)));
         }
     }
 
     private PacketDecision sendRejection(PacketInterceptionContext ctx) {
-        String message = get("osb_detector.protocol.failure");
+        String message = messageUtils.get("osb_detector.protocol.failure");
         return PacketDecision.forward(() -> ctx.session().sendToClient(PacketType.CONNECT_FAILURE, new ConnectFailure(message)));
     }
 
-    private String get(String code, Object... args) {
-        return messageSource.getMessage(code, args, Locale.getDefault());
-    }
 
 }

@@ -3,11 +3,11 @@ package irden.space.proxy.plugin.irden.ingame.doors;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageService;
-import irden.space.proxy.plugin.command_handler.wording.RussianLiteralsUtils;
 import irden.space.proxy.plugin.irden.ingame.doors.model.IrdenDoorPaidEntryOffer;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
 import irden.space.proxy.plugin.irden.service.exception.InsufficientFundsException;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
+import irden.space.proxy.plugin.utils.wording.LiteralUtils;
 import irden.space.proxy.protocol.codec.variant.Variants;
 import irden.space.proxy.protocol.util.VariantObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,7 @@ public class PaidDoorMessageHandler {
     }
 
     private String getDeclinedAmount(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
+        return LiteralUtils.declineRussian((int) amount, "монета", "монеты", "монет");
     }
 
 }

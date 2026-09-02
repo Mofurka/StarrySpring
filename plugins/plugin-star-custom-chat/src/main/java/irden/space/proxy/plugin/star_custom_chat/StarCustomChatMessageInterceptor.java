@@ -11,6 +11,7 @@ import irden.space.proxy.plugin.star_custom_chat.constants.SCCConstants;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatFightData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatProximityData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatSH;
+import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
@@ -20,12 +21,10 @@ import irden.space.proxy.protocol.util.MapVariantUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,7 +35,7 @@ public class StarCustomChatMessageInterceptor {
     private final JsonMapper jsonMapper;
     private final PlayerManagerApi playerManagerApi;
     private final ApplicationEventPublisher eventPublisher;
-    private final MessageSource messageSource;
+    private final MessageUtils messageUtils;
 
 
     @PacketHandler(
@@ -74,7 +73,7 @@ public class StarCustomChatMessageInterceptor {
                 var player = playerBySessionId.get();
                 ChatMessageEvent chatMessageEvent = null;
                 if (!player.permissions().has(ChatPermissions.SEND_MESSAGE)) {
-                    String message = messageSource.getMessage("chat.blocked", null, Locale.getDefault());
+                    String message = messageUtils.get("chat.blocked");
                     player.sendMessage(message);
                     return PacketDecision.cancel();
                 }

@@ -1,7 +1,6 @@
 package irden.space.proxy.plugin.irden;
 
 import irden.space.proxy.plugin.command_handler.CommandContext;
-import irden.space.proxy.plugin.command_handler.wording.RussianLiteralsUtils;
 import irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountOwnerType;
@@ -15,6 +14,7 @@ import irden.space.proxy.plugin.irden.service.exception.InvalidAmountException;
 import irden.space.proxy.plugin.irden.service.exception.SameAccountTransferException;
 import irden.space.proxy.plugin.player_manager.command.PlayerTarget;
 import irden.space.proxy.plugin.player_manager.model.Player;
+import irden.space.proxy.plugin.utils.wording.LiteralUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -309,6 +309,6 @@ public class PlayerBalanceCommandsHandler {
 
 
     private String getDeclinedAmount(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
+        return LiteralUtils.declineRussian((int) amount, "монета", "монеты", "монет");
     }
 }

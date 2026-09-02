@@ -1,6 +1,5 @@
 package irden.space.proxy.plugin.irden.d20;
 
-import irden.space.proxy.plugin.command_handler.wording.RussianLiteralsUtils;
 import irden.space.proxy.plugin.discord.DiscordBotMessageService;
 import irden.space.proxy.plugin.irden.d20.constants.MessageTemplate;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
@@ -11,6 +10,7 @@ import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.star_custom_chat.StarCustomChatMessageSender;
 import irden.space.proxy.plugin.star_custom_chat.constants.ChatMode;
+import irden.space.proxy.plugin.utils.wording.LiteralUtils;
 import irden.space.proxy.protocol.codec.variant.Variants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -112,6 +112,6 @@ public class MoneyMessageHandler {
     }
 
     private String getDeclinedAmount(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
+        return LiteralUtils.declineRussian((int) amount, "монета", "монеты", "монет");
     }
 }

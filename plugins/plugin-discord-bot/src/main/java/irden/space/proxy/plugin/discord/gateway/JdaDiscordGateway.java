@@ -3,12 +3,17 @@ package irden.space.proxy.plugin.discord.gateway;
 import irden.space.proxy.plugin.discord.api.*;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageHistory;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
+import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.requests.restaction.pagination.MessagePaginationAction;
+import net.dv8tion.jda.api.requests.restaction.pagination.PaginationAction;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +26,7 @@ public class JdaDiscordGateway implements DiscordGateway {
 
     private final DiscordConnection connection;
     private final DiscordButtonListener buttonListener;
+    private final DiscordMessageListener messageListener;
 
     private static Throwable readyFailure(Throwable failure, Duration timeout) {
         Throwable cause = failure instanceof CompletionException && failure.getCause() != null
@@ -40,9 +46,106 @@ public class JdaDiscordGateway implements DiscordGateway {
         }
     }
 
+    private static CompletableFuture<List<Message>> retrieveHistory(
+            MessageChannel channel,
+            DiscordHistoryQuery query
+    ) {
+        return switch (query.anchor()) {
+            case LATEST -> paginate(channel, query.limit(), PaginationAction.PaginationOrder.BACKWARD, 0);
+            case BEFORE -> paginate(
+                    channel, query.limit(), PaginationAction.PaginationOrder.BACKWARD, query.anchorMessageId());
+            case AFTER -> paginate(
+                    channel, query.limit(), PaginationAction.PaginationOrder.FORWARD, query.anchorMessageId());
+            case BEGINNING -> paginate(channel, query.limit(), PaginationAction.PaginationOrder.FORWARD, 0);
+            case AROUND -> channel.getHistoryAround(query.anchorMessageId(), query.limit())
+                    .submit()
+                    .thenApply(MessageHistory::getRetrievedHistory);
+        };
+    }
+
+    private static CompletableFuture<List<Message>> paginate(
+            MessageChannel channel,
+            int limit,
+            PaginationAction.PaginationOrder order,
+            long anchorMessageId
+    ) {
+        MessagePaginationAction action = channel.getIterableHistory().order(order);
+        if (anchorMessageId > 0) {
+            action = action.skipTo(anchorMessageId);
+        }
+        return action.takeAsync(limit);
+    }
+
+    /**
+     * JDA отдаёт историю в порядке обхода: BACKWARD - от свежих к старым, FORWARD - наоборот.
+     * Приводим её к порядку, который просил вызывающий.
+     */
+    private static List<DiscordReceivedMessage> toOrderedHistory(
+            List<Message> messages,
+            DiscordHistoryQuery query
+    ) {
+        List<DiscordReceivedMessage> mapped = new ArrayList<>(DiscordMessageMapper.toReceived(messages));
+        Comparator<DiscordReceivedMessage> byId = Comparator.comparingLong(DiscordReceivedMessage::messageId);
+        mapped.sort(query.oldestFirst() ? byId : byId.reversed());
+        return List.copyOf(mapped);
+    }
+
+    private static CompletableFuture<Optional<DiscordReceivedMessage>> emptyWhenMissing(Throwable failure) {
+        Throwable cause = failure instanceof CompletionException && failure.getCause() != null
+                ? failure.getCause()
+                : failure;
+
+        if (cause instanceof ErrorResponseException error
+                && (error.getErrorResponse() == ErrorResponse.UNKNOWN_MESSAGE
+                || error.getErrorResponse() == ErrorResponse.UNKNOWN_CHANNEL)) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+
+        return CompletableFuture.failedFuture(cause);
+    }
+
     @Override
     public DiscordButtonRegistration onButton(String buttonId, DiscordButtonHandler handler) {
         return buttonListener.register(buttonId, handler);
+    }
+
+    @Override
+    public DiscordMessageRegistration onMessage(long channelId, DiscordMessageHandler handler) {
+        return messageListener.register(channelId, handler);
+    }
+
+    @Override
+    public DiscordMessageRegistration onAnyMessage(DiscordMessageHandler handler) {
+        return messageListener.registerForAnyChannel(handler);
+    }
+
+    @Override
+    public CompletableFuture<List<DiscordReceivedMessage>> history(long channelId, DiscordHistoryQuery query) {
+        Objects.requireNonNull(query, "query");
+
+        return call(() -> retrieveHistory(channel(channelId), query)
+                .thenApply(messages -> toOrderedHistory(messages, query)));
+    }
+
+    @Override
+    public CompletableFuture<Optional<DiscordReceivedMessage>> fetchMessage(long channelId, long messageId) {
+        return call(() -> channel(channelId)
+                .retrieveMessageById(messageId)
+                .submit()
+                .thenApply(message -> Optional.of(DiscordMessageMapper.toReceived(message)))
+                .exceptionallyCompose(JdaDiscordGateway::emptyWhenMissing));
+    }
+
+    @Override
+    public CompletableFuture<List<DiscordReceivedMessage>> pinnedMessages(long channelId) {
+        return call(() -> channel(channelId)
+                .retrievePinnedMessages()
+                .takeAsync(DiscordHistoryQuery.MAX_PAGE_SIZE)
+                .thenApply(pinned -> {
+                    List<Message> messages = new ArrayList<>(pinned.size());
+                    pinned.forEach(entry -> messages.add(entry.getMessage()));
+                    return DiscordMessageMapper.toReceived(messages);
+                }));
     }
 
     @Override

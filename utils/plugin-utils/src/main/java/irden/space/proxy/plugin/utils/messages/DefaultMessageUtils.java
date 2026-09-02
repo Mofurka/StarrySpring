@@ -1,18 +1,22 @@
-package irden.space.proxy.plugin.general;
+package irden.space.proxy.plugin.utils.messages;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
-import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 
-@Component
 @RequiredArgsConstructor
-public class MessageUtils {
+public class DefaultMessageUtils implements MessageUtils {
     private final MessageSource messageSource;
 
+    @Override
     public String get(String code, Object... args) {
         return messageSource.getMessage(code, args, Locale.getDefault());
+    }
+
+    @Override
+    public String get(String code, Locale locale, Object... args) {
+        return messageSource.getMessage(code, args, locale);
     }
 
 }
