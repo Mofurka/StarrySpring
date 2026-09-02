@@ -19,6 +19,7 @@ public record IrdenConfig(
             Long announceDiscordChannelId
     ) {
     }
+
     public record SiteConnectorConfig(
             String apiKey,
             String baseUrl,

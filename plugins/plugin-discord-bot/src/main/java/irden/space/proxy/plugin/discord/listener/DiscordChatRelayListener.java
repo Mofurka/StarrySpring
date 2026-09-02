@@ -54,7 +54,7 @@ public class DiscordChatRelayListener extends ListenerAdapter {
         }
         if (channel.authorNameOverride() == null) {
             senderBuilder.append(" <").append(event.getAuthor().getEffectiveName()).append(">");
-        } else if (!channel.authorNameOverride().equals("noop")){
+        } else if (!channel.authorNameOverride().equals("noop")) {
             senderBuilder.append(" <").append(channel.authorNameOverride()).append(">");
         }
         String sender = senderBuilder.toString();

@@ -95,7 +95,6 @@ public class AccountService {
     }
 
 
-
     @Transactional(readOnly = true)
     public AccountEntity getPlayerMainAccount(long applicationId)
             throws AccountNotFoundException {

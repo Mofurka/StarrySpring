@@ -73,14 +73,13 @@ public enum PacketType {
     REPLACE_TILE_LIST(69),
     UPDATE_WORLD_TEMPLATE(70);
 
+    private static final PacketType[] BY_ID = buildById();
     private final int id;
+
 
     PacketType(int id) {
         this.id = id;
     }
-
-
-    private static final PacketType[] BY_ID = buildById();
 
     private static PacketType[] buildById() {
         int maxId = 0;

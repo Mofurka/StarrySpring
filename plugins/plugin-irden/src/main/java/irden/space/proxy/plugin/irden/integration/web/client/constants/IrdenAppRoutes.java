@@ -11,9 +11,9 @@ public class IrdenAppRoutes {
     }
 
     public static class Storage {
-        public static final String ROOT =  API + "/storages";
-        public static final String FIND =  ROOT + "/find";
-        public static final String REQUEST =  ROOT + "/requests";
+        public static final String ROOT = API + "/storages";
+        public static final String FIND = ROOT + "/find";
+        public static final String REQUEST = ROOT + "/requests";
     }
 
 }

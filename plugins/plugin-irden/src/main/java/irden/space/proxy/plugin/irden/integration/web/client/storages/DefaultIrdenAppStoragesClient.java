@@ -4,7 +4,6 @@ import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.Storag
 import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdToStringConverter;
 import irden.space.proxy.plugin.irden.integration.web.dto.player_discord_id.PlayerDiscordIdToStringConverter;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.web.client.RestClient;
@@ -18,7 +17,7 @@ public class DefaultIrdenAppStoragesClient {
     // Надо придумать как заставить IDE видить что это бин в этом контексте
     @Bean
     IrdenAppStoragesClient irdenAppStoragesClient(RestClient irdenRestClient,
-                                                  PlayerAppIdToStringConverter  playerAppIdToStringConverter,
+                                                  PlayerAppIdToStringConverter playerAppIdToStringConverter,
                                                   StorageIdParamToStringConverter storageIdParamToStringConverter,
                                                   PlayerDiscordIdToStringConverter playerDiscordIdToStringConverter) {
         RestClientAdapter adapter =

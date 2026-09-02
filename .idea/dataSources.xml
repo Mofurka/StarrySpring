@@ -14,7 +14,7 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="starryspring@127.0.0.1" uuid="bb7e98a5-3838-4ac1-836a-3da366e85a64">
+    <data-source source="LOCAL" name="starryspring@irden.space" uuid="bb7e98a5-3838-4ac1-836a-3da366e85a64">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <imported>true</imported>

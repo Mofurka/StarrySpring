@@ -182,7 +182,7 @@ public class PlayerPositionTracker {
                     Player to = optionalPlayer.get();
                     if (from.position().getCurrentLocation().equals(to.position().getCurrentLocation())) {
                         PlayerPosition position = to.position();
-                        entityMessageService.sendToEntity(from.sessionContext(), from.entityId(), "warp", Variants.of("Nowhere=%s.%s".formatted(position.getX().intValue(), position.getY().intValue())) );
+                        entityMessageService.sendToEntity(from.sessionContext(), from.entityId(), "warp", Variants.of("Nowhere=%s.%s".formatted(position.getX().intValue(), position.getY().intValue())));
                         return PacketDecision.cancel();
                     }
                 }
@@ -190,7 +190,6 @@ public class PlayerPositionTracker {
         }
         return PacketDecision.forward();
     }
-
 
 
     @OnDisconnected

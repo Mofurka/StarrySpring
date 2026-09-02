@@ -70,7 +70,7 @@ public final class OsbDetectorJoinInterceptor {
         if (brand.equals("OpenStarbound") && openProtocolVersion >= configuration.osbProtocolVersionThreshold()) {
             return null;
         } else {
-            String message = get("osb_detector.version.failure",configuration.osbVersion());
+            String message = get("osb_detector.version.failure", configuration.osbVersion());
             return PacketDecision.cancel(() -> ctx.session().sendToClient(PacketType.CONNECT_FAILURE, new ConnectFailure(message)));
         }
     }

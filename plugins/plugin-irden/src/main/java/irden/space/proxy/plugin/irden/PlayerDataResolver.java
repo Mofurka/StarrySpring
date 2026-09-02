@@ -17,7 +17,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 
 import static irden.space.proxy.plugin.irden.constants.PlayerAccountDefaults.PLAYER_METADATA_ACCOUNT_KEY;
@@ -57,7 +56,7 @@ public class PlayerDataResolver {
                     log.info("{} does not have the connection record", player.uuid());
                     // вынести потом в проперти из хардкода
                     if (player.account().equals("player")) {
-                        player.sendMessage("Привяжите персонажа к сайту. Для этого зайдите на сайт, в выпадающем списке у имени персонажа \"Связи с персонажами\"" );
+                        player.sendMessage("Привяжите персонажа к сайту. Для этого зайдите на сайт, в выпадающем списке у имени персонажа \"Связи с персонажами\"");
                     }
                 });
     }

@@ -17,7 +17,6 @@ import org.intellij.lang.annotations.PrintFormat;
 
 import java.time.LocalDateTime;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.micrometer.common.util.StringUtils.isBlank;

@@ -34,6 +34,10 @@ public class TransactionObjectMessageInterceptor {
 
     private final DiscordBotMessageService discordBotMessageService;
 
+    private static String coins(long amount) {
+        return RussianLiteralsUtils.declineWord((int) amount, "монету", "монеты", "монет");
+    }
+
     @EntityMessageHandler("irden:account:name")
     public VariantValue getAccountName(EntityMessageContext context) {
         Optional<String> string = Variants.asString(context.arg(0));
@@ -71,8 +75,5 @@ public class TransactionObjectMessageInterceptor {
             }
         }
         return null;
-    }
-    private static String coins(long amount) {
-        return RussianLiteralsUtils.declineWord((int) amount, "монету", "монеты", "монет");
     }
 }

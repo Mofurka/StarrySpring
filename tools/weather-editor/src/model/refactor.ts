@@ -1,4 +1,4 @@
-import type { Conditions, HistoryCondition, Transition, WeatherModel } from "./types";
+import type {Conditions, HistoryCondition, Transition, WeatherModel} from "./types";
 
 /**
  * Каскадные переименования и удаления.
@@ -13,92 +13,92 @@ import type { Conditions, HistoryCondition, Transition, WeatherModel } from "./t
 
 /** Все переходы модели: собственные у состояний плюс глобальные. */
 export function allTransitions(model: WeatherModel): Transition[] {
-  const out: Transition[] = [...model.globalTransitions];
-  for (const state of Object.values(model.states)) out.push(...state.transitions);
-  return out;
+    const out: Transition[] = [...model.globalTransitions];
+    for (const state of Object.values(model.states)) out.push(...state.transitions);
+    return out;
 }
 
 /** Каждый блок условий модели: у переходов и у их модификаторов. */
 export function forEachConditions(
-  model: WeatherModel,
-  fn: (conditions: Conditions) => void,
+    model: WeatherModel,
+    fn: (conditions: Conditions) => void,
 ): void {
-  for (const transition of allTransitions(model)) {
-    if (transition.conditions) fn(transition.conditions);
-    for (const modifier of transition.modifiers) fn(modifier.condition);
-  }
+    for (const transition of allTransitions(model)) {
+        if (transition.conditions) fn(transition.conditions);
+        for (const modifier of transition.modifiers) fn(modifier.condition);
+    }
 }
 
 function forEachHistoryCondition(
-  model: WeatherModel,
-  fn: (history: HistoryCondition) => void,
+    model: WeatherModel,
+    fn: (history: HistoryCondition) => void,
 ): void {
-  forEachConditions(model, (c) => {
-    if (c.recentWeather) fn(c.recentWeather);
-    if (c.absentRecentWeather) fn(c.absentRecentWeather);
-  });
+    forEachConditions(model, (c) => {
+        if (c.recentWeather) fn(c.recentWeather);
+        if (c.absentRecentWeather) fn(c.absentRecentWeather);
+    });
 }
 
 /** Пересоздаёт объект с переименованным ключом, сохраняя исходный порядок. */
 function renameKey<T>(
-  source: Record<string, T>,
-  oldId: string,
-  newId: string,
+    source: Record<string, T>,
+    oldId: string,
+    newId: string,
 ): Record<string, T> {
-  const out: Record<string, T> = {};
-  for (const key of Object.keys(source)) out[key === oldId ? newId : key] = source[key];
-  return out;
+    const out: Record<string, T> = {};
+    for (const key of Object.keys(source)) out[key === oldId ? newId : key] = source[key];
+    return out;
 }
 
 function replaceInList(list: string[], oldId: string, newId: string): void {
-  for (let i = 0; i < list.length; i++) {
-    if (list[i] === oldId) list[i] = newId;
-  }
+    for (let i = 0; i < list.length; i++) {
+        if (list[i] === oldId) list[i] = newId;
+    }
 }
 
 function removeFromList(list: string[], id: string): number {
-  let removed = 0;
-  for (let i = list.length - 1; i >= 0; i--) {
-    if (list[i] === id) {
-      list.splice(i, 1);
-      removed++;
+    let removed = 0;
+    for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i] === id) {
+            list.splice(i, 1);
+            removed++;
+        }
     }
-  }
-  return removed;
+    return removed;
 }
 
 /* ---------- состояния ---------- */
 
 export function renameState(model: WeatherModel, oldId: string, newId: string): void {
-  model.states = renameKey(model.states, oldId, newId);
+    model.states = renameKey(model.states, oldId, newId);
 
-  for (const transition of allTransitions(model)) {
-    if (transition.to === oldId) transition.to = newId;
-  }
-  forEachHistoryCondition(model, (h) => replaceInList(h.anyStates, oldId, newId));
+    for (const transition of allTransitions(model)) {
+        if (transition.to === oldId) transition.to = newId;
+    }
+    forEachHistoryCondition(model, (h) => replaceInList(h.anyStates, oldId, newId));
 
-  if (model.settings.defaultState === oldId) model.settings.defaultState = newId;
+    if (model.settings.defaultState === oldId) model.settings.defaultState = newId;
 }
 
 export interface StateReferences {
-  transitions: number;
-  historyConditions: number;
-  isDefault: boolean;
+    transitions: number;
+    historyConditions: number;
+    isDefault: boolean;
 }
 
 /** Что сломается при удалении состояния — показываем до подтверждения. */
 export function countStateReferences(model: WeatherModel, id: string): StateReferences {
-  let transitions = 0;
-  let historyConditions = 0;
+    let transitions = 0;
+    let historyConditions = 0;
 
-  for (const transition of allTransitions(model)) {
-    if (transition.to === id) transitions++;
-  }
-  forEachHistoryCondition(model, (h) => {
-    if (h.anyStates.includes(id)) historyConditions++;
-  });
+    for (const transition of allTransitions(model)) {
+        if (transition.to === id) transitions++;
+    }
+    forEachHistoryCondition(model, (h) => {
+        if (h.anyStates.includes(id)) historyConditions++;
+    });
 
-  return { transitions, historyConditions, isDefault: model.settings.defaultState === id };
+    return {transitions, historyConditions, isDefault: model.settings.defaultState === id};
 }
 
 /**
@@ -107,49 +107,49 @@ export function countStateReferences(model: WeatherModel, id: string): StateRefe
  * дороже, чем показать ошибку.
  */
 export function deleteState(model: WeatherModel, id: string): void {
-  delete model.states[id];
+    delete model.states[id];
 }
 
 /* ---------- периоды ---------- */
 
 export function renamePeriod(model: WeatherModel, oldId: string, newId: string): void {
-  model.periods = renameKey(model.periods, oldId, newId);
+    model.periods = renameKey(model.periods, oldId, newId);
 
-  for (const state of Object.values(model.states)) {
-    replaceInList(state.allowedPeriods, oldId, newId);
-    if (oldId in state.presentations) {
-      state.presentations = renameKey(state.presentations, oldId, newId);
+    for (const state of Object.values(model.states)) {
+        replaceInList(state.allowedPeriods, oldId, newId);
+        if (oldId in state.presentations) {
+            state.presentations = renameKey(state.presentations, oldId, newId);
+        }
     }
-  }
-  forEachConditions(model, (c) => replaceInList(c.periods, oldId, newId));
+    forEachConditions(model, (c) => replaceInList(c.periods, oldId, newId));
 }
 
 export interface PeriodReferences {
-  allowedPeriods: number;
-  presentationBlocks: number;
-  presentationVariants: number;
-  conditions: number;
+    allowedPeriods: number;
+    presentationBlocks: number;
+    presentationVariants: number;
+    conditions: number;
 }
 
 export function countPeriodReferences(model: WeatherModel, id: string): PeriodReferences {
-  let allowedPeriods = 0;
-  let presentationBlocks = 0;
-  let presentationVariants = 0;
-  let conditions = 0;
+    let allowedPeriods = 0;
+    let presentationBlocks = 0;
+    let presentationVariants = 0;
+    let conditions = 0;
 
-  for (const state of Object.values(model.states)) {
-    if (state.allowedPeriods.includes(id)) allowedPeriods++;
-    const block = state.presentations[id];
-    if (block) {
-      presentationBlocks++;
-      presentationVariants += block.length;
+    for (const state of Object.values(model.states)) {
+        if (state.allowedPeriods.includes(id)) allowedPeriods++;
+        const block = state.presentations[id];
+        if (block) {
+            presentationBlocks++;
+            presentationVariants += block.length;
+        }
     }
-  }
-  forEachConditions(model, (c) => {
-    if (c.periods.includes(id)) conditions++;
-  });
+    forEachConditions(model, (c) => {
+        if (c.periods.includes(id)) conditions++;
+    });
 
-  return { allowedPeriods, presentationBlocks, presentationVariants, conditions };
+    return {allowedPeriods, presentationBlocks, presentationVariants, conditions};
 }
 
 /**
@@ -159,13 +159,13 @@ export function countPeriodReferences(model: WeatherModel, id: string): PeriodRe
  * через countPeriodReferences.
  */
 export function deletePeriod(model: WeatherModel, id: string): void {
-  delete model.periods[id];
+    delete model.periods[id];
 
-  for (const state of Object.values(model.states)) {
-    removeFromList(state.allowedPeriods, id);
-    delete state.presentations[id];
-  }
-  forEachConditions(model, (c) => removeFromList(c.periods, id));
+    for (const state of Object.values(model.states)) {
+        removeFromList(state.allowedPeriods, id);
+        delete state.presentations[id];
+    }
+    forEachConditions(model, (c) => removeFromList(c.periods, id));
 }
 
 /* ---------- ключи ассоциативных редакторов ---------- */
@@ -178,10 +178,10 @@ export function deletePeriod(model: WeatherModel, id: string): void {
  * становилось undefined, а в объекте оседала цепочка полудописанных ключей.
  */
 export function renameMapKey<T>(
-  source: Record<string, T>,
-  oldKey: string,
-  newKey: string,
+    source: Record<string, T>,
+    oldKey: string,
+    newKey: string,
 ): Record<string, T> {
-  if (oldKey === newKey || !(oldKey in source) || newKey in source) return source;
-  return renameKey(source, oldKey, newKey);
+    if (oldKey === newKey || !(oldKey in source) || newKey in source) return source;
+    return renameKey(source, oldKey, newKey);
 }

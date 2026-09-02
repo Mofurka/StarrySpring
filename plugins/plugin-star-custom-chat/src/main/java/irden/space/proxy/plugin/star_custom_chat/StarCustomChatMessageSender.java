@@ -79,6 +79,8 @@ public class StarCustomChatMessageSender {
                 )
         );
     }
-    public record MessageData(Integer connectionId, String nickname, String message, String chatMode, Integer proximityRadius) {
+
+    public record MessageData(Integer connectionId, String nickname, String message, String chatMode,
+                              Integer proximityRadius) {
     }
 }

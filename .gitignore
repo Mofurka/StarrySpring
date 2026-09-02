@@ -44,3 +44,4 @@ build/
 ### Tools ###
 # Собирается из tools/weather-editor (pnpm build).
 /tools/weather-editor.html
+/plugins/dist/

@@ -265,14 +265,6 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
         }
     }
 
-    private record ActiveSession(
-            ProxySessionRuntimeContext context,
-            Thread clientToServer,
-            Thread serverToClient
-    ) {
-    }
-
-
     private Socket connectUpstream(ProxySession session) {
         try {
             Socket upstreamSocket = new Socket(
@@ -352,5 +344,12 @@ public class ProxyRuntimeServiceImpl implements ProxyRuntimeService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to send lifecycle packet for session " + context.session().getId(), e);
         }
+    }
+
+    private record ActiveSession(
+            ProxySessionRuntimeContext context,
+            Thread clientToServer,
+            Thread serverToClient
+    ) {
     }
 }

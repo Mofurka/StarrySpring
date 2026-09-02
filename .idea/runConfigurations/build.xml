@@ -7,6 +7,7 @@
         <option name="containerName" value="" />
         <option name="contextFolderPath" value="boot" />
         <option name="showCommandPreview" value="true" />
+        <option name="contextFolderPath" value="./boot" />
         <option name="sourceFilePath" value="Dockerfile" />
       </settings>
     </deployment>

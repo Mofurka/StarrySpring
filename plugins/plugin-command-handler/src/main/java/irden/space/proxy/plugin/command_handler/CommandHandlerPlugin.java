@@ -195,8 +195,6 @@ public class CommandHandlerPlugin implements ProxyPlugin {
 
         return focusedArgument.type().suggestions(commandContext, focusedValue == null ? "" : focusedValue);
     }
-    public record ResolvedArgument(ArgumentNode<?> node, String rawValue) {
-    }
 
     public List<String> autocomplete(
             PacketInterceptionContext packetContext,
@@ -347,6 +345,9 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         return value == null
                 ? ""
                 : value.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+    }
+
+    public record ResolvedArgument(ArgumentNode<?> node, String rawValue) {
     }
 
     private record ParsedCommand(

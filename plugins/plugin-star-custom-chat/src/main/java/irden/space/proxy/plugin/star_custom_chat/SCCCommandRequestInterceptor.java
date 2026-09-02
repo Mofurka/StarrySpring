@@ -34,6 +34,9 @@ public class SCCCommandRequestInterceptor {
     private final EntityMessageService entityMessages;
     private final SccCommandAutocomplete commandAutocomplete;
 
+    private static VariantValue handled(boolean handled) {
+        return Variants.mapBuilder().put("handled", handled).build();
+    }
 
     @EntityMessageHandler(COMMAND_AUTOCOMPLETE_REQUEST_MESSAGE)
     public VariantValue autocompleteRequest(EntityMessageContext context) {
@@ -70,11 +73,6 @@ public class SCCCommandRequestInterceptor {
         }
         return handled(wasHandled);
     }
-
-    private static VariantValue handled(boolean handled) {
-        return Variants.mapBuilder().put("handled", handled).build();
-    }
-
 
     @PacketHandler(value = PacketType.SPAWN_ENTITY, direction = PacketDirection.TO_SERVER)
     public PacketDecision onSpawnEntity(PacketInterceptionContext context) {

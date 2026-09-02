@@ -5,4 +5,5 @@ public record ChannelToListen(
         String nameOverride,
         String modeOverride,
         String authorNameOverride
-    ) {}
+) {
+}

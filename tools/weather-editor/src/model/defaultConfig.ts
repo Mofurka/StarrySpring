@@ -7,5 +7,5 @@ import rawDefaultConfig from "../../../../config/plugins/irden/weather/weather-s
 export const DEFAULT_CONFIG_TEXT = rawDefaultConfig;
 
 export function loadDefaultConfig(): unknown {
-  return JSON.parse(rawDefaultConfig);
+    return JSON.parse(rawDefaultConfig);
 }

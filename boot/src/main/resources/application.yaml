@@ -33,7 +33,7 @@ proxy:
 assets:
   store:
     enabled: false
-    archives: []
+    archives: [ ]
     excluded-extensions:
       - .ogg
       - .png

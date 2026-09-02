@@ -26,5 +26,5 @@ public interface IrdenAppStoragesClient {
     @PostExchange(
             url = IrdenAppRoutes.Storage.REQUEST
     )
-    void makeTransferRequest(@RequestBody StorageTransferRequest request)  throws IrdenAppClientException;
+    void makeTransferRequest(@RequestBody StorageTransferRequest request) throws IrdenAppClientException;
 }

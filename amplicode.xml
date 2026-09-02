@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="AmplicodePersistenceUnitSettings">
-    <persistence-units>
-      <persistence-unit moduleName="boot" name="Default">
-        <packages>
-          <package value="irden.space.boot" />
-        </packages>
-      </persistence-unit>
-      <persistence-unit moduleName="server-boot" name="Default">
-        <packages>
-          <package value="irden.space.boot" />
-        </packages>
-      </persistence-unit>
-      <persistence-unit moduleName="plugin-player-manager" name="Default" />
-      <persistence-unit moduleName="plugin-ban-manager" name="Default" />
-      <persistence-unit moduleName="plugin-site-connector" name="Default">
-        <packages>
-          <package value="irden.space.proxy.plugin.irden.integration.web.client" />
-        </packages>
-      </persistence-unit>
-      <persistence-unit moduleName="plugin-irden" name="Default" />
-    </persistence-units>
-  </component>
+    <component name="AmplicodePersistenceUnitSettings">
+        <persistence-units>
+            <persistence-unit moduleName="boot" name="Default">
+                <packages>
+                    <package value="irden.space.boot"/>
+                </packages>
+            </persistence-unit>
+            <persistence-unit moduleName="server-boot" name="Default">
+                <packages>
+                    <package value="irden.space.boot"/>
+                </packages>
+            </persistence-unit>
+            <persistence-unit moduleName="plugin-player-manager" name="Default"/>
+            <persistence-unit moduleName="plugin-ban-manager" name="Default"/>
+            <persistence-unit moduleName="plugin-site-connector" name="Default">
+                <packages>
+                    <package value="irden.space.proxy.plugin.irden.integration.web.client"/>
+                </packages>
+            </persistence-unit>
+            <persistence-unit moduleName="plugin-irden" name="Default"/>
+        </persistence-units>
+    </component>
 </project>

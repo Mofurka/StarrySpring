@@ -6,7 +6,6 @@ import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
-import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessage;
 import irden.space.proxy.protocol.payload.packet.entity_message_response.EntityMessageResponse;

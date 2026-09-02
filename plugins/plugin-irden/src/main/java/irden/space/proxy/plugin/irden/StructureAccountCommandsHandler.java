@@ -30,11 +30,6 @@ public class StructureAccountCommandsHandler {
     private final PlayerAccountService playerAccountService;
     private final AccountTransactionService accountTransactionService;
 
-    private enum Direction {
-        TO_PLAYER,
-        FROM_PLAYER
-    }
-
     private static String coins(long amount) {
         return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
     }
@@ -188,5 +183,10 @@ public class StructureAccountCommandsHandler {
         for (AccountEntity account : accounts) {
             context.reply("• %s - %s %s", account.getOwnerName(), account.getBalance(), coins(account.getBalance()));
         }
+    }
+
+    private enum Direction {
+        TO_PLAYER,
+        FROM_PLAYER
     }
 }

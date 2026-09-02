@@ -17,7 +17,7 @@ public record StorageTransferRequest(
         String transferDescription,
         @JsonProperty("autoAccept")
         boolean autoAccept
-        ) {
+) {
 
     public StorageTransferRequest setRequestApplicationId(Long applicationId) {
         return new StorageTransferRequest(

@@ -35,8 +35,8 @@ public class PaidDoorMessageHandler {
             UUID accountUuid = (UUID) player.metadata().get("accountUuid");
             try {
                 var withdraw = transactionService.transfer(accountUuid, UUID.fromString(door.account()), door.price(), UUID.randomUUID(), door.doorUuid());
-                entityMessageService.sendToEntity(ctx.session(),player.entityId(), "warp", Variants.of(door.warpTarget()));
-                player.sendMessage("Вы заплатили %s %s".formatted(withdraw.getAmount(), getDeclinedAmount(withdraw.getAmount()) ));
+                entityMessageService.sendToEntity(ctx.session(), player.entityId(), "warp", Variants.of(door.warpTarget()));
+                player.sendMessage("Вы заплатили %s %s".formatted(withdraw.getAmount(), getDeclinedAmount(withdraw.getAmount())));
             } catch (InsufficientFundsException e) {
                 player.sendMessage("Недостаточно средств.");
             } catch (Exception e) {
@@ -48,6 +48,7 @@ public class PaidDoorMessageHandler {
 
 
     }
+
     private String getDeclinedAmount(long amount) {
         return RussianLiteralsUtils.declineWord((int) amount, "монета", "монеты", "монет");
     }

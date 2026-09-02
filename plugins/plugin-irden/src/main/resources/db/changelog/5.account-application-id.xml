@@ -22,17 +22,18 @@
                             FROM ${irdenSchema}.game_account a
                                      JOIN ${irdenSchema}.player_attributes pa ON pa.player_uuid = a.owner_id
                             WHERE a.owner_type = 'CHARACTER'),
-                 survivor AS (SELECT DISTINCT ON (application_id, account_code) id, application_id, account_code
-                              FROM linked
-                              ORDER BY application_id, account_code, created_at, id),
-                 merged AS (SELECT l.id AS loser_id, s.id AS survivor_id
-                            FROM linked l
-                                     JOIN survivor s
-                                          ON s.application_id = l.application_id AND s.account_code = l.account_code
-                            WHERE l.id <> s.id)
+                 survivor AS (SELECT DISTINCT
+            ON (application_id, account_code) id, application_id, account_code
+            FROM linked
+            ORDER BY application_id, account_code, created_at, id),
+                merged AS (
+            SELECT l.id AS loser_id, s.id AS survivor_id
+            FROM linked l
+                JOIN survivor s
+            ON s.application_id = l.application_id AND s.account_code = l.account_code
+            WHERE l.id <> s.id)
             UPDATE ${irdenSchema}.account_transaction t
-            SET from_account_id = m.survivor_id
-            FROM merged m
+            SET from_account_id = m.survivor_id FROM merged m
             WHERE t.from_account_id = m.loser_id;
 
             WITH linked AS (SELECT a.id,
@@ -43,17 +44,18 @@
                             FROM ${irdenSchema}.game_account a
                                      JOIN ${irdenSchema}.player_attributes pa ON pa.player_uuid = a.owner_id
                             WHERE a.owner_type = 'CHARACTER'),
-                 survivor AS (SELECT DISTINCT ON (application_id, account_code) id, application_id, account_code
-                              FROM linked
-                              ORDER BY application_id, account_code, created_at, id),
-                 merged AS (SELECT l.id AS loser_id, s.id AS survivor_id
-                            FROM linked l
-                                     JOIN survivor s
-                                          ON s.application_id = l.application_id AND s.account_code = l.account_code
-                            WHERE l.id <> s.id)
+                 survivor AS (SELECT DISTINCT
+            ON (application_id, account_code) id, application_id, account_code
+            FROM linked
+            ORDER BY application_id, account_code, created_at, id),
+                merged AS (
+            SELECT l.id AS loser_id, s.id AS survivor_id
+            FROM linked l
+                JOIN survivor s
+            ON s.application_id = l.application_id AND s.account_code = l.account_code
+            WHERE l.id <> s.id)
             UPDATE ${irdenSchema}.account_transaction t
-            SET to_account_id = m.survivor_id
-            FROM merged m
+            SET to_account_id = m.survivor_id FROM merged m
             WHERE t.to_account_id = m.loser_id;
 
             WITH linked AS (SELECT a.id,
@@ -64,20 +66,21 @@
                             FROM ${irdenSchema}.game_account a
                                      JOIN ${irdenSchema}.player_attributes pa ON pa.player_uuid = a.owner_id
                             WHERE a.owner_type = 'CHARACTER'),
-                 survivor AS (SELECT DISTINCT ON (application_id, account_code) id, application_id, account_code
-                              FROM linked
-                              ORDER BY application_id, account_code, created_at, id),
-                 merged AS (SELECT s.id AS survivor_id, SUM(l.balance) AS extra
-                            FROM linked l
-                                     JOIN survivor s
-                                          ON s.application_id = l.application_id AND s.account_code = l.account_code
-                            WHERE l.id <> s.id
-                            GROUP BY s.id)
+                 survivor AS (SELECT DISTINCT
+            ON (application_id, account_code) id, application_id, account_code
+            FROM linked
+            ORDER BY application_id, account_code, created_at, id),
+                merged AS (
+            SELECT s.id AS survivor_id, SUM (l.balance) AS extra
+            FROM linked l
+                JOIN survivor s
+            ON s.application_id = l.application_id AND s.account_code = l.account_code
+            WHERE l.id <> s.id
+            GROUP BY s.id)
             UPDATE ${irdenSchema}.game_account a
             SET balance    = a.balance + m.extra,
                 version    = a.version + 1,
-                updated_at = now()
-            FROM merged m
+                updated_at = now() FROM merged m
             WHERE a.id = m.survivor_id;
 
             WITH linked AS (SELECT a.id,
@@ -87,19 +90,19 @@
                             FROM ${irdenSchema}.game_account a
                                      JOIN ${irdenSchema}.player_attributes pa ON pa.player_uuid = a.owner_id
                             WHERE a.owner_type = 'CHARACTER'),
-                 survivor AS (SELECT DISTINCT ON (application_id, account_code) id, application_id, account_code
-                              FROM linked
-                              ORDER BY application_id, account_code, created_at, id)
+                 survivor AS (SELECT DISTINCT
+            ON (application_id, account_code) id, application_id, account_code
+            FROM linked
+            ORDER BY application_id, account_code, created_at, id)
             DELETE
-            FROM ${irdenSchema}.game_account a
-                USING linked l
+            FROM ${irdenSchema}.game_account a USING linked l
             JOIN survivor s
             ON s.application_id = l.application_id AND s.account_code = l.account_code
             WHERE a.id = l.id
               AND l.id <> s.id;
 
             UPDATE ${irdenSchema}.game_account a
-            SET owner_id   = pa.application_id::text,
+            SET owner_id = pa.application_id::text,
                 version    = a.version + 1,
                 updated_at = now()
             FROM ${irdenSchema}.player_attributes pa
