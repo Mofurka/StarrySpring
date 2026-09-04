@@ -17,7 +17,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
             case 1 -> NullVariantValue.INSTANCE;
             case 2 -> new DoubleVariantValue(reader.readDouble64BE());
             case 3 -> new BooleanVariantValue(reader.readBoolean());
-            case 4 -> new IntVariantValue(VlqCodec.INSTANCE.readInt(reader));
+            case 4 -> new IntVariantValue(VlqCodec.INSTANCE.readLong(reader));
             case 5 -> new StringVariantValue(StarStringCodec.INSTANCE.read(reader));
             case 6 -> new ListVariantValue(readList(reader)); // tuple
             case 7 -> new MapVariantValue(readMap(reader));
@@ -38,7 +38,7 @@ public enum VariantCodec implements BinaryCodec<VariantValue> {
                 writer.writeByte(3);
                 writer.writeBoolean(value1);
             }
-            case IntVariantValue(int value1) -> {
+            case IntVariantValue(long value1) -> {
                 writer.writeByte(4);
                 VlqCodec.INSTANCE.write(writer, value1);
             }

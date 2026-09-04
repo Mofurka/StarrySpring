@@ -43,6 +43,7 @@ public class DiscordConnection {
 
         JDABuilder builder = JDABuilder.createDefault(token, EnumSet.allOf(GatewayIntent.class));
         builder.setEnableShutdownHook(false);
+        builder.setRequestTimeoutRetry(false);
         applyProxy(builder);
 
         JDA connected;

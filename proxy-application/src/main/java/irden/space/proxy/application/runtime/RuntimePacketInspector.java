@@ -113,8 +113,9 @@ public class RuntimePacketInspector {
 
     private Integer extractOpenProtocolVersion(Map<String, VariantValue> values) {
         VariantValue openProtocolVersion = values.get(OPEN_PROTOCOL_VERSION_KEY);
-        if (openProtocolVersion instanceof IntVariantValue(int value)) {
-            return value;
+        if (openProtocolVersion instanceof IntVariantValue(long value)
+                && value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+            return (int) value;
         }
 
         return null;

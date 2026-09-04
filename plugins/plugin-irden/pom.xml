@@ -54,7 +54,7 @@
             <groupId>irden.space.plugin</groupId>
             <artifactId>plugin-utils</artifactId>
             <version>1.0.0</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.dv8tion</groupId>
