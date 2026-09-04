@@ -47,9 +47,18 @@ public final class MapVariantUtils {
 
 
     public static Integer getInt(MapVariantValue map, String... deepKeys) {
+        Long value = getLong(map, deepKeys);
+        if (value == null || value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            return null;
+        }
+        return value.intValue();
+    }
+
+
+    public static Long getLong(MapVariantValue map, String... deepKeys) {
         VariantValue value = get(map, deepKeys);
-        if (value instanceof IntVariantValue(int intValue)) {
-            return intValue;
+        if (value instanceof IntVariantValue(long longValue)) {
+            return longValue;
         }
         return null;
     }
@@ -138,7 +147,9 @@ public final class MapVariantUtils {
         return switch (value) {
             case NullVariantValue _ -> NullNode.getInstance();
             case BooleanVariantValue(boolean boolValue) -> BooleanNode.valueOf(boolValue);
-            case IntVariantValue(int intValue) -> IntNode.valueOf(intValue);
+            case IntVariantValue(long intValue) -> intValue >= Integer.MIN_VALUE && intValue <= Integer.MAX_VALUE
+                    ? IntNode.valueOf((int) intValue)
+                    : LongNode.valueOf(intValue);
             case DoubleVariantValue(double doubleValue) -> DoubleNode.valueOf(doubleValue);
             case StringVariantValue(String stringValue) -> StringNode.valueOf(stringValue);
             case ListVariantValue(VariantValue[] listValues) -> {
@@ -176,7 +187,7 @@ public final class MapVariantUtils {
         }
 
         if (node.isLong()) {
-            return new IntVariantValue((int) node.longValue());
+            return new IntVariantValue(node.longValue());
         }
 
         if (node.isFloatingPointNumber()) {

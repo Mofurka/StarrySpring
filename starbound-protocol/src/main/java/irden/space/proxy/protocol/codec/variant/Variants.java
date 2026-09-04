@@ -39,11 +39,7 @@ public final class Variants {
 
 
     public static VariantValue of(long value) {
-        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(
-                    "long " + value + " does not fit into an int variant; use of(double) instead");
-        }
-        return new IntVariantValue((int) value);
+        return new IntVariantValue(value);
     }
 
     public static VariantValue of(double value) {
@@ -60,7 +56,7 @@ public final class Variants {
             case Integer number -> new IntVariantValue(number);
             case Short number -> new IntVariantValue(number.intValue());
             case Byte number -> new IntVariantValue(number.intValue());
-            case Long number -> of(number.longValue());
+            case Long number -> new IntVariantValue(number);
             case Double number -> new DoubleVariantValue(number);
             case Float number -> new DoubleVariantValue(number.doubleValue());
             case Number number -> new DoubleVariantValue(number.doubleValue());
@@ -123,8 +119,17 @@ public final class Variants {
         return value instanceof StringVariantValue(String string) ? Optional.of(string) : Optional.empty();
     }
 
+    /**
+      * Пустой результат, если варианта нет или он шире int - тогда берите {@link #asLong}.
+      */
     public static Optional<Integer> asInt(VariantValue value) {
-        return value instanceof IntVariantValue(int number) ? Optional.of(number) : Optional.empty();
+        return asLong(value)
+                .filter(number -> number >= Integer.MIN_VALUE && number <= Integer.MAX_VALUE)
+                .map(Long::intValue);
+    }
+
+    public static Optional<Long> asLong(VariantValue value) {
+        return value instanceof IntVariantValue(long number) ? Optional.of(number) : Optional.empty();
     }
 
     public static Optional<Double> asDouble(VariantValue value) {

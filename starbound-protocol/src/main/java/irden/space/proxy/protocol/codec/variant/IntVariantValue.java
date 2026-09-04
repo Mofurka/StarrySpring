@@ -1,4 +1,4 @@
 package irden.space.proxy.protocol.codec.variant;
 
-public record IntVariantValue(int value) implements VariantValue {
+public record IntVariantValue(long value) implements VariantValue {
 }

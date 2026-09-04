@@ -127,6 +127,10 @@ public class PlayerPositionTracker {
         return PacketDecision.forward();
     }
 
+    private static boolean fitsInt(long value) {
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+    }
+
     private Optional<CelestialWorld> readCelestialWorld(VariantValue templateData) {
         if (!(templateData instanceof MapVariantValue template)) {
             return Optional.empty();
@@ -139,13 +143,16 @@ public class PlayerPositionTracker {
         if (location == null || location.length != 3 || planet == null || satellite == null) {
             return Optional.empty();
         }
-        if (!(location[0] instanceof IntVariantValue(int x)
-                && location[1] instanceof IntVariantValue(int y)
-                && location[2] instanceof IntVariantValue(int z))) {
+        if (!(location[0] instanceof IntVariantValue(long x)
+                && location[1] instanceof IntVariantValue(long y)
+                && location[2] instanceof IntVariantValue(long z))) {
+            return Optional.empty();
+        }
+        if (!fitsInt(x) || !fitsInt(y) || !fitsInt(z)) {
             return Optional.empty();
         }
 
-        return Optional.of(new CelestialWorld(new StarVec3I(x, y, z), planet, satellite));
+        return Optional.of(new CelestialWorld(new StarVec3I((int) x, (int) y, (int) z), planet, satellite));
     }
 
     @PacketHandler(value = PacketType.ENTITY_UPDATE, direction = PacketDirection.TO_SERVER)
