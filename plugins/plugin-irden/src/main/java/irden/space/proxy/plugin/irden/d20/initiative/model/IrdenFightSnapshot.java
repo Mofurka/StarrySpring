@@ -52,9 +52,22 @@ public record IrdenFightSnapshot(
             );
         }
 
-        if (!playersInFight.isEmpty() && currentPlayerUuidTurn == null) {
+
+        Map<String, PlayerInFight> participants = playersInFight;
+        queue = queue.stream()
+                .filter(uuid -> {
+                    PlayerInFight participant = participants.get(uuid);
+                    return participant == null || participant.participatesInTurnOrder();
+                })
+                .toList();
+
+        if (currentPlayerUuidTurn != null && !queue.contains(currentPlayerUuidTurn)) {
+            currentPlayerUuidTurn = queue.isEmpty() ? null : queue.getFirst();
+        }
+
+        if (!queue.isEmpty() && currentPlayerUuidTurn == null) {
             throw new IllegalArgumentException(
-                    "При наличии участников должен быть назначен текущий ход"
+                    "При наличии участников очереди должен быть назначен текущий ход"
             );
         }
     }
@@ -77,15 +90,19 @@ public record IrdenFightSnapshot(
                 fightEntityType
         );
 
+        Map<String, PlayerInFight> players = Map.of(
+                initiatorUuid,
+                initiatorInFight
+        );
+
+        List<String> queue = buildQueue(players);
+
         return new IrdenFightSnapshot(
                 fightName,
                 initiatorUuid,
-                Map.of(
-                        initiatorUuid,
-                        initiatorInFight
-                ),
-                List.of(initiatorUuid),
-                initiatorUuid,
+                players,
+                queue,
+                firstPlayerUuid(queue),
                 FORMATION_TURN,
                 UUID.randomUUID()
         );
@@ -95,6 +112,7 @@ public record IrdenFightSnapshot(
             Map<String, PlayerInFight> players
     ) {
         return players.values().stream()
+                .filter(PlayerInFight::participatesInTurnOrder)
                 .sorted(
                         Comparator
                                 .comparingInt(PlayerInFight::initiative)
@@ -131,8 +149,11 @@ public record IrdenFightSnapshot(
          * с максимальной инициативой.
          *
          * После первого хода новый игрок не перехватывает текущий ход.
+         *
+         * Отдельный случай - в бою до сих пор были одни наблюдатели: ходить было
+         * некому, и первый же полноценный участник берёт ход на себя.
          */
-        String updatedCurrentPlayer = isFormationTurn()
+        String updatedCurrentPlayer = isFormationTurn() || currentPlayerUuidTurn == null
                 ? firstPlayerUuid(updatedQueue)
                 : currentPlayerUuidTurn;
 
@@ -232,6 +253,11 @@ public record IrdenFightSnapshot(
             );
         }
 
+
+        if (!player.participatesInTurnOrder()) {
+            return this;
+        }
+
         if (player.initiative() == newInitiative) {
             return this;
         }
@@ -298,9 +324,17 @@ public record IrdenFightSnapshot(
     public IrdenFightSnapshot withCurrentPlayer(String playerUuid) {
         Objects.requireNonNull(playerUuid, "playerUuid");
 
-        if (!playersInFight.containsKey(playerUuid)) {
+        PlayerInFight player = playersInFight.get(playerUuid);
+
+        if (player == null) {
             throw new IllegalArgumentException(
                     "Участник не найден в бою: " + playerUuid
+            );
+        }
+
+        if (!player.participatesInTurnOrder()) {
+            throw new IllegalArgumentException(
+                    "Наблюдатель не может получить ход: " + playerUuid
             );
         }
 
@@ -315,6 +349,12 @@ public record IrdenFightSnapshot(
 
     public boolean containsPlayer(String playerUuid) {
         return playerUuid != null && playersInFight.containsKey(playerUuid);
+    }
+
+
+    @JsonIgnore
+    public List<String> participantUuids() {
+        return List.copyOf(playersInFight.keySet());
     }
 
     @JsonIgnore

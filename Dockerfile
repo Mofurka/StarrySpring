@@ -64,4 +64,4 @@ HEALTHCHECK \
 
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-cp", "/app/app.jar", "-Dloader.path=/app/lib", "org.springframework.boot.loader.launch.PropertiesLauncher"]

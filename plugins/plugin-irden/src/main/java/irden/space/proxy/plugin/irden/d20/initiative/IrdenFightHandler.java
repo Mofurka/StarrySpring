@@ -278,7 +278,8 @@ public class IrdenFightHandler {
         if (fightName.isPresent()) {
             IrdenFightSnapshot fight = getFight(fightName.get());
             var playerBySessionId = playerManagerApi.findPlayerBySessionId(context.session().sessionId());
-            if (playerBySessionId.isPresent() && fight.currentPlayerUuidTurn().equals(playerBySessionId.get().uuid().toString())) {
+            if (playerBySessionId.isPresent()
+                    && Objects.equals(fight.currentPlayerUuidTurn(), playerBySessionId.get().uuid().toString())) {
                 this.nextTurn(fightName.get());
                 return Variants.of("Ход передан");
             }

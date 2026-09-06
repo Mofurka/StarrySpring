@@ -12,5 +12,9 @@ import java.util.List;
 public interface PlayerStatisticRecordRepository
         extends JpaRepository<PlayerStatisticRecordEntity, PlayerStatisticId> {
 
-    List<PlayerStatisticRecordEntity> findAllByPlayerUuidIn(Collection<String> playerUuids);
+    List<PlayerStatisticRecordEntity> findAllByPlayerUuidInAndYearBetween(
+            Collection<String> playerUuids,
+            int fromYear,
+            int toYear
+    );
 }

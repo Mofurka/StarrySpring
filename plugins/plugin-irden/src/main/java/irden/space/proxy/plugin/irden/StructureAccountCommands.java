@@ -55,6 +55,10 @@ public class StructureAccountCommands {
                                                 .executes(handler::handleList)
                                 )
                 )
+                .then(
+                        CommandSpec.literal("to").description("Перевести со счёта объекта на другой счёт объекта.")
+                                .then(transferBetweenStructures(handler::handleTransferFromStructureToStructure))
+                )
                 .build();
     }
 
@@ -68,6 +72,25 @@ public class StructureAccountCommands {
                                                         CommandSpec.argument("amount", IntegerArgumentType.integer())
                                                                 .then(
                                                                         CommandSpec.argument("description", StringArgumentType.greedyString()).description("Описание транзакции.").optional().executes(executor)
+                                                                )
+                                                )
+                                )
+                );
+    }
+
+    private CommandNodeBuilder<?> transferBetweenStructures(CommandExecutor executor) {
+        return CommandSpec.argument("from-type", EnumArgumentType.of(StructureAccountType.class)).description("Вид счёта-отправителя.")
+                .then(
+                        CommandSpec.argument("from", StructureAccountArgumentType.structureAccount(accountService, "from-type")).description("Счёт-отправитель.")
+                                .then(
+                                        CommandSpec.argument("to-type", EnumArgumentType.of(StructureAccountType.class)).description("Вид счёта-получателя.")
+                                                .then(
+                                                        CommandSpec.argument("to", StructureAccountArgumentType.structureAccount(accountService, "to-type")).description("Счёт-получатель.")
+                                                                .then(
+                                                                        CommandSpec.argument("amount", IntegerArgumentType.integer())
+                                                                                .then(
+                                                                                        CommandSpec.argument("description", StringArgumentType.greedyString()).description("Описание транзакции.").optional().executes(executor)
+                                                                                )
                                                                 )
                                                 )
                                 )

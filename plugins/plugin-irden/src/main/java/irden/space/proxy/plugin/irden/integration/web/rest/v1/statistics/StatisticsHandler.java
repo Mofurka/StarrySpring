@@ -27,15 +27,15 @@ public class StatisticsHandler {
     private final AccountRepository accountRepository;
     private final PlayerManagerApi playerManagerApi;
 
-    public StatisticsResponse handleAllPlayers() {
-        return aggregate(playerAttributesRepository.findAll());
+    public StatisticsResponse handleAllPlayers(StatisticsDateRange range) {
+        return aggregate(playerAttributesRepository.findAll(), range);
     }
 
-    public StatisticsResponse handlePlayerByApplicationId(long applicationId) {
-        return aggregate(playerAttributesRepository.findAllByApplicationId(applicationId));
+    public StatisticsResponse handlePlayerByApplicationId(long applicationId, StatisticsDateRange range) {
+        return aggregate(playerAttributesRepository.findAllByApplicationId(applicationId), range);
     }
 
-    private StatisticsResponse aggregate(List<PlayerAttributesEntity> attributes) {
+    private StatisticsResponse aggregate(List<PlayerAttributesEntity> attributes, StatisticsDateRange range) {
         Map<Long, List<String>> uuidsByApplication = attributes.stream()
                 .filter(attribute -> attribute.getApplicationId() != null)
                 .collect(Collectors.groupingBy(
@@ -53,7 +53,9 @@ public class StatisticsHandler {
                 .collect(Collectors.toSet());
 
         Map<String, List<PlayerStatisticRecordEntity>> recordsByUuid =
-                playerStatisticRecordRepository.findAllByPlayerUuidIn(uuids).stream()
+                playerStatisticRecordRepository
+                        .findAllByPlayerUuidInAndYearBetween(uuids, range.minYear(), range.maxYear())
+                        .stream()
                         .collect(Collectors.groupingBy(PlayerStatisticRecordEntity::getPlayerUuid));
 
         Set<String> onlineUuids = playerManagerApi.onlinePlayers().stream()
@@ -80,7 +82,7 @@ public class StatisticsHandler {
         Map<Long, StatisticsByPlayer> players = new LinkedHashMap<>();
         uuidsByApplication.forEach((applicationId, applicationUuids) -> {
             Map<Integer, Map<Month, PeriodAccumulator>> merged =
-                    mergeStatistics(applicationUuids, recordsByUuid);
+                    mergeStatistics(applicationUuids, recordsByUuid, range);
 
             if (merged.isEmpty()) {
                 return;
@@ -100,12 +102,17 @@ public class StatisticsHandler {
 
     private Map<Integer, Map<Month, PeriodAccumulator>> mergeStatistics(
             List<String> applicationUuids,
-            Map<String, List<PlayerStatisticRecordEntity>> recordsByUuid
+            Map<String, List<PlayerStatisticRecordEntity>> recordsByUuid,
+            StatisticsDateRange range
     ) {
         Map<Integer, Map<Month, PeriodAccumulator>> merged = new TreeMap<>();
 
         for (String uuid : applicationUuids) {
             for (PlayerStatisticRecordEntity record : recordsByUuid.getOrDefault(uuid, List.of())) {
+                if (!range.contains(record.getYear(), record.getMonth())) {
+                    continue;
+                }
+
                 merged
                         .computeIfAbsent(record.getYear(), ignored -> new TreeMap<>())
                         .computeIfAbsent(record.getMonth(), ignored -> new PeriodAccumulator())

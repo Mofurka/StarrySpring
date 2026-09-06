@@ -34,6 +34,10 @@ public class StructureAccountCommandsHandler {
         return LiteralUtils.declineRussian((int) amount, "монета", "монеты", "монет");
     }
 
+    private static String describe(StructureAccountTarget target) {
+        return "%s '%s'".formatted(target.type().displayName(), target.name());
+    }
+
     public void handleCreate(CommandContext context) {
         StructureAccountType type = context.get("type", StructureAccountType.class);
         String name = context.get("name", String.class).trim();
@@ -132,7 +136,7 @@ public class StructureAccountCommandsHandler {
         }
 
         AccountEntity structureAccount = target.account();
-        String structure = "%s '%s'".formatted(target.type().displayName(), target.name());
+        String structure = describe(target);
         boolean toPlayer = direction == Direction.TO_PLAYER;
 
         try {
@@ -182,6 +186,38 @@ public class StructureAccountCommandsHandler {
         context.reply("Счета - %s:", type.displayName());
         for (AccountEntity account : accounts) {
             context.reply("• %s - %s %s", account.getOwnerName(), account.getBalance(), coins(account.getBalance()));
+        }
+    }
+
+    public void handleTransferFromStructureToStructure(CommandContext context) {
+        StructureAccountTarget from = context.get("from", StructureAccountTarget.class);
+        StructureAccountTarget to = context.get("to", StructureAccountTarget.class);
+
+        int amount = context.get("amount", Integer.class);
+        if (amount <= 0) {
+            context.reply("Сумма должна быть больше нуля.");
+            return;
+        }
+
+        try {
+            var transaction = accountTransactionService.transfer(
+                    from.account().getId(),
+                    to.account().getId(),
+                    amount,
+                    UUID.randomUUID(),
+                    context.getOrDefault("description", String.class, "Перевод между счетами")
+            );
+
+            long moved = transaction.getAmount();
+            context.reply("Переведено %s %s: %s → %s.", moved, coins(moved), describe(from), describe(to));
+            context.reply("Остаток на %s: %s %s. Баланс %s: %s %s.",
+                    describe(from), transaction.getFromBalanceAfter(), coins(transaction.getFromBalanceAfter()),
+                    describe(to), transaction.getToBalanceAfter(), coins(transaction.getToBalanceAfter()));
+        } catch (InsufficientFundsException e) {
+            long balance = from.account().getBalance();
+            context.reply("Недостаточно средств: на счёте %s %s %s.", describe(from), balance, coins(balance));
+        } catch (SameAccountTransferException e) {
+            context.reply("Нельзя перевести деньги на тот же счёт.");
         }
     }
 

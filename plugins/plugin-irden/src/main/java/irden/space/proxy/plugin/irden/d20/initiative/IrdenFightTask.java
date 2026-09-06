@@ -143,7 +143,7 @@ public final class IrdenFightTask implements Runnable {
     }
 
     public void notifyAllLeave(String message) {
-        this.snapshotReference.get().queue().forEach(s ->
+        this.snapshotReference.get().participantUuids().forEach(s ->
                 this.notifyCurrentPlayerLeave(s, message)
         );
     }

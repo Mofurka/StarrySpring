@@ -22,6 +22,7 @@ services:
 
     volumes:
       - ./runtime-plugins:/app/runtime-plugins:ro
+      - ./lib:/app/lib:ro
       - ./config:/app/config
       - /home/mofuro/.steam/steam/steamapps/common/Starbound:/app/game
 

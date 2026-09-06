@@ -19,25 +19,39 @@ public final class StructureAccountArgumentType implements ArgumentType<Structur
 
     private final Supplier<AccountService> accountServiceSupplier;
 
-    private StructureAccountArgumentType(Supplier<AccountService> accountServiceSupplier) {
+    private final String typeArgumentName;
+
+    private StructureAccountArgumentType(Supplier<AccountService> accountServiceSupplier, String typeArgumentName) {
         this.accountServiceSupplier = Objects.requireNonNull(accountServiceSupplier, "accountServiceSupplier");
+        this.typeArgumentName = Objects.requireNonNull(typeArgumentName, "typeArgumentName");
     }
 
     public static StructureAccountArgumentType structureAccount(AccountService accountService) {
+        return structureAccount(accountService, TYPE_ARGUMENT);
+    }
+
+    public static StructureAccountArgumentType structureAccount(AccountService accountService, String typeArgumentName) {
         Objects.requireNonNull(accountService, "accountService");
-        return new StructureAccountArgumentType(() -> accountService);
+        return new StructureAccountArgumentType(() -> accountService, typeArgumentName);
     }
 
     public static StructureAccountArgumentType structureAccount(Supplier<AccountService> accountServiceSupplier) {
-        return new StructureAccountArgumentType(accountServiceSupplier);
+        return new StructureAccountArgumentType(accountServiceSupplier, TYPE_ARGUMENT);
     }
 
-    private static StructureAccountType resolveType(CommandArgumentContext context) {
-        return context == null ? null : context.getOrDefault(TYPE_ARGUMENT, StructureAccountType.class, null);
+    public static StructureAccountArgumentType structureAccount(
+            Supplier<AccountService> accountServiceSupplier,
+            String typeArgumentName
+    ) {
+        return new StructureAccountArgumentType(accountServiceSupplier, typeArgumentName);
     }
 
-    private static StructureAccountType resolveType(CommandContext context) {
-        return context == null ? null : context.getOrDefault(TYPE_ARGUMENT, StructureAccountType.class, null);
+    private StructureAccountType resolveType(CommandArgumentContext context) {
+        return context == null ? null : context.getOrDefault(typeArgumentName, StructureAccountType.class, null);
+    }
+
+    private StructureAccountType resolveType(CommandContext context) {
+        return context == null ? null : context.getOrDefault(typeArgumentName, StructureAccountType.class, null);
     }
 
     @Override

@@ -48,8 +48,8 @@ public class ISMMessenger {
                     if (snapshot == null) {
                         return;
                     }
-                    List<String> queue = snapshot.queue();
-                    starCustomChatMessageSender.broadcastMessageToUuids(queue, spl, ChatMode.FIGHT);
+                    List<String> audience = snapshot.participantUuids();
+                    starCustomChatMessageSender.broadcastMessageToUuids(audience, spl, ChatMode.FIGHT);
                 }
                 case RollMode.LOCAL ->
                         starCustomChatMessageSender.broadcastMessageToClientIds(clientIds, spl, ChatMode.PROXIMITY);
@@ -68,10 +68,10 @@ public class ISMMessenger {
             if (snapshot == null) {
                 return;
             }
-            List<String> queue = snapshot.queue();
+            List<String> audience = snapshot.participantUuids();
             var finalMessage = "%s[%s] %s".formatted(ChatMode.FIGHT.getPrefix(), Color.RED.colorString(snapshot.fightName()), event.message());
             var messageData = new StarCustomChatMessageSender.MessageData(sender.clientId(), sender.nickname(), finalMessage, ChatMode.FIGHT.getMode(), 100);
-            starCustomChatMessageSender.broadcastMessageToUuids(queue, messageData);
+            starCustomChatMessageSender.broadcastMessageToUuids(audience, messageData);
         }
     }
 
