@@ -4,9 +4,12 @@ import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 
 @RequiredArgsConstructor
 @Component
@@ -51,7 +54,6 @@ public class BanFormatUtils {
             Duration duration = Duration.between(now, expiresAt);
             long minutes = duration.toMinutes();
 
-            // Для английского оставляем "s", для русского строка всё равно "{0} мин."
             String pluralSuffix = minutes > 1 ? "s" : "";
 
             return messageUtils.get("ban.until.minutes", minutes, pluralSuffix);
@@ -59,16 +61,23 @@ public class BanFormatUtils {
 
         String time = expiresAt.toLocalTime().format(TIME_FORMATTER);
 
-        if (expiresAt.isBefore(now.plusDays(1))) {
+        LocalDate today = now.toLocalDate();
+        LocalDate expiresDate = expiresAt.toLocalDate();
+
+        if (expiresDate.equals(today)) {
             return messageUtils.get("ban.until.today", time);
         }
 
-        if (expiresAt.isBefore(now.plusDays(2))) {
+        if (expiresDate.equals(today.plusDays(1))) {
             return messageUtils.get("ban.until.tomorrow", time);
         }
 
-        if (expiresAt.isBefore(now.plusWeeks(1))) {
-            return messageUtils.get("ban.until.this-week", messageUtils.get("ban.until.this-week.names").split(",")[expiresAt.getDayOfWeek().getValue() - 1], time);
+        if (expiresDate.isBefore(today.with(TemporalAdjusters.next(DayOfWeek.MONDAY)))) {
+            String dayName = messageUtils
+                    .get("ban.until.this-week.names")
+                    .split(",")[expiresAt.getDayOfWeek().getValue() - 1];
+
+            return messageUtils.get("ban.until.this-week", dayName, time);
         }
 
         if (expiresAt.isBefore(now.plusMonths(1))) {
