@@ -108,7 +108,7 @@ public class JdaDiscordGateway implements DiscordGateway {
             List<DiscordForumPost> archived,
             DiscordForumPostQuery query
     ) {
-        Map<Long, DiscordForumPost> byId = new LinkedHashMap<>(active.size() + archived.size());
+        Map<Long, DiscordForumPost> byId = LinkedHashMap.newLinkedHashMap(active.size() + archived.size());
         for (DiscordForumPost post : active) {
             if (query.matches(post)) {
                 byId.putIfAbsent(post.id(), post);

@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.extractToken;
@@ -27,30 +27,41 @@ import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService
 public class BoardEntityMessageHandler {
     private static final String PREFIX = "irden:bulletin_board:";
     private static final long TEST_FORUM_CHANNEL = 1544921962948731001L;
-    private static final long TEST_FORUM_THREAD = 1544922291769573457L;
     private final DiscordGateway discordGateway;
     private final VariantObjectMapper variantObjectMapper;
     private final DiscordApplicationTokenService tokenService;
 
     @EntityMessageHandler(PREFIX + "getNotes")
     public VariantValue getNotes(EntityMessageContext context) {
-        var response = discordGateway.forumPosts(TEST_FORUM_CHANNEL)
-                .thenApply(posts ->
-                        posts.stream().map(
-                                post -> StarboundForumPost.builder()
-                                        .id(post.id())
-                                        .name(post.name())
-                                        .archived(post.archived())
-                                        .locked(post.locked())
-                                        .createdAt(post.createdAt().toEpochMilli())
-                                        .messageCount(post.messageCount())
-                                        .build()
-                        ).toList()
-                ).join();
-
-        return variantObjectMapper.toVariant(response);
+        Optional<Long> threadId = Variants.asLong(context.arg(0));
+        if (threadId.isPresent()) {
+            var response = discordGateway.forumPosts(threadId.get())
+                    .thenApply(posts ->
+                            posts.stream().map(
+                                    post -> StarboundForumPost.builder()
+                                            .id(post.id())
+                                            .name(post.name())
+                                            .archived(post.archived())
+                                            .locked(post.locked())
+                                            .createdAt(post.createdAt().toEpochMilli())
+                                            .messageCount(post.messageCount())
+                                            .starterRef(post.starterRef())
+                                            .build()
+                            ).toList()
+                    ).join();
+            return variantObjectMapper.toVariant(response);
+        }
+        return null;
     }
 
+
+    @EntityMessageHandler(PREFIX + "firstMessage")
+    public VariantValue firstMessage(EntityMessageContext context) {
+        var threadRef = variantObjectMapper.fromVariant(context.arg(0), DiscordMessageRef.class);
+        var firstMessage = discordGateway.fetchMessage(threadRef)
+                .join();
+        return firstMessage.map(discordReceivedMessage -> Variants.of(discordReceivedMessage.content())).orElse(null);
+    }
 
     @EntityMessageHandler(PREFIX + "getNoteContent")
     public VariantValue getNoteContent(EntityMessageContext context) {
@@ -84,20 +95,21 @@ public class BoardEntityMessageHandler {
         var threadId = textContent.threadId();
         var content = textContent.content();
 
-            var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
-                    .thenApply(DiscordWebhook::requireTarget)
-                    .thenCompose(relay -> publishApplication(relay, content, threadId))
-                    .thenApply(message -> {
-                        log.info("Successfully published application through webhook");
-                        return "Сообщение отправлено";
-                    })
-                    .exceptionally(throwable -> {
-                        log.error("Failed to publish application through webhook", throwable);
-                        throw new RuntimeException("Failed to publish application through webhook", throwable);
-                    }).join();
+        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
+                .thenApply(DiscordWebhook::requireTarget)
+                .thenCompose(relay -> publishApplication(relay, content, threadId))
+                .thenApply(message -> {
+                    log.info("Successfully published application through webhook");
+                    return "Сообщение отправлено";
+                })
+                .exceptionally(throwable -> {
+                    log.error("Failed to publish application through webhook", throwable);
+                    throw new RuntimeException("Failed to publish application through webhook", throwable);
+                }).join();
 
         return Variants.of(response);
     }
+
     private CompletableFuture<DiscordMessageRef> publishApplication(DiscordWebhookTarget relay, String content, Long channel) {
         if (extractToken(content).isPresent()) {
             throw new IllegalStateException("Token already exists in the message");
@@ -106,7 +118,7 @@ public class BoardEntityMessageHandler {
         var message = DiscordMessage.text(content);
 
         DiscordWebhookMessage request = DiscordWebhookMessage
-                .as("Mofuro" + UUID.randomUUID(), message)
+                .as("Mofuro", message)
                 .withAvatarUrl("https://mc-heads.net/avatar/Mofuro")
                 .inThread(channel);
 
