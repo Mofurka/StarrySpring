@@ -1,7 +1,6 @@
-package irden.space.proxy.plugin.player_manager;
+package irden.space.proxy.plugin.player_manager.persistence;
 
 import irden.space.proxy.plugin.api.annotations.OnLoad;
-import irden.space.proxy.plugin.player_manager.persistence.LiquibaseRunner;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -24,6 +24,9 @@ public class ChatMessageEventHandler {
     @EventListener
     @Async
     public void onChatMessageEvent(ChatMessageEvent event) {
+        if (event.silent()) {
+            return;
+        }
         var finalMessage = "**<%s>[%s]:**  `%s`".formatted(event.sender().name(), event.mode(), event.message());
         discordBotMessageService.handleInGameMessage(finalMessage);
     }

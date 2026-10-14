@@ -18,8 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.extractToken;
-import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.wrapToken;
+import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.*;
 
 @Component
 @Slf4j
@@ -35,21 +34,25 @@ public class BoardEntityMessageHandler {
     public VariantValue getNotes(EntityMessageContext context) {
         Optional<Long> threadId = Variants.asLong(context.arg(0));
         if (threadId.isPresent()) {
-            var response = discordGateway.forumPosts(threadId.get())
-                    .thenApply(posts ->
-                            posts.stream().map(
-                                    post -> StarboundForumPost.builder()
-                                            .id(post.id())
-                                            .name(post.name())
-                                            .archived(post.archived())
-                                            .locked(post.locked())
-                                            .createdAt(post.createdAt().toEpochMilli())
-                                            .messageCount(post.messageCount())
-                                            .starterRef(post.starterRef())
-                                            .build()
-                            ).toList()
-                    ).join();
-            return variantObjectMapper.toVariant(response);
+            Optional<DiscordForumChannel> discordForumChannel = discordGateway.forumChannel(TEST_FORUM_CHANNEL).join();
+            if (discordForumChannel.isPresent()) {
+                var response = discordGateway.forumPosts(threadId.get())
+                        .thenApply(posts ->
+                                posts.stream().map(
+                                        post -> StarboundForumPost.builder()
+                                                .id(post.id())
+                                                .name(post.name())
+                                                .archived(post.archived())
+                                                .locked(post.locked())
+                                                .createdAt(post.createdAt().toEpochMilli())
+                                                .messageCount(post.messageCount())
+                                                .starterRef(post.starterRef())
+                                                .build()
+                                ).toList()
+                        ).join();
+                VariantValue variant = variantObjectMapper.toVariant(response);
+                return Variants.listOf(discordForumChannel.get().name(), variant);
+            }
         }
         return null;
     }
@@ -72,15 +75,17 @@ public class BoardEntityMessageHandler {
                         messages ->
                                 messages.stream().map(
                                         message -> {
-                                            extractToken(message.content()).ifPresent(token -> {
-                                                log.info("Token found in message: {}", token);
-                                                long decrypt = tokenService.decrypt(token, message.messageId());
-                                                log.info("Decrypted application ID: {}", decrypt);
-                                            });
+                                            String finalMessage;
+                                            Optional<String> tokenOptional = extractToken(message.content());
+                                            if (tokenOptional.isPresent()) {
+                                                finalMessage = clearToken(message.content());
+                                            } else {
+                                                finalMessage = message.content();
+                                            }
                                             return StarboundForumMessage.builder()
                                                     .id(message.messageId())
                                                     .author(message.author().name())
-                                                    .content(message.content())
+                                                    .content(finalMessage)
                                                     .createdAt(message.createdAt().toEpochMilli() / 1000)
                                                     .build();
                                         }
@@ -118,8 +123,8 @@ public class BoardEntityMessageHandler {
         var message = DiscordMessage.text(content);
 
         DiscordWebhookMessage request = DiscordWebhookMessage
-                .as("Mofuro", message)
-                .withAvatarUrl("https://mc-heads.net/avatar/Mofuro")
+                .as("Инкогнито.", message)
+                .withAvatarUrl("https://i.imgur.com/bNdKwD5.png")
                 .inThread(channel);
 
         return discordGateway.sendWebhook(relay, request).thenCompose(sent -> {

@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.irden.test;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -10,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -23,6 +25,16 @@ public class DiscordApplicationTokenService {
     private static final Pattern TAG_PATTERN = Pattern.compile("\\|\\|-# <tag:v1:(.*?)>\\|\\|");
     private final SecretKey discordApplicationTokenKey;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    public static String clearToken(@Nonnull String content) {
+        Objects.requireNonNull(content, "Content cannot be null");
+        var matcher = TAG_PATTERN.matcher(content);
+        if (matcher.find()) {
+            content = content.replace(matcher.group(0), "");
+            return content;
+        }
+        return content;
+    }
 
     public static String wrapToken(String token) {
         return "||-# <tag:v1:" + token + ">||";

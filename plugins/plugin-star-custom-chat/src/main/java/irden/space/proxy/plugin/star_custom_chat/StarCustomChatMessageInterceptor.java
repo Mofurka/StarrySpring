@@ -11,13 +11,16 @@ import irden.space.proxy.plugin.star_custom_chat.constants.SCCConstants;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatFightData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatProximityData;
 import irden.space.proxy.plugin.star_custom_chat.model.IrdenCustomChatSH;
+import irden.space.proxy.plugin.star_custom_chat.model.StarCustomChatEntityMessage;
 import irden.space.proxy.plugin.utils.messages.MessageUtils;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.entity.type.Entity;
 import irden.space.proxy.protocol.payload.packet.entity.type.StageHandEntity;
+import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessage;
 import irden.space.proxy.protocol.util.MapVariantUtils;
+import irden.space.proxy.protocol.util.VariantObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,6 +39,7 @@ public class StarCustomChatMessageInterceptor {
     private final PlayerManagerApi playerManagerApi;
     private final ApplicationEventPublisher eventPublisher;
     private final MessageUtils messageUtils;
+    private final VariantObjectMapper variantObjectMapper;
 
 
     @PacketHandler(
@@ -97,6 +101,33 @@ public class StarCustomChatMessageInterceptor {
             );
         }
 
+        return PacketDecision.forward();
+    }
+
+
+    //    @EntityMessageHandler(SCCConstants.SCC_ADD_MESSAGE)
+//    public VariantValue onChatMessage(EntityMessageContext context) {
+//        VariantValue arg = context.arg(0);
+//        log.info("Received chat message: {}", arg);
+//        return
+//    }
+    @PacketHandler(value = PacketType.ENTITY_MESSAGE, direction = PacketDirection.TO_SERVER)
+    public PacketDecision onEntityMessage(PacketInterceptionContext context) {
+        EntityMessage entityMessage = context.parsedPayload(EntityMessage.class);
+        if (entityMessage.message().equals(SCCConstants.SCC_ADD_MESSAGE)) {
+            var starCustomChatEntityMessage = variantObjectMapper.fromVariant(entityMessage.args()[0], StarCustomChatEntityMessage.class);
+            Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(context.session().sessionId());
+            if (playerBySessionId.isPresent()) {
+                var player = playerBySessionId.get();
+                ChatMessageEvent chatMessageEvent = new ChatMessageEvent(
+                        player,
+                        starCustomChatEntityMessage.mode(),
+                        starCustomChatEntityMessage.text(),
+                        true, null
+                );
+                eventPublisher.publishEvent(chatMessageEvent);
+            }
+        }
         return PacketDecision.forward();
     }
 

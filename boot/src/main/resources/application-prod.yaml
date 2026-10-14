@@ -42,7 +42,13 @@ assets:
 logging:
   level:
     root: INFO
-    irden.space.proxy.application: INFO
+    irden:
+      space:
+        proxy:
+          application: INFO
+          plugin:
+            native_server_lifespan: DEBUG
+
 
 management:
   endpoints:

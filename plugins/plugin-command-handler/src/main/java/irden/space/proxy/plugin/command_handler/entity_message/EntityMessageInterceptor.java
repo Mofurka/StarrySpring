@@ -6,6 +6,7 @@ import irden.space.proxy.plugin.api.PluginSessionContext;
 import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.protocol.codec.variant.VariantValue;
+import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.packet.entity_message.EntityMessage;
 import irden.space.proxy.protocol.payload.packet.entity_message_response.EntityMessageResponse;
@@ -34,7 +35,7 @@ public class EntityMessageInterceptor {
 
         RegisteredEntityMessageHandler handler = EntityMessageRegistry.global().find(entityMessage.message());
         if (handler == null) {
-            return PacketDecision.forward(); // не наше сообщение - пусть идёт на сервер
+            return PacketDecision.forward(); // не наше сообщение - пусть идёт дальше
         }
 
         EntityMessageContext messageContext = new EntityMessageContext(
@@ -57,10 +58,20 @@ public class EntityMessageInterceptor {
                     e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
         }
 
-        context.session().sendToClient(
-                PacketType.ENTITY_MESSAGE_RESPONSE,
-                new EntityMessageResponse(response, entityMessage.uuid())
-        );
+        var packetResponse = new EntityMessageResponse(response, entityMessage.uuid());
+
+        if (context.direction() == PacketDirection.TO_CLIENT) {
+            context.session().sendToServer(
+                    PacketType.ENTITY_MESSAGE_RESPONSE,
+                    packetResponse
+            );
+
+        } else {
+            context.session().sendToClient(
+                    PacketType.ENTITY_MESSAGE_RESPONSE,
+                    packetResponse
+            );
+        }
 
         return PacketDecision.cancel();
     }
