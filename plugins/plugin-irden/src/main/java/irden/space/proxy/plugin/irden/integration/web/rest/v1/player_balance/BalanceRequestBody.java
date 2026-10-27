@@ -1,11 +1,12 @@
 package irden.space.proxy.plugin.irden.integration.web.rest.v1.player_balance;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 public record BalanceRequestBody(
         long amount,
-        @JsonAlias("from_id")
-        String fromId
+        String comment,
+        @JsonProperty("from_app_id")
+        String fromAppId
 ) {
 }

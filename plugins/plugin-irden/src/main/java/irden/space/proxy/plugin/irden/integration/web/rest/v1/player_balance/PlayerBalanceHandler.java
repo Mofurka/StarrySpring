@@ -1,6 +1,6 @@
 package irden.space.proxy.plugin.irden.integration.web.rest.v1.player_balance;
 
-import irden.space.proxy.plugin.irden.integration.web.rest.v1.dto.player_uuid.PlayerUuidParam;
+import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdParam;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
 import irden.space.proxy.plugin.irden.service.PlayerAccountService;
@@ -11,9 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * Путь остался на uuid персонажа, чтобы не ломать контракт с сайтом, но счёт
- * принадлежит привязке: uuid переводится в {@code applicationId} внутри
- * {@link PlayerAccountService}.
+ * Больше нет
  */
 @Component
 @RequiredArgsConstructor
@@ -21,7 +19,7 @@ public class PlayerBalanceHandler {
     private final PlayerAccountService playerAccountService;
     private final AccountTransactionService accountTransactionService;
 
-    public long handleGetPlayerBalance(PlayerUuidParam param) {
+    public long handleGetPlayerBalance(PlayerAppIdParam param) {
         AccountEntity account;
         try {
             account = requireAccount(param);
@@ -32,7 +30,7 @@ public class PlayerBalanceHandler {
     }
 
 
-    public long handleResetPlayerBalance(PlayerUuidParam param) {
+    public long handleResetPlayerBalance(PlayerAppIdParam param) {
         AccountEntity account = requireAccount(param);
         if (account.getBalance() == 0) {
             return 0L;
@@ -42,7 +40,7 @@ public class PlayerBalanceHandler {
     }
 
 
-    public long setPlayerBalance(PlayerUuidParam param, BalanceRequestBody balanceRequestBody) {
+    public long setPlayerBalance(PlayerAppIdParam param, BalanceRequestBody balanceRequestBody) {
         AccountEntity account = requireAccount(param);
         long amount = account.getBalance() + balanceRequestBody.amount();
         if (account.getBalance() == amount) {
@@ -51,24 +49,24 @@ public class PlayerBalanceHandler {
         if (amount < 0) {
             return handleResetPlayerBalance(param);
         } else if (account.getBalance() < amount) {
-            return handlePlayerBalanceDeposit(account, balanceRequestBody.amount(), balanceRequestBody.fromId());
+            return handlePlayerBalanceDeposit(account, balanceRequestBody.amount(), balanceRequestBody.fromAppId());
         } else {
-            return handlePlayerBalanceWithdraw(account, balanceRequestBody.amount(), balanceRequestBody.fromId());
+            return handlePlayerBalanceWithdraw(account, balanceRequestBody.amount(), balanceRequestBody.fromAppId());
         }
 
     }
 
-    public long updatePlayerBalance(PlayerUuidParam param, BalanceRequestBody balanceRequestBody) {
+    public long updatePlayerBalance(PlayerAppIdParam param, BalanceRequestBody balanceRequestBody) {
         AccountEntity account = requireAccount(param);
         if (balanceRequestBody.amount() >= 0) {
-            return handlePlayerBalanceDeposit(account, balanceRequestBody.amount(), balanceRequestBody.fromId());
+            return handlePlayerBalanceDeposit(account, balanceRequestBody.amount(), balanceRequestBody.fromAppId());
         } else {
-            return handlePlayerBalanceWithdraw(account, balanceRequestBody.amount(), balanceRequestBody.fromId());
+            return handlePlayerBalanceWithdraw(account, balanceRequestBody.amount(), balanceRequestBody.fromAppId());
         }
     }
 
-    private AccountEntity requireAccount(PlayerUuidParam param) throws AccountNotFoundException {
-        return playerAccountService.getMainAccount(param.uuid());
+    private AccountEntity requireAccount(PlayerAppIdParam param) throws AccountNotFoundException {
+        return playerAccountService.getMainAccount(param.toString());
     }
 
     private long handlePlayerBalanceDeposit(AccountEntity account, long amount, String fromId) {

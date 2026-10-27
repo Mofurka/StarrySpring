@@ -99,14 +99,15 @@ public class DiscordConnection {
         }
 
         log.info("Shutting down Discord bot");
+        current.shutdown();
         try {
-            if (!jda.awaitShutdown(Duration.ofSeconds(15))) {
-                jda.shutdownNow();
-                jda.awaitShutdown();
+            if (!current.awaitShutdown(Duration.ofSeconds(15))) {
+                current.shutdownNow();
+                current.awaitShutdown();
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            jda.shutdownNow();
+            current.shutdownNow();
         }
     }
 
