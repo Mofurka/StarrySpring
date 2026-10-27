@@ -64,7 +64,7 @@ public class TransactionObjectMessageInterceptor {
             UUID playerAccountUuid = (UUID) playerBySessionId.get().metadata().get("accountUuid");
             try {
                 UUID uuid = UUID.fromString(account);
-                AccountTransactionEntity byObject = accountTransactionService.transfer(playerAccountUuid, uuid, amount, UUID.randomUUID(), "By object");
+                AccountTransactionEntity byObject = accountTransactionService.transfer(playerAccountUuid, uuid, amount, UUID.randomUUID(), transactionObjectData.comment().isEmpty() ? "By Object" : transactionObjectData.comment());
                 AccountEntity account1 = accountService.getAccount(uuid);
                 playerBySessionId.get().sendMessage("Вы перевели %s %s -> %s %s".formatted(byObject.getAmount(), coins(byObject.getAmount()), StructureAccountType.valueOf(account1.getAccountCode()).displayName(), account1.getOwnerName()));
                 discordBotMessageService.handleInGameMessage("**%s** перевёл %s %s -> %s %s".formatted(playerBySessionId.get().name(), byObject.getAmount(), coins(byObject.getAmount()), StructureAccountType.valueOf(account1.getAccountCode()).displayName(), account1.getOwnerName()));
