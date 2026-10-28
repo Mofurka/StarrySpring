@@ -3,6 +3,7 @@ package irden.space.proxy.plugin.irden.ingame.bulletin_boards;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
 import irden.space.proxy.plugin.discord.api.*;
+import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.ForumChannelData;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.ForumMessagesContent;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.TextContent;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.response.StarboundForumMessage;
@@ -32,28 +33,28 @@ public class BoardEntityMessageHandler {
 
     @EntityMessageHandler(PREFIX + "getNotes")
     public VariantValue getNotes(EntityMessageContext context) {
-        Optional<Long> threadId = Variants.asLong(context.arg(0));
-        if (threadId.isPresent()) {
-            Optional<DiscordForumChannel> discordForumChannel = discordGateway.forumChannel(TEST_FORUM_CHANNEL).join();
-            if (discordForumChannel.isPresent()) {
-                var response = discordGateway.forumPosts(threadId.get())
-                        .thenApply(posts ->
-                                posts.stream().map(
-                                        post -> StarboundForumPost.builder()
-                                                .id(post.id())
-                                                .name(post.name())
-                                                .archived(post.archived())
-                                                .locked(post.locked())
-                                                .createdAt(post.createdAt().toEpochMilli())
-                                                .messageCount(post.messageCount())
-                                                .starterRef(post.starterRef())
-                                                .build()
-                                ).toList()
-                        ).join();
-                VariantValue variant = variantObjectMapper.toVariant(response);
-                return Variants.listOf(discordForumChannel.get().name(), variant);
-            }
+        var data = variantObjectMapper.fromVariant(context.arg(0), ForumChannelData.class);
+        Optional<DiscordForumChannel> discordForumChannel = discordGateway.forumChannel(TEST_FORUM_CHANNEL).join();
+        if (discordForumChannel.isPresent()) {
+            var query = data.archived() ? DiscordForumPostQuery.archived(100) : DiscordForumPostQuery.active();
+            var response = discordGateway.forumPosts(data.forumId(), query)
+                    .thenApply(posts ->
+                            posts.stream().map(
+                                    post -> StarboundForumPost.builder()
+                                            .id(post.id())
+                                            .name(post.name())
+                                            .archived(post.archived())
+                                            .locked(post.locked())
+                                            .createdAt(post.createdAt().toEpochMilli())
+                                            .messageCount(post.messageCount())
+                                            .starterRef(post.starterRef())
+                                            .build()
+                            ).toList()
+                    ).join();
+            VariantValue variant = variantObjectMapper.toVariant(response);
+            return Variants.listOf(discordForumChannel.get().name(), variant);
         }
+
         return null;
     }
 
