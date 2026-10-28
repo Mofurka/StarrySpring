@@ -116,6 +116,31 @@ public class BoardEntityMessageHandler {
         return Variants.of(response);
     }
 
+
+    @EntityMessageHandler(PREFIX + "editText")
+    public VariantValue editText(EntityMessageContext context) {
+        var textContent = variantObjectMapper.fromVariant(context.arg(0), TextContent.class);
+        var threadId = textContent.threadId();
+        var content = textContent.content();
+        var messageId = textContent.messageId();
+
+        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
+                .thenApply(DiscordWebhook::requireTarget)
+                .thenCompose(relay ->
+                        discordGateway.editWebhookMessage(relay, new DiscordMessageRef(threadId, messageId), DiscordMessage.text(content)))
+                .thenApply(message -> {
+                    log.info("Successfully published application through webhook");
+                    return "Сообщение изменено";
+                })
+                .exceptionally(throwable -> {
+                    log.error("Failed to publish application through webhook", throwable);
+                    throw new RuntimeException("Failed to publish application through webhook", throwable);
+                }).join();
+
+        return Variants.of(response);
+    }
+
+
     private CompletableFuture<DiscordMessageRef> publishApplication(DiscordWebhookTarget relay, String content, Long channel) {
         if (extractToken(content).isPresent()) {
             throw new IllegalStateException("Token already exists in the message");
