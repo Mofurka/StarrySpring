@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.native_server_lifespan;
 
 import irden.space.proxy.plugin.api.PluginContext;
 import irden.space.proxy.plugin.api.annotations.OnLoad;
+import irden.space.proxy.plugin.api.annotations.OnStop;
 import irden.space.proxy.plugin.general.GeneralUtils;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.NativeServerInfo;
 import irden.space.proxy.plugin.native_server_lifespan.model.response.ServerRestartResult;
@@ -356,8 +357,8 @@ public class ServerLifespan implements DisposableBean {
     }
 
 
-    @Override
-    public void destroy() {
+    @OnStop
+    public void onStop() {
         try {
             var time = 10;
             generalUtils.broadcastMessage("Server shutdown initiated.");
@@ -376,6 +377,10 @@ public class ServerLifespan implements DisposableBean {
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    @Override
+    public void destroy() {
         stopServer();
     }
 

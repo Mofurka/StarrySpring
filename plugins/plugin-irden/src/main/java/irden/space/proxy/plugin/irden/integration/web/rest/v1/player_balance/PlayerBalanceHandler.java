@@ -78,8 +78,8 @@ public class PlayerBalanceHandler {
 
     private long handlePlayerBalanceWithdraw(AccountEntity account, long amount, String comment) {
         String message = comment != null ? comment : "Списание баланса с сайта";
-        var transaction = accountTransactionService.withdraw(account.getId(), amount, UUID.randomUUID(), message);
-        return transaction.getToBalanceAfter();
+        var transaction = accountTransactionService.withdraw(account.getId(), Math.abs(amount), UUID.randomUUID(), message);
+        return transaction.getFromBalanceAfter();
     }
 
 }
