@@ -40,6 +40,7 @@ public class DiscordApplicationTokenService {
         return "||-# <tag:v1:" + token + ">||";
     }
 
+
     public static Optional<String> extractToken(String wrappedToken) {
         var matcher = TAG_PATTERN.matcher(wrappedToken);
         if (matcher.find()) {

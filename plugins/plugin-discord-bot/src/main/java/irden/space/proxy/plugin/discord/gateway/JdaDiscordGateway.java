@@ -130,7 +130,7 @@ public class JdaDiscordGateway implements DiscordGateway {
     }
 
 
-    private static CompletableFuture<Optional<DiscordForumPost>> findArchivedPost(ForumChannel forum, long postId) {
+    private static CompletableFuture<Optional<ThreadChannel>> findArchivedPost(ForumChannel forum, long postId) {
         AtomicReference<ThreadChannel> found = new AtomicReference<>();
 
         return forum.retrieveArchivedPublicThreadChannels()
@@ -141,7 +141,7 @@ public class JdaDiscordGateway implements DiscordGateway {
                     found.set(thread);
                     return false;
                 })
-                .thenApply(ignored -> Optional.ofNullable(found.get()).map(DiscordForumMapper::toPost));
+                .thenApply(ignored -> Optional.ofNullable(found.get()));
     }
 
 
@@ -264,16 +264,8 @@ public class JdaDiscordGateway implements DiscordGateway {
 
     @Override
     public CompletableFuture<Optional<DiscordForumPost>> forumPost(long forumChannelId, long postId) {
-        return call(() -> {
-            ForumChannel forum = forum(forumChannelId);
-
-            ThreadChannel cached = connection.require().getChannelById(ThreadChannel.class, postId);
-            if (cached != null && cached.getParentChannel().getIdLong() == forumChannelId) {
-                return CompletableFuture.completedFuture(Optional.of(DiscordForumMapper.toPost(cached)));
-            }
-
-            return findArchivedPost(forum, postId);
-        });
+        return call(() -> findPostThread(forumChannelId, postId)
+                .thenApply(thread -> thread.map(DiscordForumMapper::toPost)));
     }
 
     @Override
@@ -290,6 +282,15 @@ public class JdaDiscordGateway implements DiscordGateway {
 
             return action.submit().thenApply(post -> DiscordForumMapper.toPost(post.getThreadChannel()));
         });
+    }
+
+    @Override
+    public CompletableFuture<Void> deleteForumPost(long forumChannelId, long postId) {
+        return call(() -> findPostThread(forumChannelId, postId)
+                .thenCompose(thread -> thread
+                        .map(post -> post.delete().submit())
+                        .orElseThrow(() -> new DiscordUnavailableException(
+                                "Discord forum post " + postId + " is unknown or unavailable"))));
     }
 
     @Override
@@ -379,6 +380,36 @@ public class JdaDiscordGateway implements DiscordGateway {
             }
             if (message.inThread()) {
                 action = action.setThreadId(message.threadId());
+            }
+
+            return action.submit().thenApply(JdaDiscordGateway::toRef);
+        });
+    }
+
+    @Override
+    public CompletableFuture<DiscordMessageRef> createForumPost(
+            DiscordWebhookTarget target,
+            DiscordForumPostRequest request,
+            String username,
+            String avatarUrl
+    ) {
+        Objects.requireNonNull(request, "request");
+
+        return call(() -> {
+            ThreadCreateMetadata thread = new ThreadCreateMetadata(request.name());
+            if (!request.tagIds().isEmpty()) {
+                thread = thread.addTags(DiscordForumMapper.toTagSnowflakes(request.tagIds()));
+            }
+
+            WebhookMessageCreateAction<Message> action = webhookClient(target)
+                    .sendMessage(DiscordMessageMapper.toCreateData(request.message()))
+                    .createThread(thread);
+
+            if (hasText(username)) {
+                action = action.setUsername(username);
+            }
+            if (hasText(avatarUrl)) {
+                action = action.setAvatarUrl(avatarUrl);
             }
 
             return action.submit().thenApply(JdaDiscordGateway::toRef);
@@ -562,6 +593,17 @@ public class JdaDiscordGateway implements DiscordGateway {
                     "Discord forum channel " + forumChannelId + " is unknown or unavailable");
         }
         return forum;
+    }
+
+    private CompletableFuture<Optional<ThreadChannel>> findPostThread(long forumChannelId, long postId) {
+        ForumChannel forum = forum(forumChannelId);
+
+        ThreadChannel cached = connection.require().getChannelById(ThreadChannel.class, postId);
+        if (cached != null && cached.getParentChannel().getIdLong() == forumChannelId) {
+            return CompletableFuture.completedFuture(Optional.of(cached));
+        }
+
+        return findArchivedPost(forum, postId);
     }
 
     private Guild guild(long guildId) {
