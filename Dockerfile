@@ -35,6 +35,8 @@ ENV PATH="/opt/graalvm/bin:${PATH}"
 
 WORKDIR /app
 
+RUN mkdir -p /app/logs     && chown app:app /app/logs
+
 ARG JAR_FILE=target/*.jar
 COPY --chown=app:app ${JAR_FILE} /app/app.jar
 

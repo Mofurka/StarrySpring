@@ -1,6 +1,7 @@
 package irden.space.boot;
 
 import irden.space.boot.config.AsyncConfiguration;
+import irden.space.boot.logging.PluginLoggingInitializer;
 import irden.space.boot.persistence.PluginJpaInitializer;
 import irden.space.boot.scheduling.PluginSchedulingConfiguration;
 import irden.space.boot.security.PluginMethodSecurityConfiguration;
@@ -38,6 +39,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
     private final PluginControllerAdviceRegistrar controllerAdviceRegistrar;
     private final PluginEventListenerRegistrar eventListenerRegistrar;
     private final PluginConfigInitializer configInitializer;
+    private final PluginLoggingInitializer loggingInitializer;
     private final PluginJpaInitializer jpaInitializer;
 
     public SpringPluginContainerFactory(ApplicationContext rootContext) {
@@ -46,6 +48,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
         this.controllerAdviceRegistrar = new PluginControllerAdviceRegistrar(this.rootContext);
         this.eventListenerRegistrar = new PluginEventListenerRegistrar(this.rootContext);
         this.configInitializer = new PluginConfigInitializer(this.rootContext);
+        this.loggingInitializer = new PluginLoggingInitializer();
         this.jpaInitializer = new PluginJpaInitializer(this.rootContext);
     }
 
@@ -60,6 +63,7 @@ public final class SpringPluginContainerFactory implements PluginContainerFactor
             pluginContext.setParent(rootContext);
             pluginContext.setClassLoader(candidate.pluginClass().getClassLoader());
             configInitializer.apply(pluginContext, candidate);
+            loggingInitializer.apply(pluginContext, candidate, scopedContext);
             ConfigurationPropertiesBindingPostProcessor.register(pluginContext);
             pluginContext.register(PluginMethodSecurityConfiguration.class);
             pluginContext.register(PluginSchedulingConfiguration.class);
