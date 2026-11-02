@@ -2,6 +2,7 @@ package irden.space.proxy.plugin.irden.integration.storages;
 
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
+import irden.space.proxy.plugin.irden.constants.PlayerMetadata;
 import irden.space.proxy.plugin.irden.integration.permissions.SitePermissions;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.IrdenAppStoragesClient;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.*;
@@ -56,10 +57,15 @@ public class IrdenStorageMessageHandler {
             if (!has)
                 throw new IllegalStateException("Вам не доступно автопринятие запроса. ИНЦИДЕНТ БУДЕТ СООБЩЁН АДМИНИСТРАТОРУ!!!!!!!!!!!!!!!");
         }
-        Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
+        Optional<Player> playerBySessionId;
+        if (storageTransferRequest.requestAuthorUuid() != null) {
+            playerBySessionId = playerManagerApi.findPlayerByUuid(storageTransferRequest.requestAuthorUuid(), true);
+        } else {
+            playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
+        }
         if (playerBySessionId.isPresent()) {
             Player player = playerBySessionId.get();
-            Long applicationId = (Long) player.metadata().get("applicationId");
+            Long applicationId = PlayerMetadata.getApplicationId(player);
             irdenAppStoragesClient.makeTransferRequest(storageTransferRequest.setRequestApplicationId(applicationId));
         }
         return null;
