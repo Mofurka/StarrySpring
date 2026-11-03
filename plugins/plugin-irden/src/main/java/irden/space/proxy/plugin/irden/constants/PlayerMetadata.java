@@ -13,6 +13,7 @@ public final class PlayerMetadata {
         if (o != null) {
             return (Long) o;
         }
+        player.kick("Персонаж не привязан! Анкета -> Привязать персонажа.");
         throw new IllegalStateException("Персонаж не привязан");
     }
 
@@ -21,6 +22,7 @@ public final class PlayerMetadata {
         if (o != null) {
             return (Long) o;
         }
+        player.kick("Персонаж не привязан! Анкета -> Привязать персонажа.");
         throw new IllegalStateException("Персонаж не привязан");
     }
 

@@ -32,8 +32,8 @@ public class IrdenStorageMessageHandler {
         Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
         if (playerBySessionId.isPresent()) {
             Player player = playerBySessionId.get();
-            Long applicationId = (Long) player.metadata().get("discordId");
-            StoragesResponse<StorageAttributes> storageByPlayerAppId = irdenAppStoragesClient.findStorageByPlayerDiscordId(new PlayerDiscordIdParam(applicationId));
+            Long discordId = PlayerMetadata.getDiscordId(player);
+            StoragesResponse<StorageAttributes> storageByPlayerAppId = irdenAppStoragesClient.findStorageByPlayerDiscordId(new PlayerDiscordIdParam(discordId));
             return variantObjectMapper.toVariant(storageByPlayerAppId.data());
         }
         return null;
