@@ -4,12 +4,11 @@ import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageCont
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
 import irden.space.proxy.plugin.discord.api.*;
 import irden.space.proxy.plugin.irden.constants.PlayerMetadata;
+import irden.space.proxy.plugin.irden.ingame.bulletin_boards.cache.BulletinBoardCache;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.ForumChannelData;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.ForumMessagesContent;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.NoteContent;
 import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.request.TextContent;
-import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.response.StarboundForumMessage;
-import irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.response.StarboundForumPost;
 import irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService;
 import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.plugin.player_manager.model.Player;
@@ -23,15 +22,16 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.*;
+import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.extractToken;
+import static irden.space.proxy.plugin.irden.test.DiscordApplicationTokenService.wrapToken;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class BoardEntityMessageHandler {
     private static final String PREFIX = "irden:bulletin_board:";
-    private static final long TEST_FORUM_CHANNEL = 1544921962948731001L;
     private final DiscordGateway discordGateway;
+    private final BulletinBoardCache boardCache;
     private final VariantObjectMapper variantObjectMapper;
     private final DiscordApplicationTokenService tokenService;
     private final PlayerManagerApi playerManagerApi;
@@ -39,23 +39,9 @@ public class BoardEntityMessageHandler {
     @EntityMessageHandler(PREFIX + "getNotes")
     public VariantValue getNotes(EntityMessageContext context) {
         var data = variantObjectMapper.fromVariant(context.arg(0), ForumChannelData.class);
-        Optional<DiscordForumChannel> discordForumChannel = discordGateway.forumChannel(TEST_FORUM_CHANNEL).join();
+        Optional<DiscordForumChannel> discordForumChannel = discordGateway.forumChannel(data.forumId()).join();
         if (discordForumChannel.isPresent()) {
-            var query = data.archived() ? DiscordForumPostQuery.archived(100) : DiscordForumPostQuery.active();
-            var response = discordGateway.forumPosts(data.forumId(), query)
-                    .thenApply(posts ->
-                            posts.stream().map(
-                                    post -> StarboundForumPost.builder()
-                                            .id(post.id())
-                                            .name(post.name())
-                                            .archived(post.archived())
-                                            .locked(post.locked())
-                                            .createdAt(post.createdAt().toEpochMilli())
-                                            .messageCount(post.messageCount())
-                                            .starterRef(post.starterRef())
-                                            .build()
-                            ).toList()
-                    ).join();
+            var response = boardCache.posts(data.forumId(), data.archived()).join();
             VariantValue variant = variantObjectMapper.toVariant(response);
             return Variants.listOf(discordForumChannel.get().name(), variant);
         }
@@ -67,52 +53,31 @@ public class BoardEntityMessageHandler {
     @EntityMessageHandler(PREFIX + "firstMessage")
     public VariantValue firstMessage(EntityMessageContext context) {
         var threadRef = variantObjectMapper.fromVariant(context.arg(0), DiscordMessageRef.class);
-        var firstMessage = discordGateway.fetchMessage(threadRef)
-                .join();
-        return firstMessage.map(discordReceivedMessage -> Variants.of(discordReceivedMessage.content())).orElse(null);
+        var firstMessage = boardCache.content(threadRef).join();
+        return firstMessage.map(Variants::of).orElse(null);
     }
 
     @EntityMessageHandler(PREFIX + "getNoteContent")
     public VariantValue getNoteContent(EntityMessageContext context) {
         var forumMessagesContent = variantObjectMapper.fromVariant(context.arg(0), ForumMessagesContent.class);
-        var threadId = forumMessagesContent.threadId();
-        var response = discordGateway.history(threadId)
-                .thenApply(
-                        messages ->
-                                messages.stream().map(
-                                        message -> {
-                                            String finalMessage;
-                                            Optional<String> tokenOptional = extractToken(message.content());
-                                            if (tokenOptional.isPresent()) {
-                                                finalMessage = clearToken(message.content());
-                                            } else {
-                                                finalMessage = message.content();
-                                            }
-                                            return StarboundForumMessage.builder()
-                                                    .id(message.messageId())
-                                                    .author(message.author().name())
-                                                    .content(finalMessage)
-                                                    .createdAt(message.createdAt().toEpochMilli() / 1000)
-                                                    .build();
-                                        }
-                                ).toList().reversed()
-                ).join();
+        var response = boardCache.messages(forumMessagesContent.threadId()).join();
         return variantObjectMapper.toVariant(response);
     }
 
     @EntityMessageHandler(PREFIX + "createNote")
     public VariantValue createNote(EntityMessageContext context) {
         var noteContent = variantObjectMapper.fromVariant(context.arg(0), NoteContent.class);
+        var forumId = noteContent.forumId();
         var appId = requireAppId(context);
 
-        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
-                .thenApply(DiscordWebhook::requireTarget)
+        var response = boardCache.relay(forumId)
                 .thenCompose(relay -> createApplication(relay, noteContent, appId))
                 .thenApply(post -> {
                     log.info("Successfully created forum post {} through webhook", post.channelId());
                     return "Объявление создано!";
                 })
                 .exceptionally(throwable -> {
+                    boardCache.relayFailed(forumId, throwable);
                     log.error("Failed to create forum post through webhook", throwable);
                     throw new RuntimeException("Failed to create forum post through webhook", throwable);
                 }).join();
@@ -149,16 +114,18 @@ public class BoardEntityMessageHandler {
         var textContent = variantObjectMapper.fromVariant(context.arg(0), TextContent.class);
         var threadId = textContent.threadId();
         var content = textContent.content();
+        var forumId = textContent.forumId();
         var appId = requireAppId(context);
 
-        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
-                .thenApply(DiscordWebhook::requireTarget)
+        var response = boardCache.relay(forumId)
                 .thenCompose(relay -> publishApplication(relay, content, threadId, appId))
                 .thenApply(message -> {
+                    boardCache.messagesChanged(threadId);
                     log.info("Successfully published application through webhook");
                     return "Сообщение отправлено";
                 })
                 .exceptionally(throwable -> {
+                    boardCache.relayFailed(forumId, throwable);
                     log.error("Failed to publish application through webhook", throwable);
                     throw new RuntimeException("Failed to publish application through webhook", throwable);
                 }).join();
@@ -171,18 +138,19 @@ public class BoardEntityMessageHandler {
     @EntityMessageHandler(PREFIX + "editText")
     public VariantValue editText(EntityMessageContext context) {
         var textContent = variantObjectMapper.fromVariant(context.arg(0), TextContent.class);
-        var threadId = textContent.threadId();
         var content = textContent.content();
-        var messageId = textContent.messageId();
-        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
-                .thenApply(DiscordWebhook::requireTarget)
+        var messageRef = new DiscordMessageRef(textContent.threadId(), textContent.messageId());
+        var forumId = textContent.forumId();
+        var response = boardCache.relay(forumId)
                 .thenCompose(relay ->
-                        editApplication(relay, content, new DiscordMessageRef(threadId, messageId), requireAppId(context)))
+                        editApplication(relay, content, messageRef, requireAppId(context)))
                 .thenApply(message -> {
+                    boardCache.messageEdited(messageRef);
                     log.info("Successfully edited application through webhook");
                     return "Сообщение изменено";
                 })
                 .exceptionally(throwable -> {
+                    boardCache.relayFailed(forumId, throwable);
                     log.error("Failed to edit application through webhook", throwable);
                     throw new RuntimeException("Failed to edit application through webhook", throwable);
                 }).join();
@@ -200,19 +168,22 @@ public class BoardEntityMessageHandler {
 
     @EntityMessageHandler(PREFIX + "deleteNote")
     public VariantValue deleteNote(EntityMessageContext context) {
-        var threadId = variantObjectMapper.fromVariant(context.arg(0), ForumMessagesContent.class).threadId();
+        var noteContent = variantObjectMapper.fromVariant(context.arg(0), ForumMessagesContent.class);
+        var threadId = noteContent.threadId();
+        var forumId = noteContent.forumId();
         var starterRef = new DiscordMessageRef(threadId, threadId);
         var appId = requireAppId(context);
 
-        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
-                .thenApply(DiscordWebhook::requireTarget)
+        var response = boardCache.relay(forumId)
                 .thenCompose(relay -> requireOwnToken(relay, starterRef, appId))
-                .thenCompose(token -> discordGateway.deleteForumPost(TEST_FORUM_CHANNEL, threadId))
+                .thenCompose(token -> discordGateway.deleteForumPost(forumId, threadId))
                 .thenApply(ignored -> {
+                    boardCache.postDeleted(forumId, threadId);
                     log.info("Successfully deleted forum post {}", threadId);
                     return "Объявление удалено";
                 })
                 .exceptionally(throwable -> {
+                    boardCache.relayFailed(forumId, throwable);
                     log.error("Failed to delete forum post {}", threadId, throwable);
                     throw new RuntimeException("Failed to delete forum post", throwable);
                 }).join();
@@ -224,20 +195,22 @@ public class BoardEntityMessageHandler {
     public VariantValue deleteText(EntityMessageContext context) {
         var textContent = variantObjectMapper.fromVariant(context.arg(0), TextContent.class);
         var messageRef = new DiscordMessageRef(textContent.threadId(), textContent.messageId());
+        var forumId = textContent.forumId();
         if (messageRef.messageId() == messageRef.channelId()) {
             throw new IllegalStateException("Первое сообщение нельзя удалить отдельно, удалите объявление целиком.");
         }
         var appId = requireAppId(context);
 
-        var response = discordGateway.webhookOrCreate(TEST_FORUM_CHANNEL, "game-relay")
-                .thenApply(DiscordWebhook::requireTarget)
+        var response = boardCache.relay(forumId)
                 .thenCompose(relay -> requireOwnToken(relay, messageRef, appId)
                         .thenCompose(token -> discordGateway.deleteWebhookMessage(relay, messageRef)))
                 .thenApply(ignored -> {
+                    boardCache.messagesChanged(messageRef.channelId());
                     log.info("Successfully deleted application message through webhook");
                     return "Сообщение удалено";
                 })
                 .exceptionally(throwable -> {
+                    boardCache.relayFailed(forumId, throwable);
                     log.error("Failed to delete application message through webhook", throwable);
                     throw new RuntimeException("Failed to delete application message through webhook", throwable);
                 }).join();
