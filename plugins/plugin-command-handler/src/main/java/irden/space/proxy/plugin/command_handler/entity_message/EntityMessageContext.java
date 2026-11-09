@@ -30,6 +30,10 @@ public record EntityMessageContext(
         return args == null ? 0 : args.length;
     }
 
+    public VariantValue firstArg() {
+        return arg(0);
+    }
+
     public VariantValue arg(int index) {
         if (args == null || index < 0 || index >= args.length) {
             return null;

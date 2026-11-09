@@ -85,6 +85,8 @@ public class CommandHandlerPlugin implements ProxyPlugin {
 
         Thread.ofVirtual()
                 .name("command-" + registeredCommand.name())
+                .uncaughtExceptionHandler((thread, failure) ->
+                        log.error("Command '/{}' thread failed", registeredCommand.name(), failure))
                 .start(() -> executeAsync(context.session(), registeredCommand, argumentContext, parsedCommand));
         return PacketDecision.cancel();
     }
@@ -96,20 +98,14 @@ public class CommandHandlerPlugin implements ProxyPlugin {
                 parsedCommand.tokens()
         );
         if (parseResult instanceof CommandParseResult.Error(String message)) {
-            session.sendToClient(
-                    PacketType.CHAT_RECEIVE,
-                    CommandMessages.systemMessage(message)
-            );
+            reply(session, message);
             return;
         }
 
         CommandParseResult.Success success = (CommandParseResult.Success) parseResult;
 
         if (!hasRequiredPermissions(session, success.matchedNodes())) {
-            session.sendToClient(
-                    PacketType.CHAT_RECEIVE,
-                    CommandMessages.systemMessage("You do not have permission to use this command.")
-            );
+            reply(session, "You do not have permission to use this command.");
             return;
         }
 
@@ -119,10 +115,15 @@ public class CommandHandlerPlugin implements ProxyPlugin {
         } catch (RuntimeException e) {
             log.error("Failed to execute command '/{}'", registeredCommand.name(), e);
 
-            session.sendToClient(
-                    PacketType.CHAT_RECEIVE,
-                    CommandMessages.systemMessage("Command '/" + registeredCommand.name() + "' failed: " + e.getMessage())
-            );
+            reply(session, "Command '/" + registeredCommand.name() + "' failed: " + e.getMessage());
+        }
+    }
+
+    private void reply(PluginSessionContext session, String message) {
+        try {
+            session.sendToClient(PacketType.CHAT_RECEIVE, CommandMessages.systemMessage(message));
+        } catch (RuntimeException e) {
+            log.warn("Failed to reply to command in session {}", session.sessionId(), e);
         }
     }
 

@@ -1,7 +1,8 @@
-package irden.space.proxy.plugin.irden.integration.storages;
+package irden.space.proxy.plugin.irden.ingame.storages;
 
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
+import irden.space.proxy.plugin.irden.constants.PlayerMetadata;
 import irden.space.proxy.plugin.irden.integration.permissions.SitePermissions;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.IrdenAppStoragesClient;
 import irden.space.proxy.plugin.irden.integration.web.client.storages.dto.*;
@@ -31,8 +32,8 @@ public class IrdenStorageMessageHandler {
         Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
         if (playerBySessionId.isPresent()) {
             Player player = playerBySessionId.get();
-            Long applicationId = (Long) player.metadata().get("discordId");
-            StoragesResponse<StorageAttributes> storageByPlayerAppId = irdenAppStoragesClient.findStorageByPlayerDiscordId(new PlayerDiscordIdParam(applicationId));
+            Long discordId = PlayerMetadata.getDiscordId(player);
+            StoragesResponse<StorageAttributes> storageByPlayerAppId = irdenAppStoragesClient.findStorageByPlayerDiscordId(new PlayerDiscordIdParam(discordId));
             return variantObjectMapper.toVariant(storageByPlayerAppId.data());
         }
         return null;
@@ -50,18 +51,24 @@ public class IrdenStorageMessageHandler {
 
     @EntityMessageHandler("warehouse:transfer_request")
     public VariantValue onWarehouseTransferRequest(EntityMessageContext ctx) {
-        StorageTransferRequest storageTransferRequest = variantObjectMapper.fromVariant(ctx.arg(0), StorageTransferRequest.class);
+        StorageTransferRequest storageTransferRequest = variantObjectMapper.fromVariant(ctx.firstArg(), StorageTransferRequest.class);
         if (storageTransferRequest.autoAccept()) {
-            boolean has = ctx.session().permissions().has(SitePermissions.IRDEN_STORAGE_AUTO_ACCEPT.permission());
+            boolean has = ctx.session().permissions().has(SitePermissions.IRDEN_STORAGE_AUTO_ACCEPT);
             if (!has)
                 throw new IllegalStateException("Вам не доступно автопринятие запроса. ИНЦИДЕНТ БУДЕТ СООБЩЁН АДМИНИСТРАТОРУ!!!!!!!!!!!!!!!");
         }
-        Optional<Player> playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
+        Optional<Player> playerBySessionId;
+        if (storageTransferRequest.requestAuthorUuid() != null) {
+            playerBySessionId = playerManagerApi.findPlayerByUuid(storageTransferRequest.requestAuthorUuid(), true);
+        } else {
+            playerBySessionId = playerManagerApi.findPlayerBySessionId(ctx.session().sessionId());
+        }
         if (playerBySessionId.isPresent()) {
             Player player = playerBySessionId.get();
-            Long applicationId = (Long) player.metadata().get("applicationId");
+            Long applicationId = PlayerMetadata.getApplicationId(player);
             irdenAppStoragesClient.makeTransferRequest(storageTransferRequest.setRequestApplicationId(applicationId));
+            return null;
         }
-        return null;
+        throw new IllegalStateException("Player not found");
     }
 }

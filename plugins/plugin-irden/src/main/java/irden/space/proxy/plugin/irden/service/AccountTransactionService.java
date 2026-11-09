@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -209,6 +211,25 @@ public class AccountTransactionService {
 
         return transactionRepository.findAccountHistory(
                 accountId,
+                pageable
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AccountTransactionEntity> getAccountsHistory(
+            Collection<UUID> accountIds,
+            Instant from,
+            Instant toExclusive,
+            Pageable pageable
+    ) {
+        if (accountIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return transactionRepository.findAccountsHistory(
+                accountIds,
+                from,
+                toExclusive,
                 pageable
         );
     }

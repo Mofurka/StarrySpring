@@ -62,6 +62,8 @@ public interface DiscordGateway {
 
     CompletableFuture<DiscordForumPost> createForumPost(long forumChannelId, DiscordForumPostRequest request);
 
+    CompletableFuture<Void> deleteForumPost(long forumChannelId, long postId);
+
     CompletableFuture<List<DiscordWebhook>> webhooks(long channelId);
 
     CompletableFuture<List<DiscordWebhook>> guildWebhooks(long guildId);
@@ -79,6 +81,13 @@ public interface DiscordGateway {
     CompletableFuture<Void> deleteWebhook(long webhookId);
 
     CompletableFuture<DiscordMessageRef> sendWebhook(DiscordWebhookTarget target, DiscordWebhookMessage message);
+
+    CompletableFuture<DiscordMessageRef> createForumPost(
+            DiscordWebhookTarget target,
+            DiscordForumPostRequest request,
+            String username,
+            String avatarUrl
+    );
 
     CompletableFuture<DiscordMessageRef> editWebhookMessage(
             DiscordWebhookTarget target,
@@ -268,6 +277,13 @@ public interface DiscordGateway {
             DiscordWebhookMessage message
     ) {
         return sendWebhookWhenReady(target, message, DEFAULT_READY_TIMEOUT);
+    }
+
+    default CompletableFuture<DiscordMessageRef> createForumPost(
+            DiscordWebhookTarget target,
+            DiscordForumPostRequest request
+    ) {
+        return createForumPost(target, request, null, null);
     }
 
     default CompletableFuture<DiscordMessageRef> editWebhookMessage(

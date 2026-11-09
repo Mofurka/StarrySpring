@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.irden.ingame.bulletin_boards.model.response;
 
+import irden.space.proxy.plugin.discord.api.DiscordMessageRef;
 import lombok.Builder;
 
 @Builder
@@ -9,6 +10,7 @@ public record StarboundForumPost(
         boolean archived,
         boolean locked,
         long createdAt, // epoch
+        DiscordMessageRef starterRef,
         int messageCount
 ) {
 }

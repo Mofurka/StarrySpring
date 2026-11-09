@@ -16,7 +16,10 @@ public record StorageTransferRequest(
         @JsonProperty("comment")
         String transferDescription,
         @JsonProperty("autoAccept")
-        boolean autoAccept
+        boolean autoAccept,
+
+        @JsonProperty("request_author_uuid")
+        String requestAuthorUuid
 ) {
 
     public StorageTransferRequest setRequestApplicationId(Long applicationId) {
@@ -26,7 +29,8 @@ public record StorageTransferRequest(
                 this.requestItemList,
                 applicationId,
                 this.transferDescription,
-                this.autoAccept
+                this.autoAccept,
+                this.requestAuthorUuid
         );
     }
 

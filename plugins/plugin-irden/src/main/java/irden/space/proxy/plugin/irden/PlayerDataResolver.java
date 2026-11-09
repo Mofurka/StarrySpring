@@ -1,6 +1,7 @@
 package irden.space.proxy.plugin.irden;
 
 import irden.space.proxy.plugin.general.permissions.ChatPermissions;
+import irden.space.proxy.plugin.irden.constants.PlayerMetadata;
 import irden.space.proxy.plugin.irden.integration.persistence.repository.PlayerAttributesRepository;
 import irden.space.proxy.plugin.irden.persistence.model.account.AccountEntity;
 import irden.space.proxy.plugin.irden.service.AccountTransactionService;
@@ -40,8 +41,8 @@ public class PlayerDataResolver {
                     Map<String, Object> metadata = player.metadata();
 
                     // i dunno how to better keep this contract between services
-                    metadata.put("applicationId", r.getApplicationId());
-                    metadata.put("discordId", r.getDiscordId());
+                    metadata.put(PlayerMetadata.APPLICATION_ID, r.getApplicationId());
+                    metadata.put(PlayerMetadata.DISCORD_ID, r.getDiscordId());
                     metadata.put("discordIdLink", "<@%s>".formatted(r.getDiscordId()));
 
                     playerAccessService.grantSessionPermissions(

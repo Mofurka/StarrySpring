@@ -1,5 +1,6 @@
 package irden.space.proxy.plugin.irden.integration.web.rest.v1.player_balance;
 
+import irden.space.proxy.plugin.irden.integration.web.dto.player_app_id.PlayerAppIdParam;
 import irden.space.proxy.plugin.irden.integration.web.rest.v1.constants.RestRoutes;
 import irden.space.proxy.plugin.irden.integration.web.rest.v1.dto.player_uuid.PlayerUuidParam;
 import lombok.RequiredArgsConstructor;
@@ -14,33 +15,33 @@ public class PlayerBalanceController {
     private final PlayerBalanceHandler handler;
 
 
-    @GetMapping(PlayerUuidParam.PATH)
+    @GetMapping(PlayerAppIdParam.PATH)
     public long getPlayerBalance(
-            @PathVariable(PlayerUuidParam.NAME) PlayerUuidParam playerUuidParam
+            @PathVariable(PlayerAppIdParam.NAME) PlayerAppIdParam playerAppIdParam
     ) {
-        return handler.handleGetPlayerBalance(playerUuidParam);
+        return handler.handleGetPlayerBalance(playerAppIdParam);
     }
 
-    @DeleteMapping(PlayerUuidParam.PATH)
+    @DeleteMapping(PlayerAppIdParam.PATH)
     public long resetPlayerBalance(
-            @PathVariable(PlayerUuidParam.NAME) PlayerUuidParam playerUuidParam
+            @PathVariable(PlayerAppIdParam.NAME) PlayerAppIdParam playerAppIdParam
     ) {
-        return handler.handleResetPlayerBalance(playerUuidParam);
+        return handler.handleResetPlayerBalance(playerAppIdParam);
     }
 
-    @PutMapping(PlayerUuidParam.PATH)
+    @PutMapping(PlayerAppIdParam.PATH)
     public long setPlayerBalance(
-            @PathVariable(PlayerUuidParam.NAME) PlayerUuidParam playerUuidParam,
+            @PathVariable(PlayerAppIdParam.NAME) PlayerAppIdParam playerAppIdParam,
             @RequestBody BalanceRequestBody balanceRequestBody
     ) {
-        return handler.setPlayerBalance(playerUuidParam, balanceRequestBody);
+        return handler.setPlayerBalance(playerAppIdParam, balanceRequestBody);
     }
 
-    @PatchMapping(PlayerUuidParam.PATH)
+    @PatchMapping(PlayerAppIdParam.PATH)
     public long updatePlayerBalance(
-            @PathVariable(PlayerUuidParam.NAME) PlayerUuidParam playerUuidParam,
+            @PathVariable(PlayerAppIdParam.NAME) PlayerAppIdParam playerAppIdParam,
             @RequestBody BalanceRequestBody balanceRequestBody
     ) {
-        return handler.updatePlayerBalance(playerUuidParam, balanceRequestBody);
+        return handler.updatePlayerBalance(playerAppIdParam, balanceRequestBody);
     }
 }

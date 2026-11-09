@@ -109,11 +109,14 @@ public class PlayerConnectionHandler {
                     .clientId(connectSuccess.clientId())
                     .entityId(connectSuccess.clientId() * -65536) // This how clientId transforms to entityId.
                     .build();
+
+            // TODO: Переделать под назначение ролей через команду вместо привязки к эталонному игровому аккаунту
             playerAccessService.applyResolvedPermissions(
                     context.session().sessionId(),
                     tempPlayer.uuid().toString(),
                     tempPlayer.account()
             );
+            // TODO: И сразу же туда назначение цвета прокинуть
             roleManager.findRole(player.account()).ifPresent(s -> player.namePrefix(s.colorPrefix()));
             log.info(
                     "Player connected: name='{}', uuid={}, clientId={}, entityId={}",
@@ -148,6 +151,9 @@ public class PlayerConnectionHandler {
         }
         return null;
     }
+
+
+
 
     @OnDisconnected
     public void onDisconnected(PluginSessionContext context) {

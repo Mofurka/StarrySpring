@@ -4,11 +4,14 @@ import irden.space.proxy.plugin.api.PacketDecision;
 import irden.space.proxy.plugin.api.PacketInterceptionContext;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.planet_protect.permissions.PlanetPermissions;
+import irden.space.proxy.plugin.player_manager.api.PlayerManagerApi;
 import irden.space.proxy.protocol.packet.PacketDirection;
 import irden.space.proxy.protocol.packet.PacketType;
 import irden.space.proxy.protocol.payload.common.star_item.StarItemDescriptor;
+import irden.space.proxy.protocol.payload.packet.damage_tile_group.DamageTileGroup;
 import irden.space.proxy.protocol.payload.packet.entity.type.Entity;
 import irden.space.proxy.protocol.payload.packet.entity.type.ObjectEntity;
+import irden.space.proxy.protocol.payload.packet.modify_tile_list.ModifyTileList;
 import irden.space.proxy.protocol.util.VariantObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,12 +21,13 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class PlanetModificationsInterceptor {
-    private final VariantObjectMapper variantObjectMapper;
-
+    private final PlanetModificationAuditLog auditLog;
 
     @PacketHandler(value = PacketType.MODIFY_TILE_LIST, direction = PacketDirection.TO_SERVER)
     public PacketDecision onModifyTileList(PacketInterceptionContext context) {
         if (context.session().permissions().has(PlanetPermissions.MODIFY_LIMIT)) {
+            ModifyTileList modifyTileList = context.parsedPayload(ModifyTileList.class);
+            auditLog.tilesModified(context, modifyTileList);
             return PacketDecision.forward();
         }
         return PacketDecision.cancel();
@@ -32,6 +36,8 @@ public class PlanetModificationsInterceptor {
     @PacketHandler(value = PacketType.DAMAGE_TILE_GROUP, direction = PacketDirection.TO_SERVER)
     public PacketDecision onDamageTileGroup(PacketInterceptionContext context) {
         if (context.session().permissions().has(PlanetPermissions.MODIFY_LIMIT)) {
+            DamageTileGroup damageTileGroup = context.parsedPayload(DamageTileGroup.class);
+            auditLog.tileGroupDamaged(context, damageTileGroup);
             return PacketDecision.forward();
         }
         return PacketDecision.cancel();
@@ -42,6 +48,7 @@ public class PlanetModificationsInterceptor {
         var spawnedEntity = context.parsedPayload(Entity.class);
         if (spawnedEntity instanceof ObjectEntity(var name, var parameters)) {
             if (context.session().permissions().has(PlanetPermissions.MODIFY_LIMIT)) {
+                auditLog.objectPlaced(context, name, parameters);
                 return PacketDecision.forward();
             } else {
                 var sid = new StarItemDescriptor(name, 1, parameters);
