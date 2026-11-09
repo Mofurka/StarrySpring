@@ -4,6 +4,10 @@ runtime-plugins/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
+/plugins/dist/
+/db_data/
+/logs/
+/lib/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -44,7 +48,4 @@ build/
 ### Tools ###
 # Собирается из tools/weather-editor (pnpm build).
 /tools/weather-editor.html
-/plugins/dist/
-/db_data/
-/logs/
-/lib/
+
