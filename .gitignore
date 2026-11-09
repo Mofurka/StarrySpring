@@ -47,3 +47,4 @@ build/
 /plugins/dist/
 /db_data/
 /logs/
+/lib/

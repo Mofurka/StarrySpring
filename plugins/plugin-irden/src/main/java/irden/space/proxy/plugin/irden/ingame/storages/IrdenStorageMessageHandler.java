@@ -1,4 +1,4 @@
-package irden.space.proxy.plugin.irden.integration.storages;
+package irden.space.proxy.plugin.irden.ingame.storages;
 
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageContext;
 import irden.space.proxy.plugin.command_handler.entity_message.EntityMessageHandler;
@@ -51,9 +51,9 @@ public class IrdenStorageMessageHandler {
 
     @EntityMessageHandler("warehouse:transfer_request")
     public VariantValue onWarehouseTransferRequest(EntityMessageContext ctx) {
-        StorageTransferRequest storageTransferRequest = variantObjectMapper.fromVariant(ctx.arg(0), StorageTransferRequest.class);
+        StorageTransferRequest storageTransferRequest = variantObjectMapper.fromVariant(ctx.firstArg(), StorageTransferRequest.class);
         if (storageTransferRequest.autoAccept()) {
-            boolean has = ctx.session().permissions().has(SitePermissions.IRDEN_STORAGE_AUTO_ACCEPT.permission());
+            boolean has = ctx.session().permissions().has(SitePermissions.IRDEN_STORAGE_AUTO_ACCEPT);
             if (!has)
                 throw new IllegalStateException("Вам не доступно автопринятие запроса. ИНЦИДЕНТ БУДЕТ СООБЩЁН АДМИНИСТРАТОРУ!!!!!!!!!!!!!!!");
         }
@@ -67,7 +67,8 @@ public class IrdenStorageMessageHandler {
             Player player = playerBySessionId.get();
             Long applicationId = PlayerMetadata.getApplicationId(player);
             irdenAppStoragesClient.makeTransferRequest(storageTransferRequest.setRequestApplicationId(applicationId));
+            return null;
         }
-        return null;
+        throw new IllegalStateException("Player not found");
     }
 }
