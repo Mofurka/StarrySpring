@@ -7,6 +7,7 @@ import irden.space.proxy.plugin.api.SessionPermissionService;
 import irden.space.proxy.plugin.api.annotations.OnDisconnected;
 import irden.space.proxy.plugin.api.annotations.PacketHandler;
 import irden.space.proxy.plugin.player_manager.events.PlayerConnectedEvent;
+import irden.space.proxy.plugin.player_manager.ip.PlayerIpHistoryService;
 import irden.space.proxy.plugin.player_manager.events.PlayerDisconnectedEvent;
 import irden.space.proxy.plugin.player_manager.model.Player;
 import irden.space.proxy.plugin.player_manager.model.TempPlayer;
@@ -40,13 +41,15 @@ public class PlayerConnectionHandler {
     private final SessionPermissionService sessionPermissionService;
     private final RoleManager roleManager;
     private final ApplicationEventPublisher eventPublisher;
+    private final PlayerIpHistoryService ipHistoryService;
 
     public PlayerConnectionHandler(
             @Qualifier("onlinePlayerRegistry") PlayerRegistry<Player> players,
             @Qualifier("connectingPlayerRegistry") PlayerRegistry<TempPlayer> connectingPlayers,
             PlayerRepository playerRepository,
             PlayerAccessService playerAccessService,
-            SessionPermissionService sessionPermissionService, RoleManager roleManager, ApplicationEventPublisher eventPublisher
+            SessionPermissionService sessionPermissionService, RoleManager roleManager, ApplicationEventPublisher eventPublisher,
+            PlayerIpHistoryService ipHistoryService
     ) {
         this.players = players;
         this.connectingPlayers = connectingPlayers;
@@ -55,6 +58,7 @@ public class PlayerConnectionHandler {
         this.sessionPermissionService = sessionPermissionService;
         this.roleManager = roleManager;
         this.eventPublisher = eventPublisher;
+        this.ipHistoryService = ipHistoryService;
     }
 
     @PacketHandler(value = PacketType.CLIENT_CONNECT, direction = PacketDirection.TO_SERVER)
@@ -74,6 +78,9 @@ public class PlayerConnectionHandler {
                 log.info("Existing player connecting: name='{}', uuid={}, ip={}", clientConnect.playerName(), clientConnect.playerUuid(), context.session().clientIp());
             playerRepository.updateIpAddress(clientConnect.playerUuid().toString(), context.session().clientIp());
         }
+
+        ipHistoryService.recordConnection(clientConnect.playerUuid().toString(), context.session().clientIp());
+
         TempPlayer player = TempPlayer.builder()
                 .name(clientConnect.playerName())
                 .uuid(clientConnect.playerUuid())

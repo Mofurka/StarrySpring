@@ -124,4 +124,63 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="player-manager-005-create-player-ip-history" author="Mofurka">
+        <createTable
+                schemaName="${playerManagerSchema}"
+                tableName="player_ip_history">
+            <column name="id" type="uuid" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="player_uuid" type="varchar(32)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ip_address" type="varchar(45)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="first_seen" type="java.sql.Types.TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="last_seen" type="java.sql.Types.TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="connection_count" type="bigint" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+                schemaName="${playerManagerSchema}"
+                tableName="player_ip_history"
+                columnNames="player_uuid, ip_address"
+                constraintName="uk_player_manager_ip_history_uuid_ip"/>
+
+        <createIndex
+                schemaName="${playerManagerSchema}"
+                tableName="player_ip_history"
+                indexName="idx_player_manager_ip_history_ip">
+            <column name="ip_address"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="player-manager-006-backfill-player-ip-history" author="Mofurka">
+        <comment>
+            Переносит текущий адрес каждого игрока в историю, чтобы поиск связей
+            работал и по тем, кто уже заходил до появления таблицы
+        </comment>
+        <sql dbms="postgresql">
+            INSERT INTO ${playerManagerSchema}.player_ip_history
+                (id, player_uuid, ip_address, first_seen, last_seen, connection_count)
+            SELECT gen_random_uuid(), p.player_uuid, p.ip_address, p.created_at, p.last_seen, 1
+            FROM ${playerManagerSchema}.players p
+            WHERE p.ip_address IS NOT NULL
+              AND p.ip_address &lt;&gt; ''
+            ON CONFLICT ON CONSTRAINT uk_player_manager_ip_history_uuid_ip DO NOTHING;
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
