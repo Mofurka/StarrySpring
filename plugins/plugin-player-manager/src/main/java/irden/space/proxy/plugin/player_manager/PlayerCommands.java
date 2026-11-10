@@ -35,6 +35,7 @@ public class PlayerCommands {
     private final CommandHandlerPlugin commandHandler;
     private final PluginContext pluginContext;
     private final PlayerIpHistoryService ipHistoryService;
+    private final PlayerInfoService playerInfoService;
 
     @OnLoad
     public void registerContextResolver() {
@@ -50,32 +51,8 @@ public class PlayerCommands {
         return literal("user").permission(PlayerManagerPermissions.USER.permission())
                 .then(literal("info")
                         .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
-                                .executes(context -> {
-                                    PlayerTarget identifier = context.get("identifier", PlayerTarget.class);
-                                    Player player = identifier.player();
-                                    StringBuilder sb = new StringBuilder();
-                                    sb.append("Player info:").append(System.lineSeparator());
-                                    sb.append("- Name: ").append(player.name()).append(System.lineSeparator());
-                                    sb.append("- UUID: ").append(player.uuid()).append(System.lineSeparator());
-                                    sb.append("- Online: ").append(player.online()).append(System.lineSeparator());
-                                    if (player.online()) {
-                                        sb.append("- Account: ").append(player.account()).append(System.lineSeparator());
-                                        sb.append("- Client ID: ").append(player.clientId()).append(System.lineSeparator());
-                                        sb.append("- Entity ID: ").append(player.entityId()).append(System.lineSeparator());
-                                        sb.append("- IP Address: ").append(player.ipAddress()).append(System.lineSeparator());
-                                        if (player.position().getPreviousLocation() != null) {
-                                            sb.append("- Previous Location: ").append(player.position().getPreviousLocation().toString()).append(System.lineSeparator());
-                                        }
-                                        sb.append("- Current Location: ").append(player.position().getCurrentLocation().toString()).append(System.lineSeparator());
-                                        sb.append("- Position: ").append("{").append(player.position().getX()).append(",").append(player.position().getY()).append("}").append(System.lineSeparator());
-                                        Map<String, Object> metadata = player.metadata();
-                                        if (!metadata.isEmpty()) {
-                                            sb.append("- Metadata: ").append(System.lineSeparator());
-                                            metadata.forEach((k, v) -> sb.append("  - ").append(k).append(": ").append(v).append(System.lineSeparator()));
-                                        }
-                                    }
-                                    context.reply(sb.toString());
-                                })))
+                                .executes(context -> context.reply(
+                                        playerInfoService.describe(context.get("identifier", PlayerTarget.class).player())))))
                 .then(literal("permissions")
                         .then(argument("identifier", PlayerTargetArgumentType.playerTarget(() -> playerManagerApi)).description("Player name, UUID or client ID")
                                 .executes(context -> {
