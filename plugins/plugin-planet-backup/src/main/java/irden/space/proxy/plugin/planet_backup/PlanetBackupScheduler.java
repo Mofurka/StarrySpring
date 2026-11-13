@@ -24,6 +24,7 @@ public class PlanetBackupScheduler {
 
     private final PlanetBackupConfig config;
     private final PlanetBackupService backupService;
+    private final PlanetBackupCommandHandler planetBackupCommandHandler;
 
     private ScheduledExecutorService executor;
     private volatile CronExpression cron;
@@ -72,7 +73,7 @@ public class PlanetBackupScheduler {
 
     private void runScheduledBackup() {
         try {
-            backupService.backupNow();
+            planetBackupCommandHandler.startDelayedBackup();
         } catch (Exception e) {
             log.error("Scheduled planet backup failed", e);
         } finally {

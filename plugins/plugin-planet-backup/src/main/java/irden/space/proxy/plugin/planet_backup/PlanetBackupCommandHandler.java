@@ -28,7 +28,7 @@ public class PlanetBackupCommandHandler {
     private final AtomicBoolean atomicClose = new AtomicBoolean(false);
 
     public void startDelayedBackup() {
-        Thread.ofVirtual().name("planet-backup-manual").start(() -> {
+        Thread.ofVirtual().name("planet-backup").start(() -> {
             atomicClose.set(true);
             try {
                 var time = 30;
